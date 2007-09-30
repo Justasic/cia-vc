@@ -3,10 +3,10 @@ Getting Started Developing CIA
 ==============================
 
 Want to help with CIA? Below are a few common starting points. We encourage
-you to join the IRC channel, #cia on Freenode_,  or `drop us a line`_.
+you to join the IRC channel (#cia on Freenode_) and/or the `mailing list`_.
 
 .. _Freenode: http://freenode.net
-.. _drop us a line: mailto:micah@navi.cx
+.. _mailing list: http://groups.google.com/group/cia-vc
 
 Writing Client Scripts
 ----------------------
@@ -20,16 +20,20 @@ The best way to get started is probably by using some of the existing
 messages accepted by CIA.
 
 .. _existing scripts: /doc/clients/
-.. _XML schema: http://svn.navi.cx/misc/trunk/cia/xml/schema.xsd
+.. _XML schema: http://cia-vc.googlecode.com/svn/trunk/cia/xml/schema.xsd
 
 Getting the Source
 ------------------
 
-The CIA source is available in a public `Subversion repository`_::
+CIA.vc is on Google Code:
 
-  svn co http://svn.navi.cx/misc/trunk/cia
+ * `Project Page`_
+ * `Bug Tracker`_
+ * `Source Code`_
 
-.. _Subversion repository: http://svn.navi.cx/misc/trunk/cia/
+.. _Project Page: http://code.google.com/p/cia-vc/
+.. _Bug Tracker: http://code.google.com/p/cia-vc/issues/list
+.. _Source Code: http://code.google.com/p/cia-vc/source
 
 Running Your Own Server
 -----------------------

@@ -103,7 +103,7 @@ CIA uses open standards, including XHTML, CSS2, and XML-RPC.
 .. _Django: http://djangoproject.com
 .. _IRC log: /historical/first-24-hours.html
 .. _adding your project: /doc/adding-projects
-.. _changes to its own codebase: /stats/project/navi-misc/cia
+.. _changes to its own codebase: /stats/project/CIA.vc
 .. _stats browser: /stats
 .. _client script: /doc/clients
 .. _GNU GPL: /doc/COPYING
@@ -114,7 +114,7 @@ CIA uses open standards, including XHTML, CSS2, and XML-RPC.
 .. _MySQL: http://www.mysql.com
 .. _Freenode: http://freenode.org
 .. _PicoGUI: http://picogui.org
-.. _repository: http://navi.cx/svn/misc/trunk/cia/
+.. _repository: http://cia-vc.googlecode.com/svn/trunk/cia/
 .. _Subversion: http://subversion.tigris.org/
 .. _architecture: /doc/how-cia-works
 .. _Docutils: http://docutils.sourceforge.net/

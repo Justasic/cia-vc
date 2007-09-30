@@ -17,7 +17,7 @@ Sourceforge HOWTO :: /doc/sourceforge-howto
 
 - Development
 
-README file :: /doc/README
-Known Bugs :: /doc/BUGS
-To-do List :: /doc/TODO
-Source :: http://navi.cx/svn/misc/trunk/cia/
+Bug Tracker :: http://code.google.com/p/cia-vc/issues/list
+Getting Started :: http://cia.vc/doc/development/
+Project Home :: http://code.google.com/p/cia-vc/
+Source Code :: http://code.google.com/p/cia-vc/source
