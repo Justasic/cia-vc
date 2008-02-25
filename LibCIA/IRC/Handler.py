@@ -27,6 +27,10 @@ from twisted.python import log
 from LibCIA import Ruleset
 
 
+# XXX - bleh.
+pb.MAX_BROKER_REFS = 2048
+
+
 class IrcURIHandler(Ruleset.RegexURIHandler):
     """Handles irc:// URIs in rulesets. This creates a message queue
        for each URI, and delivers formatted messages to the proper

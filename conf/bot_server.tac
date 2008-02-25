@@ -25,6 +25,10 @@ botNet = Bots.BotNetwork(Bots.SequentialNickAllocator("CIA-"))
 
 # The bot server listens on a UNIX socket rather than TCP/IP, for security
 botSocketName = "bots.socket"
+
+# XXX - bleh.
+pb.MAX_BROKER_REFS = 2048
+
 internet.UNIXServer(botSocketName, pb.PBServerFactory(botNet)).setServiceParent(application)
 
 # For maintaining the bot server without restarting, if necessary, run
