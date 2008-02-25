@@ -23,6 +23,7 @@
     {% if comment_list %}
     <div class="comments">
     {% for comment in comment_list %}
+      {% if comment.is_public %}
       <div class="comment comment-{% cycle odd,even %}" id="c{{ comment.id }}">
 	<div>
 	  <a id="c{{ comment.id }}" href="#c{{ comment.id }}">#{{ forloop.counter }}</a>
@@ -32,6 +33,7 @@
 	{{ comment.comment|escape|urlizetrunc:40|linebreaks }}
 
       </div>
+      {% endif %}
     {% endfor %}
     </div>
     {% endif %}
