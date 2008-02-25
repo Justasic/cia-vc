@@ -7,6 +7,13 @@ import django.newforms as forms
 import re, xmlrpclib, datetime
 import pysvn, httplib, urlparse, urllib
 
+REVISION_FETCH_LIMIT = 10
+
+def _ssl_server_trust_prompt(trust_dict):
+    retcode = True
+    accepted_failures = ~0
+    save = False
+    return retcode, accepted_failures, save
 
 class SvnClient:
     """This client talks to Subversion repositories, using settings
@@ -16,13 +23,7 @@ class SvnClient:
     def __init__(self, model):
         self.model = model
         self.client = pysvn.Client()
-        self.client.callback_ssl_server_trust_prompt = self._ssl_server_trust_prompt
-
-    def _ssl_server_trust_prompt(self, trust_dict):
-        retcode = True
-        accepted_failures = ~0
-        save = False
-        return retcode, accepted_failures, save
+        self.client.callback_ssl_server_trust_prompt = _ssl_server_trust_prompt
 
     def probe(self, location=None):
         """Test the repository. On success, stores extra information
@@ -105,6 +106,7 @@ class SvnClient:
             revision_start = pysvn.Revision(pysvn.opt_revision_kind.number, self.model.last_revision + 1),
             revision_end = pysvn.Revision(pysvn.opt_revision_kind.number, last_revision),
             discover_changed_paths = True,
+            limit = REVISION_FETCH_LIMIT
             )
 
         for change in changes:
@@ -215,7 +217,7 @@ class SvnClient:
             'revision_url': revision_url,
             }))
 
-        xmlrpclib.ServerProxy(settings.CIA_RPC_URL).hub.deliver(xml)
+        xmlrpclib.ServerProxy(settings.CIA_RPC_URL).hub.deliver_sync(xml)
 
     _pathRegexes = None
 
@@ -235,6 +237,10 @@ class SvnClient:
         """Convert pysvn's chnaged_paths list into a list of
            File objects, and apply our path regexes on those files.
            """
+        # XXX - hack to avoid killing ourself when we see a large-scale merge
+        if len(changed_paths) > 1000:
+            return [File( {'path': "Too many paths", 'action': 'M'})]
+
         files = map(File, changed_paths)
 
         # Try each of our several regexes. To be applied, the same
