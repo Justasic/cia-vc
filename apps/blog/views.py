@@ -197,6 +197,16 @@ def comment_feed(request):
 
 def post_comment(request):
     """Post a comment, and redirect back to the blog entry on success."""
+
+    answer=0
+    try:
+        # El cheapo anti-spammage - only shows up on the preview page
+        answer=request.POST["answer"]
+    except KeyError:
+        pass
+    if answer != '42' and 'post' in request.POST:
+        raise Http404
+
     response = post_free_comment(request)
     if isinstance(response, HttpResponseRedirect):
         # We can assume content_type refers to Post, since this

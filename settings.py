@@ -23,6 +23,12 @@ TEMPLATE_DEBUG = DEBUG
 CIA_REGISTRATION_IS_CLOSED = False
 
 #
+# Really cheap anti-linkspam... we use rel="nofollow", but this might prevent them
+# from popping up at all... for a while.
+# Default list plus what I wanted
+PROFANITIES_LIST = ('asshat', 'asshead', 'asshole', 'cunt', 'fuck', 'gook', 'nigger', 'shit', '://')
+
+#
 # Optional integration with Google Analytics.
 # Set this either to None or to the _uacct value from Google.
 #
