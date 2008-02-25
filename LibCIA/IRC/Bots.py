@@ -882,6 +882,13 @@ class Bot(irc.IRCClient, pb.Referenceable):
 
     def finishConnection(self):
         log.msg("%r connected" % self)
+
+        # XXX - Bleh.
+        # Abominations in python. We're hotfixing, baby!
+        # Freenode has channel forwards. We don't like forwards. This disables them.
+        if isinstance(self.network, Network.Freenode):
+            self.sendLine("MODE %s +Q" % self.nickname)
+
         self.botNet.botConnected(self)
         self.signonTimestamp = time.time()
 
