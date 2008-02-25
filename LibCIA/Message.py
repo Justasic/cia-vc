@@ -23,6 +23,7 @@ by XML documents.
 #
 
 from twisted.python import log
+from twisted.internet import defer, reactor
 import time, types, re
 import XML, RpcServer
 
@@ -35,7 +36,20 @@ class HubInterface(RpcServer.Interface):
         self.hub = hub
 
     def xmlrpc_deliver(self, xml):
-        """Deliver an XML message, returning its result on success or a Fault on failure"""
+        """Queue an XML message, returning 'queued.' - don't have time for more."""
+        # XXX - Hack from BP, make xml clients return ASAP
+        # not sure if this helps much, actually
+        d = defer.Deferred()
+        d.addCallback(Message)
+        d.addCallback(self.hub.deliver)
+        # Delay of effectively 0, just give xmlrpc a chance to close the connection first
+        reactor.callLater(0.01, d.callback, xml)
+        return "queued."
+        # Was:
+        # return self.hub.deliver(Message(xml))
+
+    def xmlrpc_deliver_sync(self, xml):
+        """Queue an XML message and wait until it's processed - for internal use."""
         return self.hub.deliver(Message(xml))
 
 
