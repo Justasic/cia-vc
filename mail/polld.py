@@ -65,6 +65,13 @@ LIFETIME = 3600 * 12
 pollerqueue = blockingqueue.TwoLevelQueue()
 queuedmails = emailqueue.EmailQueue("ping")
 running = True
+# List of all repositories we are currently querying - if we get two
+# ping emails for the same repo at nearly the same time, we may be getting
+# two checking threads getting the same old state from the db and calling in
+# the same changes.
+processing = set()
+# Lock to ensure consistency of that
+process_lock = thread.allocate_lock()
 
 def svn_loop(pollerqueue):
     # Persistent client instance, because pysvn has a sucking competition with black holes
@@ -75,21 +82,35 @@ def svn_loop(pollerqueue):
         # If the queue has been shut down, this raises SystemExit.
         # Normally, it blocks until a request is available, and returns it.
         pinger = pollerqueue.pop()
+
+        # Ensure nobody else is pinging this at the same time as us
+        process_lock.acquire()
+        while pinger in processing:
+            process_lock.release()
+            time.sleep(5)
+            process_lock.acquire()
+        # Okay, nobody else is processing this, so we are.
+        processing.add(pinger)
+        process_lock.release()
+
         # big try-catch to prevent errors on a repository from killing off
         # our workers.
         try:
-
             try:
                 repos = Repository.objects.get(is_active=True,
                                            pinger_name=pinger)
             except Repository.DoesNotExist:
-                continue
-            client.model = repos
-            client.poll()
+                repos = None
+            if repos:
+                client.model = repos
+                client.poll()
 
         except:
             logging.exception("Poller for %s threw exception." % pinger)
 
+        process_lock.acquire()
+        processing.discard(pinger)
+        process_lock.release()
 
 
 def get_repository_for_message(msg):
