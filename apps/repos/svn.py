@@ -101,6 +101,10 @@ class SvnClient:
         if last_revision <= self.model.last_revision:
             return
 
+        self.model.last_revision = last_revision
+        self.model.last_update_time = datetime.datetime.now()
+        self.model.save()
+
         changes = self.client.log(
             self.model.location,
             revision_start = pysvn.Revision(pysvn.opt_revision_kind.number, self.model.last_revision + 1),
@@ -111,10 +115,6 @@ class SvnClient:
 
         for change in changes:
             self._deliverCommit(change)
-
-        self.model.last_revision = last_revision
-        self.model.last_update_time = datetime.datetime.now()
-        self.model.save()
 
     _pollerData = ('<?xml version="1.0" encoding="utf-8"?>' +
                     '<propfind xmlns="DAV:">' +
