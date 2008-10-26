@@ -652,6 +652,10 @@ class Bot(irc.IRCClient, pb.Referenceable):
     # Timeout, in seconds, for joining channels
     joinTimeout = 60
 
+    # Timeout from TCP connection until we give up trying to get a nick
+    # Useful to weed out "zombie" connections
+    signonTimeout = 5*60
+
     # Important timestamps
     lastPingTimestamp = None
     lastPongTimestamp = None
@@ -683,6 +687,10 @@ class Bot(irc.IRCClient, pb.Referenceable):
         self._messageQueue = FairQueue(self.maxQueueSize)
         self.pendingWhoisTests = {}
         self.connectTimestamp = None
+        # note that we call connectionLost, not quit,
+        # because at this point we don't trust the server to properly respond.
+        self.signonTimer = reactor.callLater(self.signonTimeout,
+          self.connectionLost, "signon timed out")
 
     def emptyChannels(self):
         """Called when we know we're not in any channels and we shouldn't
@@ -732,7 +740,7 @@ class Bot(irc.IRCClient, pb.Referenceable):
            realize this nick doesn't match those allowed by nickAllocator and
            start looking for a better one.
            """
-        tempNick = "CIA-temp%03d" % random.randint(0, 999)
+        tempNick = "CIAtmp%03d" % random.randint(0, 999)
         self.nicknames.append(tempNick)
         self.setNick(tempNick)
 
@@ -890,6 +898,7 @@ class Bot(irc.IRCClient, pb.Referenceable):
             self.sendLine("MODE %s +Q" % self.nickname)
 
         self.botNet.botConnected(self)
+        self.signonTimer.cancel()
         self.signonTimestamp = time.time()
 
         # Start the cycle of pinging the server to ensure our connection

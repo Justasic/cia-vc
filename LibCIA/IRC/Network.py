@@ -156,8 +156,9 @@ class IRCNet(BaseNetwork):
 
 class EFNet(BaseNetwork):
     alias = 'efnet'
+    newBotTimeout = 5*60
     servers = (
-        ('irc.desync.com', None),
+        ('irc.shoutcast.com', None),
         ('efnet.xs4all.nl', None),
         ('irc.mzima.net', None),
         )
