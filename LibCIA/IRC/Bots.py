@@ -32,7 +32,6 @@ import time, random, Queue
 from LibCIA import TimeUtil
 from LibCIA.IRC import Network
 
-
 class Request(pb.Referenceable):
     """The Request object specifies a network, optionally a channel, and
        a number of bots that need to inhabit that network/channel.
@@ -233,6 +232,11 @@ class BotNetwork(pb.Root):
     """A collection of IRC bots that work to satisfy a collection of Request objects.
        Users should interact with the BotNetwork via Request instances.
        """
+
+    # As we don't want to flood the upstream router with SYN packets,
+    # we only create a BotFactory every globalConnectInterval seconds
+    globalConnectInterval = 1.0
+
     # In addition to checking bot status immediately after changes that*******
     # are likely to be important, we check bot status periodically, every
     # botCheckInterval seconds.
@@ -255,6 +259,8 @@ class BotNetwork(pb.Root):
         self.nickAllocator = nickAllocator
         self.requests = []
         self.unknownMessageLog = MessageLog()
+        self.connectCheckTimer = None
+        self.connectCheckQueue = Queue.Queue()
 
         # A map from Network to list of Bots
         self.networks = {}
@@ -387,7 +393,23 @@ class BotNetwork(pb.Root):
 
         # Nope... how about asking more bots to join the request's network?
         if not request.network in self.newBotNetworks:
-            self.createBot(request.network)
+            self.scheduleBot(request.network)
+
+    def scheduleBot(self, network):
+        """Schedule a new bot for a given network"""
+        log.msg("Scheduling a new IRC bot for %s" % network)
+        self.connectCheckQueue.put_nowait(network)
+        if not self.connectCheckTimer:
+            self.checkConnectQueue()
+
+    def checkConnectQueue(self):
+        try:
+            network = self.connectCheckQueue.get_nowait()
+            self.createBot(network)
+            self.newBotNetworks[network] = False
+            self.connectCheckTimer = reactor.callLater(self.globalConnectInterval, self.checkConnectQueue)
+        except Queue.Empty:
+            self.connectCheckTimer = None
 
     def createBot(self, network):
         """Create a new bot for the given network, retrying if necessary"""
@@ -415,8 +437,9 @@ class BotNetwork(pb.Root):
 
         try:
             timer = self.newBotNetworks[bot.network]
-            if timer.active():
-                timer.cancel()
+            if timer:
+                if timer.active():
+                    timer.cancel()
             del self.newBotNetworks[bot.network]
         except KeyError:
             # Hmm, we weren't waiting for this bot to connect?
@@ -523,7 +546,11 @@ class BotNetwork(pb.Root):
            """
         newBots = []
         for network, timer in self.newBotNetworks.iteritems():
-            newBots.append((str(network), timer.getTime()))
+            if timer:
+                deadline = timer.getTime()
+            else:
+                deadline = 0
+            newBots.append((str(network), deadline))
         return newBots
 
 
@@ -1189,7 +1216,7 @@ class Bot(irc.IRCClient, pb.Referenceable):
             self.me(channel, 'tastes crunchy')
 
         elif text == "rubs %s's tummy" % me:
-	    self.say(channel, "*purr*")
+            self.say(channel, "*purr*")
 
     def remote_getInfoDict(self):
         return {
