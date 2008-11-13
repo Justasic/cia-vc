@@ -87,7 +87,10 @@ class StatsTarget(StrAndUnicode, models.Model):
         return aset.is_editable()
 
     def get_absolute_url(self):
-        return "/stats/" + quote(self.path)
+        path = self.path
+        if isinstance(path, unicode):
+            path = path.encode('utf8')
+        return "/stats/" + quote(path)
 
     def get_asset_edit_url(self):
         """Return a URL pointing at the Add Asset page for this target's
