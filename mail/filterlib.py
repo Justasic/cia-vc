@@ -25,7 +25,7 @@ receive incoming mail on stdin and send output via XML-RPC.
 #
 
 import sys, email, xmlrpclib
-from twisted.xish import domish
+from twisted.words.xish import domish
 from StringIO import StringIO
 
 
