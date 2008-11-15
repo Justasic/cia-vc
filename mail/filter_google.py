@@ -18,17 +18,25 @@ class GoogleFilter(CommitFilter):
             if len(line) <= 4 or line.lstrip() != line[4:]:
                 self.pushLine(line)
                 return
+            if line == '     ':
+                # Continuation marker: file is on next line
+                line = self.pullLine()
             self.addFile(line.strip(), action)
 
     def pullLog(self):
-        # Log is somewhat ambiguous.
-        # I guess the exact algorithm would be # "find the first line
-        # of 78 '=' chars and cut message at the last empty line before.
-        # Oh well, we cut at the first empty line, for now.
+        # todo: lines ending with two spaces were broken by the email formatter
+        # Join them back together
         lines = []
         while True:
-            line = self.pullLine().strip()
+            line = self.pullLine()
             if not line:
+                break;
+            line = line.strip()
+
+            if line == "=" * 78:
+                # First diff, last line was "Modified: ..." or such,
+                # Strip that line and the empty one before it
+                lines = lines[:-2]
                 break
             lines.append(line)
         self.addLog("\n".join(lines))
@@ -45,7 +53,7 @@ class GoogleFilter(CommitFilter):
         self.xml.source.project.children[0] = project
 
     def parse(self):
-        self.xml.generator.addElement('version', content='Googlecode parser 0.3')
+        self.xml.generator.addElement('version', content='Googlecode parser 0.4')
         match = re.match(r"\s*\[(?P<project>.*) commit\].*", self.message['subject'])
         if not match:
             return
