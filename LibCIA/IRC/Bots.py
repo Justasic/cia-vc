@@ -24,13 +24,114 @@ can be restarted without effecting the bots.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from twisted.protocols import irc
+from twisted.protocols import irc, basic
 from twisted.internet import protocol, reactor, defer
 from twisted.python import log, util
 from twisted.spread import pb
 import time, random, Queue
 from LibCIA import TimeUtil
 from LibCIA.IRC import Network
+
+class CommandParser(basic.LineOnlyReceiver):
+    """The Protocol subclass that takes messages from the RPC server.
+
+       We use a line-based protocol and not something like NetString
+       even though the latter would handle things like newlines in strings,
+       so that the communication stays properly human-readable
+       and we don't depend on twisted too much.
+
+       Anyway, we'd better not be receiving newlines inside our input
+       in the first place, since we're utterly unprepared to handle it.
+
+       Our protocol consists of the following messages:
+       ADD target
+       DEL target
+       MSG target message
+       START_SYNC
+       SYNC target
+       END_SYNC
+
+       Where target is of the form network[:port]/channel
+       ([] denote optional, channel includes all # characters).
+
+       The idea of the *SYNC construct is to allow a restarted rpc server
+       to synchronize its active requests: Everything between START_SYNC
+       and END_SYNC is ADD'ed if we don't have it already, and everything
+       not mentioned by the time we get END_SYNC is DEL'd
+    """
+
+    def __init__(self, botNet):
+        self.botNet = botNet
+        self.handlers = {
+            "ADD": self.handle_add,
+            "DEL": self.handle_del,
+            "MSG": self.handle_msg,
+            "START_SYNC": self.handle_start_sync,
+            "SYNC"      : self.handle_sync,
+            "END_SYNC"  : self.handle_end_sync,
+        }
+        self.sync_id = -1
+
+    def lineReceived(self, line):
+        """Parses a line and calls the appropriate handler."""
+        parts = line.split(None, 2)
+        command = parts[0]
+        handler = self.handlers[command]
+        handler(*parts[1:])
+
+    def handle_add(self, target):
+        (network, channel) = self.parse_target(target)
+        if self.botNet.findRequest(network, channel):
+            log.msg("Asked to create %s twice" % target)
+            return
+        Request(self.botNet, network, channel)
+
+    def handle_del(self, target):
+        (network, channel) = self.parse_target(target)
+        request = self.botNet.findRequest(network, channel)
+        if not request:
+            log.msg("Del on nonexistant %s" % target)
+            return
+        request.cancel()
+
+    def handle_msg(self, target, message):
+        (network, channel) = self.parse_target(target)
+        request = self.botNet.findRequest(network, channel)
+        if not request:
+            log.msg("Msg on nonexistant %s" % target)
+            return
+        request.remote_msg(message)
+
+    def handle_start_sync(self):
+        self.sync_id = self.botNet.start_sync()
+
+    def handle_sync(self, target):
+        (network, channel) = self.parse_target(target)
+        if self.sync_id == self.botNet.sync_id:
+            request = self.botNet.findRequest(network, channel)
+            if request:
+                request.have_sync = True
+            else:
+                Request(self.botNet, network, channel)
+
+    def handle_end_sync(self):
+        self.botNet.end_sync(self.sync_id)
+
+    def parse_target(self, target):
+        """Parses a name[:port]/target spec.
+
+           returns a tuple (network, target) where network is a Network object
+           and target is the target as a string.
+        """
+        network, channel = target.split("/", 1)
+        hostport = network.split(":", 1)
+        if len(hostport) > 1:
+            network = hostport[0]
+            port = hostport[1]
+        else:
+            port = None
+        net_obj = Network.find(network, port)
+        return (net_obj, channel)
 
 class Request(pb.Referenceable):
     """The Request object specifies a network, optionally a channel, and
@@ -43,6 +144,7 @@ class Request(pb.Referenceable):
     def __init__(self, botNet, network, channel=None, numBots=1):
         self.bots = []
         self._active = True
+        self.have_sync = True
 
         self.botNet = botNet
         self.network = network
@@ -258,6 +360,7 @@ class BotNetwork(pb.Root):
     def __init__(self, nickAllocator):
         self.nickAllocator = nickAllocator
         self.requests = []
+        self.sync_id = 0
         self.unknownMessageLog = MessageLog()
         self.connectCheckTimer = None
         self.connectCheckQueue = Queue.Queue()
@@ -308,6 +411,37 @@ class BotNetwork(pb.Root):
     def removeRequest(self, request):
         """Indicates that a request is no longer needed"""
         self.requests.remove(request)
+        self.checkBots()
+
+    def start_sync(self):
+        """Starts a sync process, marking all requests as "not synced".
+
+           Returns a "sync ID", a value you should check against our
+           sync_id field whenever doing sync related things. This guards
+           against two control sources syncing at the same time and
+           the first end_sync killing stuff that wasn't confirmed since
+           the second start_sync.
+           (later wins, to prevent an unfinished sync from stalling all
+            later syncs)
+        """
+        self.sync_id += 1
+        for request in self.requests:
+            request.have_sync = False
+        return self.sync_id
+
+    def end_sync(self, sync_id):
+        if self.sync_id != sync_id:
+            log.msg("Stale sync (%d)" % sync_id)
+            return
+
+        self.sync_id += 1
+        stale_requests = []
+        for request in self.requests:
+            if not request.have_sync:
+                stale_requests.append(request)
+        for request in stale_requests:
+            self.requests.remove(request)
+
         self.checkBots()
 
     def checkBots(self):
