@@ -97,7 +97,7 @@ class Filter:
         if self.debug:
             print self.xml.toXml()
         else:
-            xmlrpclib.ServerProxy(self.server).hub.deliver(self.xml.toXml())
+            xmlrpclib.ServerProxy(self.server).hub.deliver_sync(self.xml.toXml())
 
 
 class CommitFilter(Filter):
