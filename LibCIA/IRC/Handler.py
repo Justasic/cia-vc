@@ -82,7 +82,7 @@ class IrcURIHandler(Ruleset.RegexURIHandler):
         else:
             # It's a channel. Add the # if necesary.
             channel = d['target']
-            if channel[0] != '#':
+            if channel[0] not in '#!+&':
                 channel = '#' + channel
             return ChannelMessageQueue(self.remoteBots, d['host'], d['port'], channel)
 
