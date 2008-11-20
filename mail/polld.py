@@ -10,53 +10,13 @@ from cia.apps.accounts.authplus import send_mail_to_user
 from cia.apps.accounts.models import Project, UserAsset
 from django.contrib.contenttypes.models import ContentType
 
-# XXX - memleak debugging
 from cia.apps.repos.svn import SvnClient
-import gc
-
-def getTypeName(obj):
-    """Try as hard and as generically as we can to get a useful type/class name"""
-    try:
-        t = obj.__class__
-    except:
-        t = type(obj)
-    try:
-        t = t.__name__
-    except:
-        pass
-    t = str(t)
-    return t
-
-def getTypeFreq():
-    objects = gc.get_objects()
-    typeFreq = {}
-    for object in objects:
-        t = getTypeName(object)
-        # Increment the frequency
-        typeFreq[t] = typeFreq.setdefault(t, 0) + 1
-    return typeFreq
-
-def debugMem():
-    import sys
-    global lastTypeFreq
-    typeFreq_cur = getTypeFreq()
-    keys = typeFreq_cur.keys()
-    keys.sort(lambda a,b: cmp(typeFreq_cur[a],typeFreq_cur[b]))
-    print "%45s    %7s  %7s  %7s" % ("Type", "startup", "last", "now")
-    newline = False
-    for key in keys:
-        sys.stderr.write("%45s :  %-7d  %-7d  %-7d  " % (key, startTypeFreq.get(key, 0), lastTypeFreq.get(key, 0), typeFreq_cur.get(key, 0)))
-        if newline:
-             sys.stderr.write("\n")
-             newline = False
-        else:
-             newline = True
-    if newline:
-         sys.stderr.write("\n")
-    lastTypeFreq = typeFreq_cur
 
 
 NUM_WORKERS = 5
+
+# Skip a poller this many times after it threw an exception
+PENALTY = 5
 
 # XXX - hack - we leak memory like a sieve. die twice a day, get restarted by cron.
 LIFETIME = 3600 * 12
@@ -76,8 +36,10 @@ process_lock = thread.allocate_lock()
 def svn_loop(pollerqueue):
     # Persistent client instance, because pysvn has a sucking competition with black holes
     # and a leaking competition with neutrino radiation
+    global watchdog
     client = SvnClient(None)
-    while 1:
+    try:
+      while 1:
         # This call manages the entire thread:
         # If the queue has been shut down, this raises SystemExit.
         # Normally, it blocks until a request is available, and returns it.
@@ -102,15 +64,21 @@ def svn_loop(pollerqueue):
             except Repository.DoesNotExist:
                 repos = None
             if repos:
+                logging.info("%03d Polling %s..." % (thread.get_ident(), repos.location))
+                watchdog = 6
                 client.model = repos
+                client._pathRegexes = None
                 client.poll()
 
         except:
-            logging.exception("Poller for %s threw exception." % pinger)
+            logging.info("Poller for %s threw exception.", pinger, exc_info=1)
 
         process_lock.acquire()
         processing.discard(pinger)
         process_lock.release()
+    except Exception:
+        logging.exception("ACK! Pollerthread %03d going down." % thread.get_ident())
+        raise
 
 
 def get_repository_for_message(msg):
@@ -175,25 +143,19 @@ def main_loop():
     logging.info("starting main loop.")
     lasttime = int(time.time())
     deadline = lasttime + LIFETIME
-    global startTypeFreq
-    global lastTypeFreq
-    startTypeFreq = None
-    lastTypeFreq = getTypeFreq()
-    nextDebug = 60
+    global watchdog
+    watchdog = 6
     while running and (time.time() < deadline):
         process_mailqueue()
         lasttime = process_cron(lasttime)
         time.sleep(10)
-        # XXX - more debugging
         fh = open("/home/cia/cia/data/queue/ping/pollq.length", 'w')
         fh.write("High: %2d\nLow: %3d\n"  % (len(pollerqueue.high), len(pollerqueue.low)))
         fh.close()
-        nextDebug -= 1
-        if nextDebug <= 0:
-            nextDebug = 60
-            if startTypeFreq is None:
-                startTypeFreq = getTypeFreq()
-#            debugMem()
+        watchdog -= 1
+        if watchdog < 0:
+            logging.error("watchdog timeout")
+            break
     logging.info("main loop terminating.") # planned death on %d." % deadline)
 
 
