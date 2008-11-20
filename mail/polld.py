@@ -30,6 +30,7 @@ running = True
 # two checking threads getting the same old state from the db and calling in
 # the same changes.
 processing = set()
+penalties = {}
 # Lock to ensure consistency of that
 process_lock = thread.allocate_lock()
 
@@ -43,7 +44,7 @@ def svn_loop(pollerqueue):
         # This call manages the entire thread:
         # If the queue has been shut down, this raises SystemExit.
         # Normally, it blocks until a request is available, and returns it.
-        pinger = pollerqueue.pop()
+        pinger, prio = pollerqueue.pop_with_priority()
 
         # Ensure nobody else is pinging this at the same time as us
         process_lock.acquire()
@@ -52,6 +53,12 @@ def svn_loop(pollerqueue):
             time.sleep(5)
             process_lock.acquire()
         # Okay, nobody else is processing this, so we are.
+        penalty = penalties.pop(pinger, 1) - 1
+        if penalty and prio != "high":
+            penalties[pinger] = penalty
+            process_lock.release()
+            continue
+
         processing.add(pinger)
         process_lock.release()
 
@@ -72,6 +79,7 @@ def svn_loop(pollerqueue):
 
         except:
             logging.info("Poller for %s threw exception.", pinger, exc_info=1)
+            penalties[pinger] = PENALTY
 
         process_lock.acquire()
         processing.discard(pinger)

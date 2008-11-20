@@ -66,6 +66,9 @@ class TwoLevelQueue(object):
             self.lock.release()
 
     def pop(self):
+        return self.pop_with_priority()[0]
+
+    def pop_with_priority(self):
         # As long as we're empty, block here.
         self.emptylock.acquire()
         if self.dead:
@@ -77,9 +80,9 @@ class TwoLevelQueue(object):
         try:
             # At least one is guaranteed to be nonempty as per emptylock
             if len(self.high) > 0:
-                result = self.high.popleft()
+                result = (self.high.popleft(), "high")
             else:
-                result = self.low.popleft()
+                result = (self.low.popleft(), "low")
             # If there's at least one entry remaining, allow next pop()
             if len(self) > 0:
                 self.emptylock.release()
