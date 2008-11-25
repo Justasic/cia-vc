@@ -22,7 +22,7 @@ The irc:// URI handler, acting as a frontend to our network of bots
 #
 
 from twisted.internet import reactor, protocol
-from twisted.protocol import basic
+from twisted.protocols import basic
 from twisted.python import log
 from LibCIA import Ruleset
 
