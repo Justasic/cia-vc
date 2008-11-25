@@ -123,6 +123,7 @@ class ReconnectingBotServerClient(protocol.ClientFactory):
     def buildProtocol(self, addr):
         p = protocol.ClientFactory.buildProtocol(self, addr)
         self.connectCallback(p)
+        return p
 
 
 class RemoteBots:
@@ -212,7 +213,7 @@ class BotControlProtocol(basic.LineOnlyReceiver):
 
     def sendLine(self, line):
         """Sends a line, asserting it does not contain newlines"""
-        if line.index('\r') >= 0 or line.index('\n') >= 0:
+        if line.count('\r') or line.count('\n'):
             raise ValueError, "line to send contained newlines!"
         basic.LineOnlyReceiver.sendLine(self, line)
 
