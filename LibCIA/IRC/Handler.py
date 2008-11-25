@@ -113,7 +113,6 @@ class ReconnectingBotServerClient(protocol.ClientFactory):
         self.connectCallback = connectCallback
         self.delay = delay
         self.protocol = BotControlProtocol
-        protocol.ClientFactory.__init__(self)
 
     def clientConnectionFailed(self, connector, reason):
         reactor.callLater(self.delay, self.reconnector)
