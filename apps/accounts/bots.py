@@ -1,5 +1,5 @@
 from cia.apps.accounts import models, assets, authplus, formtools
-from cia.apps.legacy.bots import block, needs_bot_server
+from cia.apps.legacy import bots
 from django import newforms as forms
 from django.conf import settings
 from django.http import HttpResponseRedirect
@@ -222,31 +222,33 @@ def bot(request, asset_type, asset_id):
 ###########################
 
 @authplus.login_required
-@needs_bot_server
-def bot_cloud(request, server, scale=(1 / math.log(20.0))):
+def bot_cloud(request, scale=(1 / math.log(20.0))):
     cache_key = 'cia.bot_cloud'
     servers = cache.get(cache_key)
     if servers is None:
         # To prevent concurrent invocations..
         cache.set(cache_key, {})
 
-        bot_requests = block(server.root.callRemote('getAllRequestInfo'))
+        bot_requests = bots.status()
 
         # Group by server, including a tiny bit of annotation on each server
         servers = {}
         for bot_request in bot_requests:
             s = bot_request['server']
             if not s in servers:
-                servers[s] = {'requests': []}
+                servers[s] = {
+                  'requests': [],
+                  'num_requests': 0
+                  'name': s
+                }
+            entry = servers[s]
 
             # Annotation for font size within the cloud
             bot_request['size'] = max(0.5, math.log(2 + (bot_request['user_count'] or 0)) * scale)
 
-            servers[s]['requests'].append(bot_request)
-
-        for name, server in servers.iteritems():
-            server['num_requests'] = len(server['requests'])
-            server['name'] = name
+            entry['requests'].append(bot_request)
+            entry['num_requests'] += 1
+            bot_request['is_fulfilled'] = (bot_request['botnick'] != '---')
 
         cache.set(cache_key, servers)
 

@@ -1,6 +1,6 @@
 from django.conf import settings
-from twisted.spread import pb
-from twisted.internet import reactor
+from twisted.internet import defer, reactor, protocol
+from twisted.protocols import basic
 from twisted.python import failure
 import time
 
@@ -22,18 +22,96 @@ def block(d, timeout=60.0):
         d.result.raiseException()
     return d.result
 
-class BotServer:
+class BotServer(basic.LineOnlyReceiver):
     def __init__(self):
-        self.factory = pb.PBClientFactory()
-        reactor.connectUNIX(settings.CIA_BOT_SOCKET, self.factory)
-        self.root = block(self.factory.getRootObject())
+        self.deferred = None
+        self.handlers = {
+          'BEGIN_STATUS': self.ignore,
+          'STATUS': self.collect_status,
+          'END_STATUS': self.finish,
+          'REPORT': self.handle_report,
+          'TOTALS': self.handle_totals,
+          'BEGIN_MSGLOG': self.ignore,
+          'MSGLOG': self.collect_msglog,
+          'END_MSGLOG': self.finish,
+        }
 
-    def disconnect(self):
-        self.factory.disconnect()
+    def lineReceived(self, line):
+        parts = line.split(None, 2)
+        command = parts[0]
+        handler = self.handlers[command]
+        handler(*parts[1:])
+
+    def defer(self):
+        self.deferred = defer.Deferred()
+        return self.deferred
+
+    def doFinish(self, result):
+        self.deferred.callback(result)
+
+    def ignore(self, *args):
+        pass
+
+    def finish(self, *args):
+        self.doFinish(self.result)
+
+    def collect_status(self, target, countAtNick):
+        server, channel = target.split('/', 1)
+        count, nick = countAtNick.split('@', 1)
+        self.result.append({
+          'server': server,
+          'channel': channel,
+          'user_count': count,
+          'botnick': nick,
+        })
+
+    def handle_report(self, target, countAtNick):
+        server, channel = target.split('/', 1)
+        count, nick = countAtNick.split('@', 1)
+        self.doFinish( {
+          'server': server,
+          'channel': channel,
+          'user_count': count,
+          'botnick': nick,
+          })
+
+    def handle_totals(self, asterisk, dictstr):
+        self.doFinish(dictstr) # XXX - improve
+
+    def collect_msglog(self, timestr, logstr):
+        self.result.append((timestr, logstr))
+
+
+    def status(self):
+        self.sendLine("STATUS")
+        self.result = []
+        self.deferred = defer.Deferred()
+        return self.deferred
+
+    def report(self, target):
+        self.sendLine("REPORT " + target)
+        self.deferred = defer.Deferred()
+        return self.deferred
+
+    def totals(self):
+        self.sendLine("TOTALS")
+        self.deferred = defer.Deferred()
+        return self.deferred
+
+    def msglog(self):
+        self.sendLine("MSGLOG")
+        self.result = []
+        self.deferred = defer.Deferred()
+        return self.deferred
+
+
+def connect():
+    creator = protocol.ClientCreator(reactor, BotServer)
+    return creator.connectUNIX(settings.CIA_BOT_SOCKET)
 
 def needs_bot_server(view_func):
     def _wrapper(request, *args, **kwargs):
-        server = BotServer()
+        server = block(connect())
         try:
             return view_func(request, server, *args, **kwargs)
         finally:
@@ -43,3 +121,30 @@ def needs_bot_server(view_func):
     _wrapper.__dict__ = view_func.__dict__
     return _wrapper
 
+def status():
+    server = block(connect())
+    try:
+        return block(server.status())
+    finally:
+        server.disconnect()
+
+def report(target):
+    server = block(connect())
+    try:
+        return block(server.report(target))
+    finally:
+        server.disconnect()
+
+def totals():
+    server = block(connect())
+    try:
+        return block(server.totals())
+    finally:
+        server.disconnect()
+
+def msglog():
+    server = block(connect())
+    try:
+        return block(server.msglog())
+    finally:
+        server.disconnect()

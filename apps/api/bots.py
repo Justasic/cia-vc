@@ -1,6 +1,5 @@
 from cia.apps.api.util import json_result
-from cia.apps.legacy.bots import block, needs_bot_server
-import time
+from cia.apps.legacy import bots
 
 
 ###########################
@@ -8,10 +7,13 @@ import time
 ###########################
 
 @json_result
-@needs_bot_server
-def request_status(request, server, host, channel, port=None):
+def request_status(request, host, channel, port=None):
+    if port:
+        target = "%s:%s/%s" % (host, port, channel)
+    else:
+        target = "%s/%s" % (host, channel)
     return {
-        'request': block(server.root.callRemote('findRequestInfo', host, int(port or 0) or None, channel))
+        'request': bots.report(target)
         }
 
 
@@ -20,10 +22,9 @@ def request_status(request, server, host, channel, port=None):
 ###########################
 
 @json_result
-@needs_bot_server
-def totals(request, server):
+def totals(request):
     return {
-        'totals': block(server.root.callRemote('getTotals')),
+        'totals': bots.totals()
         }   
 
 
@@ -32,8 +33,7 @@ def totals(request, server):
 ###########################
 
 @json_result
-@needs_bot_server
-def message_log(request, server):
+def message_log(request):
     return {
-        'log': block(server.root.callRemote('getMessageLog')),
+        'log': bots.msglog()
         }

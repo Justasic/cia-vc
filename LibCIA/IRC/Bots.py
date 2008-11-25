@@ -27,12 +27,11 @@ can be restarted without effecting the bots.
 from twisted.protocols import irc, basic
 from twisted.internet import protocol, reactor, defer
 from twisted.python import log, util
-from twisted.spread import pb
 import time, random, Queue
 from LibCIA import TimeUtil
 from LibCIA.IRC import Network
 
-class CommandParser(basic.LineOnlyReceiver):
+class CommandHandler(basic.LineOnlyReceiver):
     """The Protocol subclass that takes messages from the RPC server.
 
        We use a line-based protocol and not something like NetString
@@ -44,12 +43,31 @@ class CommandParser(basic.LineOnlyReceiver):
        in the first place, since we're utterly unprepared to handle it.
 
        Our protocol consists of the following messages:
+
+       --- messages sent to us, without replies ---
        ADD target
        DEL target
        MSG target message
        START_SYNC
        SYNC target
        END_SYNC
+
+       --- requests sent to us that we reply to ---
+       <-- STATUS
+       --> BEGIN_STATUS
+       {--> STATUS target usercount@botnick
+       --> END_STATUS
+
+       <-- REPORT target
+       --> REPORT target usercount@botnick
+
+       <-- TOTALS
+       --> TOTALS * dictstr
+
+       <-- MSGLOG
+       --> BEGIN_MSGLOG
+       --> MSGLOG time nick@server command arguments
+       --> END_MSGLOG
 
        Where target is of the form network[:port]/channel
        ([] denote optional, channel includes all # characters).
@@ -69,6 +87,10 @@ class CommandParser(basic.LineOnlyReceiver):
             "START_SYNC": self.handle_start_sync,
             "SYNC"      : self.handle_sync,
             "END_SYNC"  : self.handle_end_sync,
+            "STATUS" : self.handle_status,
+            "REPORT" : self.handle_report,
+            "TOTALS" : self.handle_totals,
+            "MSGLOG" : self.handle_msglog,
         }
         self.sync_id = -1
 
@@ -100,7 +122,7 @@ class CommandParser(basic.LineOnlyReceiver):
         if not request:
             log.msg("Msg on nonexistant %s" % target)
             return
-        request.remote_msg(message)
+        request.msg(message)
 
     def handle_start_sync(self):
         self.sync_id = self.botNet.start_sync()
@@ -116,6 +138,42 @@ class CommandParser(basic.LineOnlyReceiver):
 
     def handle_end_sync(self):
         self.botNet.end_sync(self.sync_id)
+
+    def handle_status(self):
+        self.sendLine("BEGIN_STATUS")
+        for request in self.botNet.requests:
+            target = str(request.network) + '/' + request.channel
+            if request.bots:
+                botNick = request.bots[0].nickname
+            else:
+                botNick = "---"
+            numClients = request.getUserCount() or 0
+            self.sendLine("STATUS %s %d@%s" % (target, numClients, botNick))
+        self.sendLine("END_STATUS")
+
+    def handle_report(self, target):
+        (network, channel) = self.parse_target(target)
+        request = self.botNet.findRequest(network, channel)
+        if request:
+            if request.bots:
+                botNick = request.bots[0].nickname
+            else:
+                botNick = "---"
+            numClients = request.getUserCount() or 0
+        else:
+            botNick = '???'
+            numClients = -1
+
+        self.sendLine("REPORT %s %d@%s" % (target, numClients, botNick))
+
+    def handle_totals(self):
+        self.sendLine("TOTALS * " + str(self.botNet.getTotals()))
+
+    def handle_msglog(self):
+        self.sendLine("BEGIN_MSGLOG")
+        for logRecord in self.botNet.unknownMessageLog.buffer:
+            self.sendLine("MSGLOG %s %s@%s %s %s" % logRecord)
+        self.sendLine("END_MSGLOG")
 
     def parse_target(self, target):
         """Parses a name[:port]/target spec.
@@ -133,7 +191,14 @@ class CommandParser(basic.LineOnlyReceiver):
         net_obj = Network.find(network, port)
         return (net_obj, channel)
 
-class Request(pb.Referenceable):
+class CommandHandlerFactory(protocol.Factory):
+    def __init__(self, botNet):
+        self.botNet = botNet
+
+    def buildProtocol(self, addr):
+        return CommandHandler(self.botNet)
+
+class Request:
     """The Request object specifies a network, optionally a channel, and
        a number of bots that need to inhabit that network/channel.
 
@@ -203,44 +268,8 @@ class Request(pb.Referenceable):
             if nicks:
                 return len(nicks) - len(self.bots)
 
-    def remote_getInfoDict(self):
-        return {
-            'server': str(self.network),
-            'channel': self.channel,
-            'user_count': self.getUserCount(),
-            'is_fulfilled': self.isFulfilled(),
-            'is_active': self.active(),
-            'bots': [bot.remote_getInfoDict() for bot in self.bots],
-            }
-
-    def remote_active(self):
-        return self.active()
-
-    def remote_cancel(self):
-        self.cancel()
-
-    def remote_getBots(self):
-        return self.bots
-
-    def remote_getNumBots(self):
-        return self.numBots
-
-    def remote_getBotNicks(self):
-        return [bot.nickname for bot in self.bots]
-
-    def remote_isFulfilled(self):
-        return self.isFulfilled()
-
-    def remote_getChannel(self):
-        return self.channel
-
-    def remote_getNetworkName(self):
-        return str(self.network)
-
-    def remote_getUserCount(self):
-        return self.getUserCount()
-
-    def remote_msg(self, target, line):
+    # XXX - was: msg(self. target, line), supported nick targets
+    def msg(self, line):
         """Use an arbitrary bot in this request to send a message to a
            supplied target (channel or nickname). Currently this always
            uses the first bot if possible and ignores the request if no
@@ -249,12 +278,7 @@ class Request(pb.Referenceable):
            implement their own anti-flood queues.
            """
         if self.bots:
-            self.bots[0].queueMessage(target, line)
-
-    def remote_msgList(self, target, lines):
-        """Send multiple msg()es"""
-        for line in lines:
-            self.remote_msg(target, line)
+            self.bots[0].queueMessage(self.channel, line)
 
 
 class NickAllocator:
@@ -330,7 +354,7 @@ class MessageLog:
         self.buffer = self.buffer[-self.numMessages:] + [message]
 
 
-class BotNetwork(pb.Root):
+class BotNetwork:
     """A collection of IRC bots that work to satisfy a collection of Request objects.
        Users should interact with the BotNetwork via Request instances.
        """
@@ -612,35 +636,7 @@ class BotNetwork(pb.Root):
         # FIXME: remove the ruleset
         pass
 
-    def remote_findRequest(self, host, port, channel, create=True):
-        """Find and return a request, optionally creating it if necessary"""
-        network = Network.find(host, port)
-        r = self.findRequest(network, channel)
-        if r:
-            return r
-        elif create:
-            return Request(self, network, channel)
-        else:
-            return None
-
-    def remote_getRequests(self):
-        """Return a dictionary mapping (host, port, channel) to request instances"""
-        d = {}
-        for request in self.requests:
-            d[ request.network.getIdentity() + (request.channel,) ] = request
-        return d
-
-    def remote_getAllRequestInfo(self):
-        """Return a list of dictionaries describing each request."""
-        return [req.remote_getInfoDict() for req in self.requests]
-
-    def remote_findRequestInfo(self, host, port, channel):
-        """Return an info dictionary for a single request"""
-        req = self.remote_findRequest(host, port, channel, create=False)
-        if req:
-            return req.remote_getInfoDict()
-
-    def remote_getTotals(self):
+    def getTotals(self):
         """Return a dictionary of impressive-looking totals related to the bots"""
         totals = dict(
             networks = 0,
@@ -664,28 +660,6 @@ class BotNetwork(pb.Root):
                 totals['unfulfilled'] += 1
 
         return totals
-
-    def remote_getBots(self):
-        bots = []
-        for networkBots in self.networks.itervalues():
-            bots.extend(networkBots)
-        return bots
-
-    def remote_getMessageLog(self):
-        return self.unknownMessageLog.buffer
-
-    def remote_getNewBots(self):
-        """Return a list of bots that are currently trying to
-           connect, represented as (network, deadline) tuples.
-           """
-        newBots = []
-        for network, timer in self.newBotNetworks.iteritems():
-            if timer:
-                deadline = timer.getTime()
-            else:
-                deadline = 0
-            newBots.append((str(network), deadline))
-        return newBots
 
 
 class ChannelInfo:
@@ -802,7 +776,7 @@ class FairQueue:
         self._next = None
 
 
-class Bot(irc.IRCClient, pb.Referenceable):
+class Bot(irc.IRCClient):
     """An IRC bot connected to one network any any number of channels,
        sending messages on behalf of the BotController.
 
@@ -1351,76 +1325,6 @@ class Bot(irc.IRCClient, pb.Referenceable):
 
         elif text == "rubs %s's tummy" % me:
             self.say(channel, "*purr*")
-
-    def remote_getInfoDict(self):
-        return {
-            'nickname': self.nickname,
-            'current_channels': self.channels.keys(),
-            'requested_channels': self.requestedChannels.keys(),
-            'network': self.remote_getNetworkInfo(),
-            'current_time': time.time(),
-            'connect_time': self.connectTimestamp,
-            'inactive_time': self.remote_getInactivity(),
-            'is_full': self.isFull(),
-            'lag': self.getLag(),
-            }
-
-    def remote_msg(self, target, text):
-        """A remote request directly to this bot, ignoring the usual queueing"""
-        self.msg(target, text)
-
-    def remote_getNickname(self):
-        return self.nickname
-
-    def remote_getChannels(self):
-        return self.channels.keys()
-
-    def remote_getRequestedChannels(self):
-        # Convert from an InsensitiveDict to a normal one
-        return self.requestedChannels.keys()
-
-    def remote_getNetworkInfo(self):
-        """Returns a (networkName, host, port) tuple"""
-        host, port = self.transport.addr
-        return (str(self.network), host, port)
-
-    def remote_repr(self):
-        return repr(self)
-
-    def remote_getConnectTimestamp(self):
-        return self.connectTimestamp
-
-    def remote_getInactivity(self):
-        """If this bot is inactive, returns the time at which it will be garbage
-           collected. If not, returns None.
-           """
-        if self in self.botNet.inactiveBots:
-            return self.botNet.inactiveBots[self].getTime()
-
-    def remote_isFull(self):
-        return self.isFull()
-
-    def remote_isEmpty(self):
-        return (not self.channels) and (not self.requestedChannels)
-
-    def remote_getStatusText(self):
-        """Get a textual description of this bot's status"""
-        indicators = []
-
-        if self.remote_isFull():
-            indicators.append('full')
-
-        if self.remote_isEmpty():
-            indicators.append('empty')
-
-        timer = self.remote_getInactivity()
-        if timer:
-            indicators.append('GC in %s' % TimeUtil.formatDuration(timer - time.time()))
-
-        return ', '.join(indicators)
-
-    def remote_getLag(self):
-        return self.getLag()
 
 
 class BotFactory(protocol.ClientFactory):

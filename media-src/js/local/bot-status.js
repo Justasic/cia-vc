@@ -18,7 +18,7 @@ BotStatus.showBotStatus = function(obj)
 {
     this.disableTimeUpdates();
     
-    if (!obj.request || !obj.request.is_active)
+    if (!obj.request || obj.request.botnick == "???")
     {
 	/*
 	 * There is no request, or the request is marked inactive.
@@ -28,7 +28,7 @@ BotStatus.showBotStatus = function(obj)
 	return;
     }
 
-    if (!obj.request.is_fulfilled || !obj.request.bots)
+    if (obj.request.botnick == "---")
     {
 	/*
 	 * There is a request, but it's currently unfulfilled. 
@@ -40,98 +40,19 @@ BotStatus.showBotStatus = function(obj)
 	return;
     }
 
-    var bot = obj.request.bots[0];
     var status = "<p>Ready.</p>"
 
-    status += "<p>Your bot is <strong>" + bot.nickname +
-    "</strong> on " + this.formatNetwork(bot.network) + "</p>";
-
-    status += "<p>Lag: " + TimeUnitsAbbrev.format(bot.lag) + "</p>";
-
-    /* Convert the connection timestamp from server time to local time */
-    var now = (new Date()).getTime() / 1000.0;
-    var local_time_offset = now - bot.current_time;
-    this.localConnectTime = new Date(1000 * (bot.connect_time + local_time_offset));
-
-    /* Begin an auto-updating uptime counter */
-    status += "<p>Uptime: <span id=\"bot-upcounter\" />" + this.formatUptime() + "</p>";
-    this.enableTimeUpdates();
+    status += "<p>Your bot is <strong>" + request.botnick +
+    "</strong> seeing " + request.user_count + "users.</p>";
 
     /*
      * Update relatively slowly, since the bot is functioning normally
-     * and nothing aside from lag will change unless provoked to.
+     * and nothing will change much.
      */
     this.div_message.innerHTML = status;
     this.scheduleDataUpdate(60);
 };
 
-BotStatus.formatNetwork = function(network)
-{
-    /*
-     * Network names are represented by the server as a
-     * 3-tuple of (name, server, port). The "name" is the
-     * hostname-part of an irc:// URI, which may be a real
-     * server name or an abstract network name.
-     *
-     * The "server" part always identifies the actual server
-     * hostname that was selected. We'll display that, and
-     * the port if it's non-default.
-     */
-    if (network[2] != 6667) {
-	return network[1] + ":" + network[2];
-    }
-    return network[1];
-}
-
-BotStatus.formatUptime = function()
-{
-    var now = new Date();
-    var diff = now - this.localConnectTime;
-
-    var sec = Math.floor(diff / 1000) % 60;
-    var min = Math.floor(diff / (60 * 1000)) % 60;
-    var hour = Math.floor(diff / (60 * 60 * 1000)) % 24;
-    var day = Math.floor(diff / (24 * 60 * 60 * 1000));
-
-    var pad = function(i) {
-	return (i < 10) ? ("0" + i) : i;
-    }
-
-    var s = pad(min) + ":" + pad(sec);
-    if (hour) {
-	s = pad(hour) + ":" + s;
-    }
-    if (day) {
-	s = day + 'd ' + s;
-    }
-
-    return s;
-}
-
-BotStatus.updateTimes = function()
-{
-    var counter = document.getElementById("bot-upcounter");
-    if (counter) {
-	counter.innerHTML = this.formatUptime();
-    }
-}
-
-BotStatus.enableTimeUpdates = function()
-{
-    var self = this;
-    self.timeUpdateInterval = setInterval(function() {
-	self.updateTimes();
-    }, 1000);
-}
-
-BotStatus.disableTimeUpdates = function()
-{
-    if (this.timeUpdateInterval) {
-	clearInterval(self.timeUpdateInterval);
-	self.timeUpdateInterval = null;
-    }
-}
-    
 BotStatus.showError = function(code)
 {
     this.disableTimeUpdates();

@@ -12,7 +12,7 @@
         {% for request in server.requests|dictsort:"channel" %}
             <span {% if not request.is_fulfilled %}class="error"{% else %}
                   style="font-size: {{ request.size|floatformat:4 }}em"
-		  title="{{ request.user_count }} people ({{ request.bots.0.nickname }})"
+		  title="{{ request.user_count }} people ({{ request.botnick }})"
                   {% endif %}>{{ request.channel|escape }}</span>
         {% endfor %}
      </p>

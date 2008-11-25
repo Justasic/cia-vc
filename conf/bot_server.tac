@@ -10,7 +10,6 @@
 
 from twisted.application import service, internet
 from twisted.manhole.telnet import ShellFactory
-from twisted.spread import pb
 from LibCIA.IRC import Bots
 
 application = service.Application("bot_server")
@@ -26,10 +25,7 @@ botNet = Bots.BotNetwork(Bots.SequentialNickAllocator("CIA-"))
 # The bot server listens on a UNIX socket rather than TCP/IP, for security
 botSocketName = "bots.socket"
 
-# XXX - bleh.
-pb.MAX_BROKER_REFS = 2048
-
-internet.UNIXServer(botSocketName, pb.PBServerFactory(botNet)).setServiceParent(application)
+internet.UNIXServer(botSocketName, Bots.CommandHandlerFactory(botNet)).setServiceParent(application)
 
 # For maintaining the bot server without restarting, if necessary, run
 # a twisted.manhole telnet console. We only start the server if a password
