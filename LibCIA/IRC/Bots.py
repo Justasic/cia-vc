@@ -575,7 +575,8 @@ class BotNetwork:
         # Start trying to connect a bot, and set a timeout.
         log.msg("Creating a new IRC bot for %s" % network)
         BotFactory(self, network)
-        self.newBotNetworks[network] = reactor.callLater(network.newBotTimeout, self.newBotTimedOut, network)
+        # Slightly randomize reconnect time, so we don't have big reconnect blasts every BaseNetwork.newBotTimeout seconds
+        self.newBotNetworks[network] = reactor.callLater(random.uniform(0.8, 1.2) * network.newBotTimeout, self.newBotTimedOut, network)
 
     def newBotTimedOut(self, network):
         """We just timed out waiting for a new bot connection. Try again."""
