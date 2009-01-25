@@ -79,7 +79,7 @@ class IrcURIHandler(Ruleset.RegexURIHandler):
         else:
             # Compatibility: Add initial # if not given
             target = d['target']
-            if target[0] in "#!+&":
+            if not target[0] in "#!+&":
                 target = '#' + target
             return server + "/" + target
 
