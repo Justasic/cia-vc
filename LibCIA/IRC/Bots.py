@@ -557,6 +557,7 @@ class BotNetwork:
         """Schedule a new bot for a given network"""
         log.msg("Scheduling a new IRC bot for %s" % network)
         self.connectCheckQueue.put_nowait(network)
+        self.newBotNetworks[network] = False
         if not self.connectCheckTimer:
             self.checkConnectQueue()
 
@@ -564,7 +565,6 @@ class BotNetwork:
         try:
             network = self.connectCheckQueue.get_nowait()
             self.createBot(network)
-            self.newBotNetworks[network] = False
             self.connectCheckTimer = reactor.callLater(self.globalConnectInterval, self.checkConnectQueue)
         except Queue.Empty:
             self.connectCheckTimer = None
@@ -822,10 +822,11 @@ class Bot(irc.IRCClient):
         self._messageQueue = FairQueue(self.maxQueueSize)
         self.pendingWhoisTests = {}
         self.connectTimestamp = None
-        # note that we call connectionLost, not quit,
+        self.pingTimer = None
+        # Just close the TCP connection,
         # because at this point we don't trust the server to properly respond.
         self.signonTimer = reactor.callLater(self.signonTimeout,
-          self.connectionLost, "signon timed out")
+          self.transport.loseConnection)
 
     def emptyChannels(self):
         """Called when we know we're not in any channels and we shouldn't
@@ -1048,8 +1049,8 @@ class Bot(irc.IRCClient):
         self.sendLine("PING %s-%f" % (self.txByteCount, self.lastPingTransmitTimestamp))
 
     def _lagPingLoop(self):
+        self.pingTimer = reactor.callLater(self.network.pingInterval, self._lagPingLoop)
         self.sendServerPing()
-        reactor.callLater(self.network.pingInterval, self._lagPingLoop)
 
     def irc_PONG(self, prefix, params):
         """Handle the responses to pings sent with sendServerPing. This compares
@@ -1082,6 +1083,9 @@ class Bot(irc.IRCClient):
 
     def connectionLost(self, reason):
         self.emptyChannels()
+        if not self.pingTimer is None:
+            self.pingTimer.cancel()
+        self.pingTimer = None
         log.msg("%r disconnected" % self)
         self.botNet.botDisconnected(self)
         irc.IRCClient.connectionLost(self)
