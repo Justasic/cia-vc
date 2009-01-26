@@ -622,6 +622,8 @@ class BotNetwork:
             # closed, ping timeout, etc)
             pass
 
+        self.inactiveBots.pop(bot, None)
+
         # The maximum lag autodisconnect code in checkBots relies on this being
         # called whether or not we actually removed the bot- the above 'pass'
         # can not be safely replaced with 'return'.
