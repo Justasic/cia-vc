@@ -88,4 +88,4 @@ def accept(request):
         xml = XML_TEMPLATE % info
         server.hub.deliver(xml)
 
-    return http.HttpResponse('Message accepted in queue.', status=202)
+    return http.HttpResponse('Message accepted in queue.')
