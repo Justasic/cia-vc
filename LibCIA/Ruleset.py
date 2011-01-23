@@ -125,16 +125,18 @@ class TinyRuleset(object):
         if not self.matches(msg):
             return None
 
+        result = Formatters.getFactory().findMedium('irc', msg).formatMessage(msg)
         if self.includeName:
-            return Formatters.getFactory().findName('IRCProjectName').format(msg)
-        else:
-            return Formatters.getFactory().findMedium('irc', msg).format(msg)
+            args = Message.FormatterArgs(msg, result)
+            result = Formatters.getFactory().findName('IRCProjectName').format(args)
+
+        return result
 
     def get_source(self):
         if self.includeName:
-            return ']' + self.projects.join('\n')
+            return '[I' + self.uri + '\n' + self.projects.join('\n')
         else:
-            return '[' + self.projects.join('\n')
+            return '[P' + self.uri + '\n' + self.projects.join('\n')
 
     def isEmpty(self):
         return len(self.projects) == 0
