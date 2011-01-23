@@ -98,6 +98,31 @@ class RulesetInterface(RpcServer.Interface):
         return results
 
 
+class TinyRuleset(object):
+    __slots__ = 'projects',
+
+    projectPath = XML.XPath('/message/source/project')
+    formatter = Formatters.Commit.CommitToIRC()
+
+    def __init__(self, projects):
+        this.projects = [project.lower() for project in projects]
+
+    def __call__(self, msg):
+        if not self.matches(msg):
+            return None
+
+        return self.formatter.formatMessage(msg)
+
+    def matches(self, msg):
+        match = self.projectPath.queryObject(msg)
+        if match:
+            for node in match:
+                project = XML.shallowText(node)
+                if (project.strip().lower() in self.projects):
+                    return True
+        return False
+
+
 class RulesetReturnException(Exception):
     """Used to implement <return> in a Ruleset.
        This exception is caught in the <ruleset> root node,
