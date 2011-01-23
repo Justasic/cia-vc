@@ -136,6 +136,9 @@ class TinyRuleset(object):
         else:
             return '[' + self.projects.join('\n')
 
+    def isEmpty(self):
+        return len(self.projects) == 0
+
     def matches(self, msg):
         match = self.projectPath.queryObject(msg)
         if match:
