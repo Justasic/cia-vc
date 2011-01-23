@@ -24,8 +24,78 @@ by XML documents.
 
 from twisted.python import log
 from twisted.internet import defer, reactor
-import time, types, re
+import glob, os, time, types, re
 import XML, RpcServer
+
+QUEUE_PREFIX = "/home/cia/cia/data/queue/rpc/xml."
+
+class DiskBackedQueue(object):
+    """A simple disk backed queue.
+
+    Messages can be enqueued at any time and will be written to disk,
+    the queue is emptied in a controlled manner that tries to avoid
+    overloading the system.
+    """
+    scheduled = False
+
+    def __init__(self, hub, callback):
+        self.hub = hub
+        self.callback = callback
+        self.queueKey = int(time.time())
+        self.queueIndex = 0
+
+    def queue(self, message):
+        """ DiskBackedQueue.queue(message)
+
+        Flushes an incoming message to disk and ensures the pickup job is running
+        """
+        filename = QUEUE_PREFIX + self.queueKey + "-" + self.queueIndex
+        self.queueIndex += 1
+        # Caution: unconditionally encoding will raise UnicodeDecodeError...
+        if isinstance(message, unicode):
+            message = message.encode('UTF-8')
+
+        fh = open(filename, "w")
+        fh.write(message)
+        fh.close()
+
+        self.bump()
+
+    def bump(self):
+        """If a pickup job is already scheduled, do nothing.
+        Otherwise, ensure a new pickup job is started soon.
+        """
+        if self.scheduled:
+            return
+
+        self.scheduled = True
+        load = os.getloadavg()[0]
+        if (load < 2):
+            delay = 0.01
+        elif (load < 5):
+            delay = 1
+        else:
+            delay = 5
+
+        reactor.callLater(delay, self.poll)
+
+    def poll(self):
+        """Checks if there are messages in the queue.
+        If not, returns. If there are messages,
+        the first message is dequeued and a new job scheduled.
+        """
+        self.scheduled = False
+
+        for filename in glob.glob(QUEUE_PREFIX + "*"):
+            fh = open(filename)
+            contents = fh.read()
+            fh.close()
+            os.remove(filename)
+            contents = contents.decode('UTF-8', 'replace')
+            self.callback(contents)
+            self.bump()
+            return
+
 
 
 class HubInterface(RpcServer.Interface):
@@ -34,23 +104,19 @@ class HubInterface(RpcServer.Interface):
     def __init__(self, hub):
         RpcServer.Interface.__init__(self)
         self.hub = hub
+        self.queue = DiskBackedQueue(hub, self._deliver)
+
+    def _deliver(self, xml):
+        return self.hub.deliver(Message(xml))
 
     def xmlrpc_deliver(self, xml):
         """Queue an XML message, returning 'queued.' - don't have time for more."""
-        # XXX - Hack from BP, make xml clients return ASAP
-        # not sure if this helps much, actually
-        d = defer.Deferred()
-        d.addCallback(Message)
-        d.addCallback(self.hub.deliver)
-        # Delay of effectively 0, just give xmlrpc a chance to close the connection first
-        reactor.callLater(0.01, d.callback, xml)
+        self.queue.queue(xml)
         return "queued."
-        # Was:
-        # return self.hub.deliver(Message(xml))
 
     def xmlrpc_deliver_sync(self, xml):
         """Queue an XML message and wait until it's processed - for internal use."""
-        return self.hub.deliver(Message(xml))
+        return self._deliver(xml)
 
 
 class Message(XML.XMLObject):
