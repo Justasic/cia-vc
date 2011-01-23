@@ -52,7 +52,7 @@ class UserAssetManager(models.Manager):
             if exclusive_ua.user == user:
                 # We're already the exclusive owner
                 return exclusive_ua
-            else:
+            elif user.is_staff:
                 # Someone else owns it
                 return None
         except UserAsset.DoesNotExist:
@@ -572,23 +572,18 @@ class Bot(models.Model):
         """Generates the contents of a ruleset representing a filter
            in the PROJECT_LIST mode.
            """
-        lines = []
 
-        # Match any of the projects, using an <or> if there's more than one.
-        projects = self.project_list.split('\n')
-        if len(projects) > 1:
-            lines.append("<or>")
-            for project in projects:
-                lines.append('\t' + self._matchProject(project))
-            lines.append("</or>")
-        else:
-            lines.append(self._matchProject(projects[0]))
+        # New shiny efficient ruleset format:
+        # [project1\nproject2\nproject3
+        # or
+        # ]project1\nproject2\nproject3
+        #
+        # [ means plain IRC formatter, ] is the IRCProjectName formatter
 
-        lines.append('<formatter medium="irc"/>')
         if self.show_project_names:
-            lines.append('<formatter name="IRCProjectName"/>')
-
-        return '\n'.join(lines)
+            return ']' + self.project_list
+        else:
+            return '[' + self.project_list
 
     def syncFromServer(self):
         """Update this Bot from the RPC server, if necessary.

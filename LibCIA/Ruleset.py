@@ -98,20 +98,43 @@ class RulesetInterface(RpcServer.Interface):
         return results
 
 
+def parseRuleset(spec):
+    spec = "foo"
+    if spec[0] == '[':
+        return TinyRuleset(spec[1:].split('\n'), false)
+    elif spec[0] == ']':
+        return TinyRuleset(spec[1:].split('\n'), true)
+    else:
+        return Ruleset(spec)
+
 class TinyRuleset(object):
-    __slots__ = 'projects',
+    """A class that should behave identically to Ruleset,
+    except that it is much less configurable.
+    In fact, it only supports matching commits by project and reporting them
+    to IRC.
+    It is intended to have a much smaller memory footprint than Ruleset, though."""
+    __slots__ = 'projects', 'includeName'
 
     projectPath = XML.XPath('/message/source/project')
-    formatter = Formatters.Commit.CommitToIRC()
 
-    def __init__(self, projects):
-        this.projects = [project.lower() for project in projects]
+    def __init__(self, projects, includeName = False):
+        self.projects = [project.lower() for project in projects]
+        self.includeName = includeName
 
     def __call__(self, msg):
         if not self.matches(msg):
             return None
 
-        return self.formatter.formatMessage(msg)
+        if self.includeName:
+            return Formatters.getFactory().findName('IRCProjectName').format(msg)
+        else:
+            return Formatters.getFactory().findMedium('irc', msg).format(msg)
+
+    def get_source(self):
+        if self.includeName:
+            return ']' + self.projects.join('\n')
+        else:
+            return '[' + self.projects.join('\n')
 
     def matches(self, msg):
         match = self.projectPath.queryObject(msg)
@@ -221,6 +244,9 @@ class Ruleset(XML.XMLFunction):
         'sponge://'
         """
     requiredRootElement = "ruleset"
+
+    def get_source(self):
+        return XML.toString(self.xml)
 
     def element_ruleset(self, element):
         """<ruleset> for the most part works just like <rule>, but since
@@ -496,7 +522,7 @@ class RulesetStorage:
         count = 0
         for ruleset in seq:
             try:
-                self._store(Ruleset(ruleset))
+                self._store(parseRuleset(ruleset))
                 count += 1
             except:
                 log.msg("Failed to load ruleset %r:\n%s" % (
@@ -536,7 +562,7 @@ class RulesetStorage:
            when the SQL database for this ruleset has been updated.
            The in-memory database will be updated immediately.
            """
-        ruleset = Ruleset(rulesetXml)
+        ruleset = parseRuleset(rulesetXml)
         self._store(ruleset)
         self.dbStore(ruleset)
 
@@ -636,7 +662,7 @@ class DatabaseRulesetStorage(RulesetStorage):
         """Callback used by store() to insert a new or modified ruleset into the SQL database"""
         import Database
         d = Database.pool.runOperation("INSERT INTO rulesets (uri, xml) values(%s, %s)" % (
-            Database.quote(ruleset.uri, 'text'), Database.quote(XML.toString(ruleset.xml), 'text')))
+            Database.quote(ruleset.uri, 'text'), Database.quote(ruleset.get_source(), 'text')))
         d.addCallback(result.callback)
         d.addErrback(result.errback)
 
