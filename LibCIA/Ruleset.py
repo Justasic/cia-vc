@@ -99,11 +99,10 @@ class RulesetInterface(RpcServer.Interface):
 
 
 def parseRuleset(spec):
-    spec = "foo"
     if spec[0] == '[':
-        return TinyRuleset(spec[1:].split('\n'), false)
-    elif spec[0] == ']':
-        return TinyRuleset(spec[1:].split('\n'), true)
+        includeName = (spec[1] == 'I')
+        parts = spec[2:].split('\n')
+        return TinyRuleset(parts[0], parts[1:], includeName)
     else:
         return Ruleset(spec)
 
@@ -113,11 +112,12 @@ class TinyRuleset(object):
     In fact, it only supports matching commits by project and reporting them
     to IRC.
     It is intended to have a much smaller memory footprint than Ruleset, though."""
-    __slots__ = 'projects', 'includeName'
+    __slots__ = 'projects', 'includeName', 'uri'
 
     projectPath = XML.XPath('/message/source/project')
 
-    def __init__(self, projects, includeName = False):
+    def __init__(self, uri, projects, includeName = False):
+        self.uri = uri
         self.projects = [project.lower() for project in projects]
         self.includeName = includeName
 

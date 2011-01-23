@@ -574,16 +574,16 @@ class Bot(models.Model):
            """
 
         # New shiny efficient ruleset format:
-        # [project1\nproject2\nproject3
+        # [Pirc://freenode/cia\nproject1\nproject2\nproject3
         # or
-        # ]project1\nproject2\nproject3
+        # [Iirc://freenode/cia\nproject1\nproject2\nproject3
         #
-        # [ means plain IRC formatter, ] is the IRCProjectName formatter
+        # [P means plain IRC formatter, [I is the IRCProjectName formatter
 
         if self.show_project_names:
-            return ']' + self.project_list
+            return '[I' + self.getURI() + '\n' + self.project_list
         else:
-            return '[' + self.project_list
+            return '[P' + self.getURI() + '\n' + self.project_list
 
     def syncFromServer(self):
         """Update this Bot from the RPC server, if necessary.
@@ -632,6 +632,8 @@ class Bot(models.Model):
 
     def _wrapRuleset(self, content):
         """Wrap a ruleset with its outer <ruleset> element"""
+        if content[0] == '[':
+            return content
         return '<ruleset uri="%s">\n%s\n</ruleset>' % (escape(self.getURI()), content)
 
     def _loadRuleset(self):
