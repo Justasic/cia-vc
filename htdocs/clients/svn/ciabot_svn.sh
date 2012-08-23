@@ -76,7 +76,7 @@ REPOS="$1"
 REV="$2"
 
 # The email address CIA lives at
-cia_address="cia@cia.navi.cx"
+cia_address="cia@cia.vc"
 
 author=`svnlook author -r "$REV" "$REPOS" | sed 's/\&/\&amp;/g;s/</\&lt;/g;s/>/\&gt;/g'`
 log=`svnlook log -r "$REV" "$REPOS" | sed 's/\&/\&amp;/g;s/</\&lt;/g;s/>/\&gt;/g'`
