@@ -2,9 +2,16 @@
 # These logs aren't terribly useful to archive, but we
 # want recent ones in order to diagnose problems.
 5 * * * * rm -f /var/log/cia/*.log.??
+5 * * * * mv /var/log/cia/procmail.log /var/log/cia/procmail.log.1
 
 # Daily database cleanup. This should run shortly before the nightly backups.
 25 0 * * * DJANGO_SETTINGS_MODULE=cia.settings PYTHONPATH=~/ ~/cia/tools/db_cleanup.py
 
 # Repository poller. Runs every minute, determines on its own which repos need polling.
-* * * * * DJANGO_SETTINGS_MODULE=cia.settings PYTHONPATH=~/ ~/cia/conf/repos-poll.py
+# Replaced by polld.py
+#* * * * * DJANGO_SETTINGS_MODULE=cia.settings PYTHONPATH=~/ ~/cia/conf/repos-poll.py
+
+# not needed anymore.
+#* * * * * ~/cia/conf/kill-stuck-processes.py
+
+2-57/5 * * * * ~/cia/conf/ensure-queue.sh
