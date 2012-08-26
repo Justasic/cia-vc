@@ -67,7 +67,10 @@ class RulesetInterface(RpcServer.Interface):
            In addition to the usual ones, allow ('ruleset.uri', x) where x is the
            ruleset's URI.
            """
-        uri = XML.parseString(xml).documentElement.getAttributeNS(None, 'uri')
+        if (xml.startswith('[')):
+            uri = xml.split('\n')[0][2:]
+        else:
+            uri = XML.parseString(xml).documentElement.getAttributeNS(None, 'uri')
         return self.makeDefaultCaps(path) + [('ruleset.uri', uri)]
 
     def protected_grantUri(self, uri, uid):
@@ -134,9 +137,9 @@ class TinyRuleset(object):
 
     def get_source(self):
         if self.includeName:
-            return '[I' + self.uri + '\n' + self.projects.join('\n')
+            return '[I' + self.uri + '\n' + '\n'.join(self.projects)
         else:
-            return '[P' + self.uri + '\n' + self.projects.join('\n')
+            return '[P' + self.uri + '\n' + '\n'.join(self.projects)
 
     def isEmpty(self):
         return len(self.projects) == 0

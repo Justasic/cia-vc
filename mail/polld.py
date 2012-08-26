@@ -12,14 +12,14 @@ from django.contrib.contenttypes.models import ContentType
 
 from cia.apps.repos.svn import SvnClient
 
+ping_re = re.compile(r"ping\+([a-zA-Z0-9]+)@")
 
-NUM_WORKERS = 5
-
-# Skip a poller this many times after it threw an exception
-PENALTY = 5
+NUM_WORKERS = 10
 
 # XXX - hack - we leak memory like a sieve. die twice a day, get restarted by cron.
 LIFETIME = 3600 * 12
+# If we don't manage any successfull poll within this*10 seconds, die.
+WATCHDOG_TIMEOUT = 30
 
 # Queue contains pinger names, to save on memory
 pollerqueue = blockingqueue.TwoLevelQueue()
@@ -33,6 +33,16 @@ processing = set()
 penalties = {}
 # Lock to ensure consistency of that
 process_lock = thread.allocate_lock()
+
+def isPowerOfTwo(number):
+    if number == 1:
+        return True
+    i = 1
+    while number > i:
+        i <<= 1
+        if i == number:
+            return True
+    return False
 
 def svn_loop(pollerqueue):
     # Persistent client instance, because pysvn has a sucking competition with black holes
@@ -53,11 +63,13 @@ def svn_loop(pollerqueue):
             time.sleep(5)
             process_lock.acquire()
         # Okay, nobody else is processing this, so we are.
-        penalty = penalties.pop(pinger, 1) - 1
-        if penalty and prio != "high":
-            penalties[pinger] = penalty
-            process_lock.release()
-            continue
+
+        # Exponential backoff for nonresponsive repositories
+        if prio != "high":
+            penalties[pinger] = penalties.get(pinger, 0) + 1
+            if not isPowerOfTwo(penalties[pinger]):
+                process_lock.release()
+                continue
 
         processing.add(pinger)
         process_lock.release()
@@ -72,14 +84,14 @@ def svn_loop(pollerqueue):
                 repos = None
             if repos:
                 logging.info("%03d Polling %s..." % (thread.get_ident(), repos.location))
-                watchdog = 6
+                watchdog = WATCHDOG_TIMEOUT
                 client.model = repos
                 client._pathRegexes = None
                 client.poll()
+                penalties[pinger] = 0
 
         except:
             logging.info("Poller for %s threw exception.", pinger, exc_info=1)
-            penalties[pinger] = PENALTY
 
         process_lock.acquire()
         processing.discard(pinger)
@@ -90,8 +102,7 @@ def svn_loop(pollerqueue):
 
 
 def get_repository_for_message(msg):
-    ping_re = re.compile(r"ping\+([a-zA-Z0-9]+)@")
-    match = ping_re.search(msg['to']) or ping_re.search(msg['x-original-to'])
+    match = ping_re.search(msg['to'] or "") or ping_re.search(msg['x-original-to'] or "")
     if match:
         name = match.group(1)
         try:
@@ -152,7 +163,7 @@ def main_loop():
     lasttime = int(time.time())
     deadline = lasttime + LIFETIME
     global watchdog
-    watchdog = 6
+    watchdog = WATCHDOG_TIMEOUT
     while running and (time.time() < deadline):
         process_mailqueue()
         lasttime = process_cron(lasttime)

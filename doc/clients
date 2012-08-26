@@ -74,14 +74,11 @@ or grab the `local copy of cia_darcs.pl`_.
 Git
 ---
 
-The `Git Wiki's page on Interfaces, Frontends, and Tools`_ has a section for CIA clients.
-Petr Baudis wrote the ciabot.pl client script, available in Cogito's "contrib" directory.
-Fernando J. Pereda wrote a shell-script alternative.
-You can download a `local copy of ciabot.pl`_ or `ciabot.bash`_.
+Stable versions of the Python and shell hook scripts are distributed in the
+contrib directory of the git source, in the ciabot subdirectory. There
+are also `development versions`_ which may have more features.
 
-.. _Git Wiki's page on Interfaces, Frontends, and Tools: http://git.or.cz/gitwiki/InterfacesFrontendsAndTools#ciabot
-.. _local copy of ciabot.pl: /clients/git/ciabot.pl
-.. _ciabot.bash: /clients/git/ciabot.bash
+.. _development versions: http://catb.org/~esr/ciabot
 
 Subversion
 ----------
@@ -108,7 +105,7 @@ Mercurial (Hg)
 Brendan Cully contributed a CIA client for Mercurial_, with support for
 XML-RPC message delivery. You can get it from `Brendan's repository`_ or
 you can download a `local copy of hgcia.py`_. See `recent changes to hgcia`_,
-tracked by hgcia itself. There is now a `Mercurial extension distributed`_ by default that you can use. 
+tracked by hgcia itself. There is now a `Mercurial extension distributed`_ by default that you can use.
 
 .. _Mercurial: http://www.selenic.com/mercurial/wiki/
 .. _Brendan's repository: http://hg.kublai.com/mercurial/hgcia

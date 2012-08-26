@@ -27,10 +27,10 @@
       <div class="comment comment-{% cycle odd,even %}" id="c{{ comment.id }}">
 	<div>
 	  <a id="c{{ comment.id }}" href="#c{{ comment.id }}">#{{ forloop.counter }}</a>
-	  <strong>{{ comment.person_name }}</strong> wrote, on {{ comment.submit_date|date:"Y-m-d" }}:
+	  <strong>{{ comment.person_name|escape }}</strong> wrote, on {{ comment.submit_date|date:"Y-m-d" }}:
 	</div>
 
-	{{ comment.comment|escape|urlizetrunc:40|linebreaks }}
+	{{ comment.comment|escape|linebreaks }}
 
       </div>
       {% endif %}

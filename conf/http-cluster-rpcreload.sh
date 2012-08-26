@@ -10,5 +10,6 @@ kill `cat $pidfile`
 sleep 1
 
 echo Starting $PORT
-twistd2.4 -oy conf/official.rpc.tac \
+nice python -OO /usr/bin/twistd -oy conf/official.rpc.tac \
     -l $LOGDIR/server-$PORT.log --pidfile=$pidfile
+chmod a+r $pidfile

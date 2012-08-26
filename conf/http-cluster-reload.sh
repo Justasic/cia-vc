@@ -2,7 +2,7 @@ export LOGDIR=/var/log/cia
 export REQUEST_HOST=cia.vc
 export REQUEST_PORT=80
 
-for port in 3930 3931 3932 3933; do
+for port in 3930 3931 3932; do # 3933
     export PORT=$port
     pidfile=server-$PORT.pid
 
@@ -11,10 +11,11 @@ for port in 3930 3931 3932 3933; do
     sleep 5
 
     echo Starting $port
-    twistd2.4 -oy conf/official.web.tac \
+    python -OO /usr/bin/twistd -oy conf/official.web.tac \
         -l $LOGDIR/server-$PORT.log --pidfile=$pidfile
 
     echo ...
     sleep 20
+    chmod a+r $pidfile
 done
 

@@ -52,7 +52,7 @@ class UserAssetManager(models.Manager):
             if exclusive_ua.user == user:
                 # We're already the exclusive owner
                 return exclusive_ua
-            elif user.is_staff:
+            elif not user.is_staff:
                 # Someone else owns it
                 return None
         except UserAsset.DoesNotExist:
@@ -632,7 +632,7 @@ class Bot(models.Model):
 
     def _wrapRuleset(self, content):
         """Wrap a ruleset with its outer <ruleset> element"""
-        if content[0] == '[':
+        if content and content[0] == '[':
             return content
         return '<ruleset uri="%s">\n%s\n</ruleset>' % (escape(self.getURI()), content)
 

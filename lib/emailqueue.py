@@ -17,7 +17,9 @@ class EmailQueue(object):
         fh.close()
 
     def get(self):
-        for filename in glob.glob("%s/mail.*" % self.directory):
+        mails = glob.glob("%s/mail.*" % self.directory)
+        mails.sort()
+        for filename in mails:
             fh = open(filename)
             result = fh.read()
             fh.close()

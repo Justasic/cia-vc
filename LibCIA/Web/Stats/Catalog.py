@@ -44,25 +44,16 @@ class CatalogSection(Template.Section):
         C_YESTERDAY.event_count,
         C_FOREVER.event_count,
         C_FOREVER.last_time,
-        COUNT(CHILD.target_path),
+        (SELECT COUNT(*) FROM stats_catalog CHILD WHERE CHILD.parent_path = T.target_path),
         ICO.width,
         ICO.height
     FROM stats_catalog T
-        LEFT OUTER JOIN stats_catalog  CHILD       ON (CHILD.parent_path = T.target_path)
         LEFT OUTER JOIN stats_statstarget ST       ON (T.target_path = ST.path)
         LEFT OUTER JOIN images_imageinstance ICO   ON (ICO.source_id = IF(ST.icon_id IS NOT NULL, ST.icon_id, ST.photo_id) AND ICO.thumbnail_size = 32)
         LEFT OUTER JOIN stats_counters C_TODAY     ON (T.target_path = C_TODAY.target_path     AND C_TODAY.name     = 'today')
         LEFT OUTER JOIN stats_counters C_YESTERDAY ON (T.target_path = C_YESTERDAY.target_path AND C_YESTERDAY.name = 'yesterday')
         LEFT OUTER JOIN stats_counters C_FOREVER   ON (T.target_path = C_FOREVER.target_path   AND C_FOREVER.name   = 'forever')
         WHERE T.parent_path = %(path)s
-    GROUP BY
-        T.target_path,
-        ST.title,
-        ICO.path,
-        C_TODAY.event_count,
-        C_YESTERDAY.event_count,
-        C_FOREVER.event_count,
-        C_FOREVER.last_time
     ORDER BY NULL LIMIT %(limit)s
     """
 

@@ -32,6 +32,9 @@ class BaseNetwork:
     defaultPort = 6667
     currentServer = 0
 
+    # PASS to send on connect, or None
+    password = None
+
     # Maximum number of IRC channels a single bot is allowed in
     maxChannels = 18
 
@@ -115,24 +118,27 @@ class Freenode(BaseNetwork):
     # Really short timeout- there are a lot of freenode servers and they can
     # take it. Reconnecting all hosts to Freenode just takes way too long with
     # the default value.
-    newBotTimeout = 60
+    newBotTimeout = 20
     servers = (
         ('irc.freenode.net', None),
-        ('saberhagen.freenode.net', None),
-        ('kornbluth.freenode.net', None),
-        ('orwell.freenode.net', None),
-        ('sterling.freenode.net', None),
+        ('chat.freenode.net', None),
+        ('anthony.freenode.net', None),
         ('calvino.freenode.net', None),
-        ('adams.freenode.net', None),
-        ('leguin.freenode.net', None),
+        ('holmes.freenode.net', None),
+        ('hubbard.freenode.net', None),
+        ('kornbluth.freenode.net', None),
+        ('lindbohm.freenode.net', None),
+        ('niven.freenode.net', None),
+        ('verne.freenode.net', None),
+	('zelazny.freenode.net', None),
         )
 
 class Undernet(BaseNetwork):
     alias = 'undernet'
+    # They don't have a consistent MAXCHANNELS. Since they also don't have useful DNS, use lowest seen, minus 2
+    maxChannels = 8
     servers = (
-        ('london.uk.eu.undernet.org', None),
-        ('washington.dc.us.undernet.org', None),
-        ('amsterdam.nl.eu.undernet.org', None),
+        ('irc.undernet.org', None),
         )
 
 class Worldforge(BaseNetwork):
@@ -151,7 +157,7 @@ class IRCNet(BaseNetwork):
 
 	# Bert Hubert claims either of these should be fine
 	('us.ircnet.org', None),
-	('irc.choopa.net', None),
+        ('ircnet.choopa.net', None),
         )
 
 class EFNet(BaseNetwork):
@@ -161,6 +167,13 @@ class EFNet(BaseNetwork):
         ('irc.shoutcast.com', None),
         ('efnet.xs4all.nl', None),
         ('irc.mzima.net', None),
+        )
+
+class SpartaIRC(BaseNetwork):
+    alias = 'spartairc'
+    password = 'REPLACEME'
+    servers = (
+        ('irc.spartairc.co.cc', 6667),
         )
 
 _aliasCache = None

@@ -96,6 +96,7 @@ class CommandHandler(basic.LineOnlyReceiver):
 
     def lineReceived(self, line):
         """Parses a line and calls the appropriate handler."""
+        #log.msg("Received command: " + line)
         parts = line.split(None, 2)
         command = parts[0]
         handler = self.handlers[command]
@@ -104,7 +105,7 @@ class CommandHandler(basic.LineOnlyReceiver):
     def handle_add(self, target):
         (network, channel) = self.parse_target(target)
         if self.botNet.findRequest(network, channel):
-            log.msg("Asked to create %s twice" % target)
+            #log.msg("Asked to create %s twice" % target)
             return
         Request(self.botNet, network, channel)
 
@@ -361,7 +362,7 @@ class BotNetwork:
 
     # As we don't want to flood the upstream router with SYN packets,
     # we only create a BotFactory every globalConnectInterval seconds
-    globalConnectInterval = 1.0
+    globalConnectInterval = 0.1
 
     # In addition to checking bot status immediately after changes that*******
     # are likely to be important, we check bot status periodically, every
@@ -399,6 +400,9 @@ class BotNetwork:
         # Lists all bots we're thinking about deleting due to inactivity.
         # Maps from Bot instance to a DelayedCall.
         self.inactiveBots = {}
+
+        self.wantBotCheck = True
+        self.fastBotCheckTimer = None
 
         # Start the bot checking cycle
         self.checkBots()
@@ -469,9 +473,31 @@ class BotNetwork:
         self.checkBots()
 
     def checkBots(self):
+        """Schedules a bot check. If bots have not been checked within the
+           last second, they are checked now, otherwise a new check is scheduled.
+           """
+        #log.msg("in checkBots")
+        self.wantBotCheck = True
+        if not self.fastBotCheckTimer:
+            self._checkBots()
+
+    def _checkBots(self):
+        """Calls doCheckBots if a bot check has been requested.
+           This ensures doCheckBots is called not too often, it eats CPU
+           """
+        #log.msg("in _checkBots")
+        self.fastBotCheckTimer = None
+        if not self.wantBotCheck:
+            return
+        self.wantBotCheck = False
+        self.doCheckBots()
+        self.fastBotCheckTimer = reactor.callLater(10, self._checkBots)
+
+    def doCheckBots(self):
         """Search for unfulfilled requests, trying to satisfy them, then search
            for unused bots and channels, deleting them or scheduling them for deletion.
            """
+        log.msg("Checking bots...")
         # Scan through all requests, trying to satisfy those that aren't.
         # Make note of which bots and which channels are actually being used.
         # activeBots is a map from Bot instance to a map of channels that are being used.
@@ -562,6 +588,7 @@ class BotNetwork:
             self.checkConnectQueue()
 
     def checkConnectQueue(self):
+        log.msg("in checkConnectQueue")
         try:
             network = self.connectCheckQueue.get_nowait()
             self.createBot(network)
@@ -829,7 +856,10 @@ class Bot(irc.IRCClient):
         # Just close the TCP connection,
         # because at this point we don't trust the server to properly respond.
         self.signonTimer = reactor.callLater(self.signonTimeout,
-          self.transport.loseConnection)
+          self.loseConnection)
+
+    def loseConnection(self):
+        self.transport.loseConnection()
 
     def emptyChannels(self):
         """Called when we know we're not in any channels and we shouldn't
@@ -861,6 +891,7 @@ class Bot(irc.IRCClient):
         self.connectTimestamp = time.time()
         self.network = self.factory.network
         self.botNet = self.factory.botNet
+        self.password = self.network.password
 
         # Start picking an initial nickname. This is really only expected to work
         # on servers where this is the only CIA bot. If this one is in use, we get

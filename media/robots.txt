@@ -3,3 +3,8 @@
 User-agent: Teoma
 Disallow: /stats
 
+User-agent: Googlebot
+User-agent: Slurp
+User-agent: msnbot
+Disallow: /stats/*/.message
+

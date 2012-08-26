@@ -49,7 +49,7 @@ class ActivitySection(Template.Section):
         STAT.%(counter_attrib)s,
         ICO.width,
         ICO.height
-    FROM stats_counters STAT FORCE INDEX (%(counter_attrib)s)
+    FROM stats_counters STAT %(hint)s
         LEFT OUTER JOIN stats_catalog  T           ON (STAT.target_path = T.target_path)
         LEFT OUTER JOIN stats_statstarget ST       ON (T.target_path = ST.path)
         LEFT OUTER JOIN images_imageinstance ICO   ON (ICO.source_id = IF(ST.icon_id IS NOT NULL, ST.icon_id, ST.photo_id) AND ICO.thumbnail_size = 32)
@@ -64,6 +64,7 @@ class ActivitySection(Template.Section):
                  counterAttrib = 'event_count',
                  sort          = 'DESC',
                  columnTitle   = 'events today',
+                 hint          = '',
                  ):
         self.targetPath = targetPath
         self.title = title
@@ -73,6 +74,7 @@ class ActivitySection(Template.Section):
         self.sort = sort
         self.columnTitle = columnTitle
         self.title = title
+        self.hint = hint
         self.initQuery()
         self.initColumns()
 
@@ -83,6 +85,7 @@ class ActivitySection(Template.Section):
             counter = Database.quote(self.counter, 'varchar'),
             counter_attrib = self.counterAttrib,
             sort = self.sort,
+            hint = self.hint,
             )
 
     def initColumns(self):
@@ -118,7 +121,8 @@ class TimestampSection(ActivitySection):
                  columnTitle   = 'first event',
                  ):
         ActivitySection.__init__(self, targetPath, title, numItems,
-                                 counter, counterAttrib, sort, columnTitle)
+                                 counter, counterAttrib, sort, columnTitle,
+                                 hint='USE INDEX (recent_name)')
 
     def initColumns(self):
         self.columns = [

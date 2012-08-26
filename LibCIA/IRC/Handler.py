@@ -90,7 +90,7 @@ class IrcURIHandler(Ruleset.RegexURIHandler):
 
     def unassigned(self, uri):
         self.remoteBots.delete(self.trans[uri])
-        self.trans.delete(uri)
+        self.trans.pop(uri)
 
     def message(self, uri, message, content):
         self.remoteBots.msg(self.trans[uri], unicode(content).encode('utf-8'))
@@ -108,11 +108,14 @@ class ReconnectingBotServerClient(protocol.ClientFactory):
     """A PBClientFactory that automatically tries to reconnect
        using a supplied method if the connection fails.
        """
-    def __init__(self, reconnector, connectCallback, delay=4):
+    def __init__(self, reconnector, connectCallback, discoCallback, delay=4):
         self.reconnector = reconnector
         self.connectCallback = connectCallback
+        self.discoCallback = discoCallback
         self.delay = delay
-        self.protocol = BotControlProtocol
+
+    def protocol(self):
+        return BotControlProtocol(self.discoCallback)
 
     def clientConnectionFailed(self, connector, reason):
         reactor.callLater(self.delay, self.reconnector)
@@ -122,7 +125,7 @@ class ReconnectingBotServerClient(protocol.ClientFactory):
 
     def buildProtocol(self, addr):
         p = protocol.ClientFactory.buildProtocol(self, addr)
-        self.connectCallback(p)
+        reactor.callLater(0, self.connectCallback, p)
         return p
 
 
@@ -133,7 +136,7 @@ class RemoteBots:
        """
     def __init__(self, socketName):
         self.socketName = socketName
-        self.factory = ReconnectingBotServerClient(self.connect, self._gotConnection)
+        self.factory = ReconnectingBotServerClient(self.connect, self._gotConnection, self._lostConnection)
         self.allowSync = False
 
         # Collects URLs that ought to exist on the remote side
@@ -154,6 +157,10 @@ class RemoteBots:
             # Sync on connect only if we can be sure we've loaded all requests
             self.syncRequests()
 
+    def _lostConnection(self, reason):
+        log.msg("lost connection to bot server")
+        self.client = None
+
     def add(self, uri):
         self.requests.add(uri)
         if self.client:
@@ -164,12 +171,12 @@ class RemoteBots:
         if self.client:
             self.client.send_del(uri)
 
-    def msg(self, uri):
+    def msg(self, uri, message):
         if not uri in self.requests:
             log.msg("IRC handler desync: Request for %s not known here" % uri)
             return
         if self.client:
-            self.client.send_msg(uri)
+            self.client.send_msg(uri, message)
 
     def syncRequests(self):
         """If a connection to the bot server exists,
@@ -187,11 +194,16 @@ class BotControlProtocol(basic.LineOnlyReceiver):
        See corresponding class in Bots.py for a description of the protocol.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, disconnectCallback):
+        self.discoCallback = disconnectCallback
 
     def lineReceived(self, line):
         log.msg("IRC Handler received unexpected line from bot server: %s" % line)
+
+    def connectionLost(self, reason):
+        log.msg("IRC Handler lost connection.")
+        self.discoCallback(reason)
+        self.discoCallback = None
 
     def send_add(self, uri):
         self.sendLine("ADD " + uri)
@@ -200,7 +212,7 @@ class BotControlProtocol(basic.LineOnlyReceiver):
         self.sendLine("DEL " + uri)
 
     def send_msg(self, uri, msg):
-        msg = msg.replaceAll('\r', '\n')
+        msg = msg.replace('\r', '\n')
         for line in msg.split('\n'):
             if line:
                 self.sendLine("MSG %s %s" % (uri, line))
@@ -215,6 +227,8 @@ class BotControlProtocol(basic.LineOnlyReceiver):
         """Sends a line, asserting it does not contain newlines"""
         if line.count('\r') or line.count('\n'):
             raise ValueError, "line to send contained newlines!"
+        if self.transport is None:
+            self.connectionLost("Detected by sendLine")
         basic.LineOnlyReceiver.sendLine(self, line)
 
 ### The End ###

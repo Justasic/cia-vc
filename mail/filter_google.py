@@ -3,7 +3,7 @@ from filterlib import CommitFilter
 import re, time
 
 PROJECT_TRANS = {
-    'cia-vc': 'cia.vc',
+    'cia-vc': 'CIA.vc',
 }
 
 class GoogleFilter(CommitFilter):

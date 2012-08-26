@@ -97,6 +97,8 @@ def createPool(overrides={}, filename="~/.cia_db", serverCursor=False):
 
         # This is so we don't splurt our password out to twistd.log...
         'cp_noisy':  False,
+        'cp_min': 1,
+        'cp_max': 2,
         }
 
     # With server-side cursors we can iterate over the result set without

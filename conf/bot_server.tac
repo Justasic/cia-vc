@@ -36,6 +36,7 @@ except IOError:
     pass
 else:
     console = ShellFactory()
+    console.username = 'cia'
     console.password = passwd
     console.namespace['botNet'] = botNet
     internet.TCPServer(2230, console, interface='localhost').setServiceParent(application)

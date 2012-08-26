@@ -28,6 +28,9 @@ CIA_REGISTRATION_IS_CLOSED = False
 # Default list plus what I wanted
 PROFANITIES_LIST = ('asshat', 'asshead', 'asshole', 'cunt', 'fuck', 'gook', 'nigger', 'shit', '://')
 
+# comment spammers
+BANNED_IPS = ('195.225.178.23', '203.144.144.164', '83.69.224.164', '69.217.73.52', '201.134.177.1', '80.227.1.101', '94.102.60.49')
+
 #
 # Optional integration with Google Analytics.
 # Set this either to None or to the _uacct value from Google.
@@ -38,9 +41,15 @@ GOOGLE_ANALYTICS_ACCOUNT = "UA-247340-1"
 
 ADMINS = (
     ('Micah Dowty', 'micah@navi.cx'),
+    ('Karsten Behrmann', 'bear-cia@gmx.net'),
+    ('Lewis Cawte', 'lewiscawte@googlemail.com'),
+    ('William Pitcock', 'nenolod@atheme.org'),
 )
 
 DEFAULT_FROM_EMAIL = 'webmaster@cia.vc'
+# E-mail address that error messages come from.
+SERVER_EMAIL = 'django@cia.vc'
+
 
 MANAGERS = ADMINS
 

@@ -204,7 +204,7 @@ def post_comment(request):
         answer=request.POST["answer"]
     except KeyError:
         pass
-    if answer != '42' and 'post' in request.POST:
+    if answer != '4711' and 'post' in request.POST:
         raise Http404
 
     response = post_free_comment(request)

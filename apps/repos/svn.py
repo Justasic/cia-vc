@@ -7,7 +7,8 @@ import django.newforms as forms
 import re, xmlrpclib, datetime
 import pysvn, httplib, urlparse, urllib
 
-REVISION_FETCH_LIMIT = 10
+# This should be the same number as the limit on stats pages, for cosmetic reasons
+REVISION_FETCH_LIMIT = 20
 
 def _ssl_server_trust_prompt(trust_dict):
     retcode = True
@@ -101,20 +102,23 @@ class SvnClient:
         if last_revision <= self.model.last_revision:
             return
 
-        self.model.last_revision = last_revision
-        self.model.last_update_time = datetime.datetime.now()
-        self.model.save()
-
+        # Retrieve revisions in reverse, such that if we fetch 400-500 with limit 20
+        # we get 500-481 instead of 400-419
         changes = self.client.log(
             self.model.location,
-            revision_start = pysvn.Revision(pysvn.opt_revision_kind.number, self.model.last_revision + 1),
-            revision_end = pysvn.Revision(pysvn.opt_revision_kind.number, last_revision),
+            revision_start = pysvn.Revision(pysvn.opt_revision_kind.number, last_revision),
+            revision_end = pysvn.Revision(pysvn.opt_revision_kind.number, self.model.last_revision + 1),
             discover_changed_paths = True,
             limit = REVISION_FETCH_LIMIT
             )
 
+        changes.reverse()
         for change in changes:
             self._deliverCommit(change)
+
+        self.model.last_revision = last_revision
+        self.model.last_update_time = datetime.datetime.now()
+        self.model.save()
 
     _pollerData = ('<?xml version="1.0" encoding="utf-8"?>' +
                     '<propfind xmlns="DAV:">' +
@@ -217,7 +221,8 @@ class SvnClient:
             'revision_url': revision_url,
             }))
 
-        xmlrpclib.ServerProxy(settings.CIA_RPC_URL).hub.deliver_sync(xml)
+        # XXX - Bear hack: unicode kills us, at least at the moment - note: for some reason this already is a unicode string
+        xmlrpclib.ServerProxy(settings.CIA_RPC_URL).hub.deliver_sync(xml.encode('ascii', 'replace'))
 
     _pathRegexes = None
 

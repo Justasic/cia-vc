@@ -238,8 +238,8 @@ def bot_cloud(request, scale=(1 / math.log(20.0))):
             if not s in servers:
                 servers[s] = {
                   'requests': [],
-                  'num_requests': 0
-                  'name': s
+                  'num_requests': 0,
+                  'name': s,
                 }
             entry = servers[s]
 

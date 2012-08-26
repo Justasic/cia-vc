@@ -12,4 +12,4 @@ ps -p $pid >/dev/null 2>/dev/null ||
 pid=`cat /home/cia/cia/data/queue/ping/queue.pid` 2>/dev/null
 
 ps -p $pid >/dev/null 2>/dev/null ||
-  nohup /home/cia/cia/mail/polld.py >/dev/null 2>&1 </dev/null &
+  nice nohup /home/cia/cia/mail/polld.py >/dev/null 2>&1 </dev/null &

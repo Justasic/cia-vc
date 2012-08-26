@@ -295,6 +295,7 @@ class Page(Nouvelle.Twisted.Page):
                 tag('title')[ place("pageTitle") ],
                 place('baseTag'),
 		xml('<meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />'),
+                xml('<meta name="google-site-verification" content="REPLACEME" />'),
                 tag('link', rel='stylesheet', href='/media/css/old-site.css', type='text/css'),
                 tag('link', rel='shortcut icon', href='/favicon.ico', type='image/png'),
                 tag('script', type='text/javascript', src='/media/js/base.js')[ " " ],

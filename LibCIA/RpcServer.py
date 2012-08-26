@@ -112,7 +112,7 @@ class Interface(xmlrpc.XMLRPC):
         for subHandler in path[:-1]:
             interface = interface.getSubHandler(subHandler)
             if interface is None:
-                raise xmlrpc.NoSuchFunction
+                raise xmlrpc.NoSuchFunction, (self.NOT_FOUND, "no such function %s" % fqname)
 
         # Do we have a normal non-protected function?
         f = getattr(interface, "xmlrpc_%s" % path[-1], None)
@@ -123,7 +123,8 @@ class Interface(xmlrpc.XMLRPC):
         f = getattr(interface, "protected_%s" % path[-1], None)
         if f and callable(f):
             return self.protect(interface, path, f)
-        raise xmlrpc.NoSuchFunction
+        # For some reason, NoSuchFunction has the same constructor as Fault
+        raise xmlrpc.NoSuchFunction, (self.NOT_FOUND, "no such function %s" % fqname)
 
     def protect(self, interface, path, f):
         """Given a protected RPC function, return a wrapper that

@@ -78,13 +78,14 @@ class RelatedSection(Template.Section):
         LEFT OUTER JOIN stats_catalog C
             ON (C.target_path = target_%(otherSide)s_path)
         LEFT OUTER JOIN stats_statstarget ST        ON (C.target_path = ST.path)
-        LEFT OUTER JOIN images_imageinstance ICO    ON (ICO.source_id = IF(ST.icon_id IS NOT NULL, ST.icon_id, ST.photo_id) AND ICO.thumbnail_size = 32)
+        LEFT OUTER JOIN images_imageinstance ICO    ON (ICO.source_id = COALESCE(ST.icon_id, ST.photo_id) AND ICO.thumbnail_size = 32)
         LEFT OUTER JOIN stats_statstarget PARENT_ST ON (C.parent_path = PARENT_ST.path)
         WHERE R.target_%(thisSide)s_path = %(path)s
-            AND C.parent_path != %(path)s
             AND %(filter)s
-    ORDER BY NULL
+    ORDER BY R.freshness DESC
+    LIMIT 50
     """
+    # also had "AND C.parent_path != %(path)s", but that made MySQL query planner do weird things on total/commits
 
     sectionLimit = 15
 
@@ -115,9 +116,13 @@ class RelatedSection(Template.Section):
     def _startQuery(self, filter, context, result):
         # We have our related-filter, start a db interaction to do our actual
         # queries then pass the results on to _render_rows.
-        Database.pool.runInteraction(self._runQuery, filter).addCallback(
-            self._render_rows, context, result
-            ).addErrback(result.errback)
+
+        # AWFUL BP HACK - XXX - make adbapi run our query synchroneously. This hopefully reduces excess request parallelism.
+        #Database.pool.runInteraction(self._runQuery, filter).addCallback(
+        #    self._render_rows, context, result
+        #    ).addErrback(result.errback)
+        self._render_rows(Database.pool._runInteraction(self._runQuery, filter),
+            context, result)
 
     def _runQuery(self, cursor, filter):
         # Set up and run two SQL queries, one for each side of the graph link that this
@@ -164,9 +169,10 @@ class RelatedSection(Template.Section):
            """
         # Truncate the rows if we need to
         if len(rows) > self.sectionLimit:
-            footer = tag('div', _class='relatedFooter')[
-                '(%d others)' % (len(rows) - self.sectionLimit)
-                ]
+            # XXX - Bear hack
+            footer = ()#tag('div', _class='relatedFooter')[
+                #'(%d others)' % (len(rows) - self.sectionLimit)
+                #]
             rows = rows[:self.sectionLimit]
         else:
             footer = ()

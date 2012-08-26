@@ -11,7 +11,7 @@
 # Emails are stored in /home/cia/cia/data/queue/commit, we are notified of new mail
 # by a SIGUSR1 to speed the process up.
 
-import xmlrpclib, time, logging, signal
+import xmlrpclib, time, logging, signal, os
 from cia.lib import emailqueue, simplelog
 
 def deliver_loop():
@@ -20,9 +20,17 @@ def deliver_loop():
         signal.signal(signal.SIGUSR1, signal.SIG_IGN)
         for message in queue.get():
             try:
-                s.mail.deliver(message)
+                # Apparently, xmlrpclib fails to send a call to itself
+                # if a string argument contains non-utf8 chars.
+                # This probably breaks some stuff, but may fix that
+                s.mail.deliver(message.decode('ascii', 'replace').encode('ascii', 'replace'))
+
+                # Hack to prevent us killing ourself too much
+                if os.getloadavg()[0] > 4:
+                    time.sleep(10)
             except:
                 logging.exception("delivery error")
+                time.sleep(10)
         signal.signal(signal.SIGUSR1, emailqueue.sig_noop)
         time.sleep(10)
 

@@ -10,7 +10,8 @@ class RulesetDumper(Client.App):
     def main(self):
 	print "<rulesets>"
         for ruleset in self.server.ruleset.getRulesetMap().values():
-            print "\n%s" % ruleset.split("?>", 1)[1].strip()
+            print ruleset
+#            print "\n%s" % ruleset.split("?>", 1)[1].strip()
         print "\n</rulesets>"
 
 if __name__ == '__main__':

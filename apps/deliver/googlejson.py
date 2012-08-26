@@ -5,6 +5,10 @@ import xmlrpclib
 
 SERVER_URL = "http://cia.vc"
 
+PROJECT_TRANS = {
+    'cia-vc': 'CIA.vc'
+}
+
 GET_RESPONSE = """
     <html><body>
     <p>
@@ -60,7 +64,10 @@ def accept(request):
     data = simplejson.loads(body)
     info = {}
 
-    info['project'] = html.escape(data['project_name'])
+    project = data['project_name']
+    if project in PROJECT_TRANS:
+        project = PROJECT_TRANS[project]
+    info['project'] = html.escape(project)
     info['repo_url'] = html.escape(data['repository_path'])
     for revision in data['revisions']:
         info['revision'] = html.escape(revision['revision'])

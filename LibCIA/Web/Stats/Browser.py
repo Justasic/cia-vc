@@ -117,7 +117,7 @@ class Page(Template.Page):
         return [
             Metadata.Info(self.target),
             LinksSection(self.target),
-            Graph.RelatedSection(self.target),
+            #Graph.RelatedSection(self.target),
             Info.Clock(),
             ]
 

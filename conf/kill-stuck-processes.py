@@ -2,7 +2,7 @@
 
 import os, re, time
 
-pattern = re.compile("(repos-poll|repos-ping|incoming)")
+pattern = re.compile("(repos-poll|repos-ping)")
 
 for line in os.popen("ps -eo pid,lstart,args"):
     if pattern.search(line):
@@ -13,3 +13,9 @@ for line in os.popen("ps -eo pid,lstart,args"):
 
         if runtime > 600:
             os.kill(pid, 9)
+
+try:
+    os.remove("/home/cia/cia/incoming.lock")
+except:
+    # if it's not there, fine.
+    pass

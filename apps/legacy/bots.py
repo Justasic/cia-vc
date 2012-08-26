@@ -17,7 +17,7 @@ def block(d, timeout=60.0):
         remaining = deadline - time.time()
         if remaining < 0:
             raise TimeoutError()
-        reactor.iterate(delay = remaining)
+        reactor.iterate(delay = min(1, remaining))
     if isinstance(d.result, failure.Failure):
         d.result.raiseException()
     return d.result
@@ -37,10 +37,16 @@ class BotServer(basic.LineOnlyReceiver):
         }
 
     def lineReceived(self, line):
-        parts = line.split(None, 2)
-        command = parts[0]
-        handler = self.handlers[command]
-        handler(*parts[1:])
+        try:
+            parts = line.split(None, 2)
+            command = parts[0]
+            handler = self.handlers[command]
+            handler(*parts[1:])
+        except StandardError, e:
+            self.deferred.errback(e)
+
+    def disconnect(self):
+        self.transport.loseConnection()
 
     def defer(self):
         self.deferred = defer.Deferred()
@@ -61,7 +67,7 @@ class BotServer(basic.LineOnlyReceiver):
         self.result.append({
           'server': server,
           'channel': channel,
-          'user_count': count,
+          'user_count': int(count),
           'botnick': nick,
         })
 
@@ -71,7 +77,7 @@ class BotServer(basic.LineOnlyReceiver):
         self.doFinish( {
           'server': server,
           'channel': channel,
-          'user_count': count,
+          'user_count': int(count),
           'botnick': nick,
           })
 
@@ -105,9 +111,21 @@ class BotServer(basic.LineOnlyReceiver):
         return self.deferred
 
 
-def connect():
-    creator = protocol.ClientCreator(reactor, BotServer)
-    return creator.connectUNIX(settings.CIA_BOT_SOCKET)
+class BotConnFactory(protocol.ClientFactory):
+    protocol = BotServer
+    def __init__(self, deferred):
+        self.deferred = deferred
+
+    def buildProtocol(self, addr):
+        p = protocol.Factory.buildProtocol(self, addr)
+        reactor.callLater(0, self.deferred.callback, p)
+        return p
+
+def connect(timeout = 30):
+    deferred = defer.Deferred()
+    factory = BotConnFactory(deferred)
+    reactor.connectUNIX(settings.CIA_BOT_SOCKET, factory, timeout = timeout)
+    return deferred
 
 def needs_bot_server(view_func):
     def _wrapper(request, *args, **kwargs):
@@ -131,7 +149,7 @@ def status():
 def report(target):
     server = block(connect())
     try:
-        return block(server.report(target))
+        return block(server.report(target.encode('utf-8')))
     finally:
         server.disconnect()
 

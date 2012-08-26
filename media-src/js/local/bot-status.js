@@ -16,8 +16,6 @@ BotStatus.init = function(url)
 
 BotStatus.showBotStatus = function(obj)
 {
-    this.disableTimeUpdates();
-    
     if (!obj.request || obj.request.botnick == "???")
     {
 	/*
@@ -42,8 +40,8 @@ BotStatus.showBotStatus = function(obj)
 
     var status = "<p>Ready.</p>"
 
-    status += "<p>Your bot is <strong>" + request.botnick +
-    "</strong> seeing " + request.user_count + "users.</p>";
+    status += "<p>Your bot is <strong>" + obj.request.botnick +
+    "</strong> seeing " + obj.request.user_count + " users.</p>";
 
     /*
      * Update relatively slowly, since the bot is functioning normally
@@ -55,7 +53,6 @@ BotStatus.showBotStatus = function(obj)
 
 BotStatus.showError = function(code)
 {
-    this.disableTimeUpdates();
     this.div_message.innerHTML = "<p>Error checking bot status! (" + code + ")</p>";
 
     /*
@@ -72,9 +69,6 @@ BotStatus.showError = function(code)
 BotStatus.scheduleDataUpdate = function(seconds)
 {
     var self = this;
-    if (self.updateTimer) {
-	clearTimeout(self.updateTimer);
-    }
     self.timer = setTimeout(function() { 
 	self.timer = null;
 	self.updateData();

@@ -41,7 +41,7 @@ class DiskBackedQueue(object):
     def __init__(self, hub, callback):
         self.hub = hub
         self.callback = callback
-        self.queueKey = int(time.time())
+        self.queueKey = str(int(time.time()))
         self.queueIndex = 0
 
     def queue(self, message):
@@ -49,7 +49,7 @@ class DiskBackedQueue(object):
 
         Flushes an incoming message to disk and ensures the pickup job is running
         """
-        filename = QUEUE_PREFIX + self.queueKey + "-" + self.queueIndex
+        filename = QUEUE_PREFIX + self.queueKey + "-" + str(self.queueIndex)
         self.queueIndex += 1
         # Caution: unconditionally encoding will raise UnicodeDecodeError...
         if isinstance(message, unicode):
@@ -90,7 +90,8 @@ class DiskBackedQueue(object):
             fh = open(filename)
             contents = fh.read()
             fh.close()
-            os.remove(filename)
+            os.unlink(filename)
+            #os.rename(filename, filename.replace('xml.', 'done.'))
             contents = contents.decode('UTF-8', 'replace')
             self.callback(contents)
             self.bump()

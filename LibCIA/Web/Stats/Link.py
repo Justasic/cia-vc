@@ -82,7 +82,8 @@ class MessageLink(TargetRelativeLink):
         self.text = text
 
     def render(self, context):
-        return self.tagFactory(href=self.getURL(context))[self.text]
+        # XXX - bear hack: search engines, please don't follow, we have enough to do as it is
+        return self.tagFactory(href=self.getURL(context), rel="nofollow")[self.text]
 
 
 class MetadataLink(TargetRelativeLink):
