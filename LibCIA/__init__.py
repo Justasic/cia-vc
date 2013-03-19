@@ -31,11 +31,15 @@ an eye on Subversion ;)
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-__version__ = "0.91svn"
+# Open our git HEAD file and find the revision, copy it, cut it to about 10 chars, append it to the version
+
+f = open('../.git/HEAD', 'r')
+
+__version__ = "0.92"
 
 
 # Check the python version here before we proceed further
-requiredPythonVersion = (2,2,1)
+requiredPythonVersion = (2,6,0)
 import sys, string
 if sys.version_info < requiredPythonVersion:
     raise Exception("%s requires at least Python %s, found %s instead." % (
