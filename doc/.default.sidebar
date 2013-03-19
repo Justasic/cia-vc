@@ -14,10 +14,11 @@ FAQ :: /doc/faq
 Adding projects :: /doc/adding-projects
 Clients :: /doc/clients
 Sourceforge HOWTO :: /doc/sourceforge-howto
+GitHub HOWTO :: /doc/github-howto
 
 - Development
 
-Bug Tracker :: http://code.google.com/p/cia-vc/issues/list
+Bug Tracker :: https://github.com/Justasic/cia-vc/issues
 Getting Started :: http://cia.vc/doc/development/
-Project Home :: http://code.google.com/p/cia-vc/
-Source Code :: http://code.google.com/p/cia-vc/source
+Project Home :: https://github.com/Justasic/cia-vc
+Source Code :: https://github.com/Justasic/cia-vc

@@ -3,9 +3,9 @@ Getting Started Developing CIA
 ==============================
 
 Want to help with CIA? Below are a few common starting points. We encourage
-you to join the IRC channel (#cia on Freenode_) and/or the `mailing list`_.
+you to join the IRC channel (#cia on Azuru_) and/or the `mailing list`_.
 
-.. _Freenode: http://freenode.net
+.. _Azuru: http://azuru.net
 .. _mailing list: http://groups.google.com/group/cia-vc
 
 Writing Client Scripts
@@ -25,15 +25,21 @@ messages accepted by CIA.
 Getting the Source
 ------------------
 
-CIA.vc is on Google Code:
+CIA.vc is on GitHub:
 
  * `Project Page`_
  * `Bug Tracker`_
  * `Source Code`_
+ * `To Do`_
+ * `Original Google Code`_
 
-.. _Project Page: http://code.google.com/p/cia-vc/
-.. _Bug Tracker: http://code.google.com/p/cia-vc/issues/list
-.. _Source Code: http://code.google.com/p/cia-vc/source
+
+.. _Project Page: https://github.com/Justasic/cia-vc/
+.. _Bug Tracker: https://github.com/Justasic/cia-vc/issues
+.. _Source Code: https://github.com/Justasic/cia-vc/
+.. _To Do: /doc/TODO
+.. _Original Google Code: http://cia-vc.googlecode.com/
+
 
 Running Your Own Server
 -----------------------
@@ -50,6 +56,10 @@ of CIA's major components:
 If you're interested in running or developing on an isolated part of CIA,
 it may not be necessary to run every service that a production server would
 run. If you do want to run the entire application, setup can be daunting.
+
+See the setup instructions here_
+
+.. _here: /doc/install-instructions
 
 The Development and Small Deployment VM
 ---------------------------------------

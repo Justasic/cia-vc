@@ -10,3 +10,6 @@ Known Bugs
 - Many of the module imports are messy. Relative imports should be removed according
   to section 2.4 of the python programming FAQ, and the order could use some cleanup.
 
+- Much of the site is outdated and many libraries (such as Nouvelle) are deprecated or
+  desperately out of date
+
