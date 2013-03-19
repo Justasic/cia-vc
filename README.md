@@ -1,4 +1,4 @@
 cia-vc
 ======
 
-The CIA.vc source code with my modifications
+Import of the original and full CIA.vc source code history with my personal modifications to make it work on newer libraries
