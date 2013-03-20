@@ -34,8 +34,15 @@ an eye on Subversion ;)
 # Open our git HEAD file and find the revision, copy it, cut it to about 10 chars, append it to the version
 
 f = open('../.git/HEAD', 'r')
+ref = f.read()[5:].strip()
+g = open('../.git/'+ref, 'r');
+commit = g.read().strip()
+branch = ref[11:]
+shortcommit = commit[:13]
+f.close()
+g.close()
 
-__version__ = "0.92"
+__version__ = "0.92-" + branch + "-" + shortcommit
 
 
 # Check the python version here before we proceed further
