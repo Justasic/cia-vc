@@ -122,7 +122,8 @@ class TimestampSection(ActivitySection):
                  ):
         ActivitySection.__init__(self, targetPath, title, numItems,
                                  counter, counterAttrib, sort, columnTitle,
-                                 hint='USE INDEX (recent_name)')
+				 hint='USE INDEX (first_time)')
+                                 #hint='USE INDEX (recent_name)')
 
     def initColumns(self):
         self.columns = [

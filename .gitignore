@@ -21,6 +21,13 @@ lib64
 # Installer logs
 pip-log.txt
 
+# CIA specific stuff
+DEBUG
+server-*.pid
+conf/nginx.conf
+data
+*.swp
+
 # Unit test / coverage reports
 .coverage
 .tox
@@ -33,3 +40,6 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Stupid SVN shit!
+.svn

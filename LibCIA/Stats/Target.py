@@ -98,9 +98,10 @@ class StatsTarget(object):
            """
         # XXX - Bear hack: store as stats/author/f/foobar for filesystem sanity
         segmentsLower = map(string.lower, self.pathSegments)
-        if len(segmentsLower) > 0 and segmentsLower[0] == 'author' or segmentsLower[0] == 'project':
-            target = segmentsLower[1]
-            segmentsLower.insert(1, target[0])
+	if len(segmentsLower) > 0:
+        	if len(segmentsLower) > 0 and segmentsLower[0] == 'author' or segmentsLower[0] == 'project':
+            		target = segmentsLower[1]
+            		segmentsLower.insert(1, target[0])
         return Files.tryGetDir(Files.dbDir, 'stats', *segmentsLower)
 
     def deliver(self, message=None):
