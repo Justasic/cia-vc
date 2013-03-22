@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="11104"
+   name=""
+   committed-date="2007-01-04T08:56:55.853912Z"
+   url="http://svn.navi.cx/misc/trunk/cia/media/admin/css"
+   last-author="micah"
+   kind="dir"
+   uuid="9a66fdd2-3ab9-0310-9df6-91dd0304fdbc"
+   repos="http://svn.navi.cx/misc"
+   revision="11554"/>
+<entry
+   committed-rev="11104"
+   name="login.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="d4c670bf4635b2c4744af89d7c0b6bf8"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:51.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="patch-iewin.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="e4a098dbb17a9432148d9be36a3679bb"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:51.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="base.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="ef6a82e30a79309d375ab428cf78f816"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:51.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="layout.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="38225fa63e59723bdbc839e9d57fe361"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:51.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="global.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="a611b2ed1c70cc8c9bef9fcd166f1610"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:51.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="rtl.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="13bdd003e5e1c2966e8561b98ea47d77"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:51.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="changelists.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="18b582f79787dce1e5c1077d0148c814"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="forms.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="3cc2add00f04ae7cd9bb230317f546c4"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="widgets.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="62bfaeccdac52a996e865ff7c44e0461"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="dashboard.css"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="090cd9de97c502a238102f8465d0ad50"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+</wc-entries>

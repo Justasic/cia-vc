@@ -1,0 +1,3 @@
+/* image-upload.css */
+body{font-size:10px;font-family:sans-serif;font-weight:bold;color:#666;margin:0;padding:0.3em 0;background:White;}a{color:#00c;text-decoration:none;}#image-upload-form{margin:0;padding:0;clear:none;}div.thumbnail{float:left;margin:0 1em 0 0;}img.thumbnail{border:1px dashed #666;padding:2px;margin:0;}div.details{text-align:center;}#file{margin:0.25em 0;}p{margin:0.5em 0;}#ajax-loader{vertical-align:middle;display:none;border:none;margin:0 4px;}.footer{clear:both;height:1px;}
+

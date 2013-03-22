@@ -22,8 +22,7 @@ Pages for getting real-time message feeds in RSS and unformatted XML
 #
 
 from twisted.internet import defer
-from twisted.protocols import http
-from twisted.web import resource, server
+from twisted.web import resource, server, http
 from twisted.python import log
 from LibCIA import Message, Formatters, TimeUtil, XML, Database
 import Nouvelle

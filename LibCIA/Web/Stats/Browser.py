@@ -25,8 +25,7 @@ to metadata or RSS pages.
 
 from twisted.python import log
 from twisted.internet import defer
-from twisted.protocols import http
-from twisted.web import error, resource, server
+from twisted.web import error, resource, server, http
 from LibCIA.Web import Template, Info, Server
 from LibCIA import Stats, Message, TimeUtil, Formatters, XML
 from Nouvelle import tag, place

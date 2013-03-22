@@ -27,13 +27,21 @@ import _mysql
 import os
 import XML
 
+USEQUOTE = 1
+NOQUOTE = 2
 
 # Import quoting functions for use elsewhere.
 # We use twisted's quote utility most places,
 # but as it doesn't understand MySQL-style binary
 # objects, we use _mysql to define quoteBlob.
-from twisted.enterprise.util import quote
+#from twisted.enterprise.util import quote
 from _mysql import escape_string as quoteBlob
+
+# Twisted's quote utility was removed and I was unable to find any suitable solution so
+# make this nasty hack to fix it for now, hopefully it does not expose us to a nasty sql
+# injection attack..
+from LibCIA.DatabaseQuote import quote
+
 
 # Disable the silly BLOB-to-array() conversion
 # in the latest versions of python-mysqldb

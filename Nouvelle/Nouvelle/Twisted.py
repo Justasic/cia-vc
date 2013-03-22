@@ -26,8 +26,7 @@ and support for asynchronous rendering using Deferred.
 import Nouvelle
 from Nouvelle import xml
 from twisted.internet import defer
-from twisted.protocols import http
-from twisted.web import server, error, resource
+from twisted.web import server, error, resource, http
 
 
 class TwistedSerializer(Nouvelle.Serializer):

@@ -22,7 +22,7 @@ page and a directory listing page.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from twisted.protocols import http
+from twisted.web import http
 from Nouvelle import tag, place, Twisted
 from LibCIA import TimeUtil, Units
 import Template

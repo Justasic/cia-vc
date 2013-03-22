@@ -29,8 +29,7 @@ import re
 # messages from being logged every time we make an XML-RPC connection.
 # This is less ugly than the alternative of having our own xmlrpc.Proxy
 # implementation. If only xmlrpc.Proxy made it easy to set the factory class...
-xmlrpc.QueryFactory.noisy = False
-
+#xmlrpc.QueryFactory.noisy = False
 
 class XmlrpcURIHandler(Ruleset.RegexURIHandler):
     """Handles xmlrpc:// URIs, specifying an XML-RPC call to make,
@@ -122,6 +121,9 @@ class XmlrpcURIHandler(Ruleset.RegexURIHandler):
             server = server + '/RPC2'
         server = 'http://' + server
         proxy = xmlrpc.Proxy(server)
+	class QuietQueryFactory(proxy.queryFactory):
+		noisy = False
+	proxy.queryFactory = QuietQueryFactory
 
         # Parse arguments, allowing use of our 'message' and 'content' variables.
         args = self.parseArgs(groups['args'],

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="11104"
+   name=""
+   committed-date="2007-01-04T08:56:55.853912Z"
+   url="http://svn.navi.cx/misc/trunk/cia/media/admin/js"
+   last-author="micah"
+   kind="dir"
+   uuid="9a66fdd2-3ab9-0310-9df6-91dd0304fdbc"
+   repos="http://svn.navi.cx/misc"
+   revision="11554"/>
+<entry
+   committed-rev="11104"
+   name="SelectFilter.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="553303785277bfb4ddc1002607d337e1"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="SelectFilter2.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="1922badf8d33086fb21c6df3c9fc4ebd"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="SelectBox.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="965cf59e3c2b952c14ae3b6e08589aa6"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="core.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="61e9dc5dbbb82f9a853dede2d5251b22"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="dateparse.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="71369fd9604d828197cacd9bed2fb70a"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="getElementsBySelector.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="f9fdf8e8e4a0836297dda65bf109484e"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="calendar.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="31d118e5754478fbfcc68cd4745c35da"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="timeparse.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="a298a7ede5c334038c8c46d9b0a1b008"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="urlify.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="b5d8cc895feaeb7cb08b714afc4b219d"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   name="admin"
+   kind="dir"/>
+</wc-entries>

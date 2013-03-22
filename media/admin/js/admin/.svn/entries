@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="11104"
+   name=""
+   committed-date="2007-01-04T08:56:55.853912Z"
+   url="http://svn.navi.cx/misc/trunk/cia/media/admin/js/admin"
+   last-author="micah"
+   kind="dir"
+   uuid="9a66fdd2-3ab9-0310-9df6-91dd0304fdbc"
+   repos="http://svn.navi.cx/misc"
+   revision="11554"/>
+<entry
+   committed-rev="11104"
+   name="RelatedObjectLookups.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="1729616f94afcd60376200a16479ea49"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="CollapsedFieldsets.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="76b53859cd8417a810a6d085302f5a7c"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="ordering.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="c7eead0bda8304a6e92986498f7ac9f7"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+<entry
+   committed-rev="11104"
+   name="DateTimeShortcuts.js"
+   text-time="2007-02-24T15:10:52.000000Z"
+   committed-date="2007-01-04T08:56:55.853912Z"
+   checksum="69be2bb31f35322adfa648fd74fde2b4"
+   last-author="micah"
+   kind="file"
+   prop-time="2007-02-24T15:10:52.000000Z"/>
+</wc-entries>

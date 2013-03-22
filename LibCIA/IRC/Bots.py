@@ -24,7 +24,8 @@ can be restarted without effecting the bots.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from twisted.protocols import irc, basic
+from twisted.protocols import basic
+from twisted.words.protocols import irc
 from twisted.internet import protocol, reactor, defer
 from twisted.python import log, util
 import time, random, Queue
