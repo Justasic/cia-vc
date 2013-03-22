@@ -7,4 +7,4 @@ cd /home/cia
        echo `date` -- Killed.
 
        echo `date` -- Restarting...
-       (cd cia; twistd2.4 -l /var/log/cia/twistd.log -oy conf/official.monolithic.tac)
+       (cd cia; twistd -l /var/log/cia/twistd.log -oy conf/official.monolithic.tac)
