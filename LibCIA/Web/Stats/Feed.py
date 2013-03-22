@@ -185,7 +185,7 @@ class RSS2Feed(RSSFeed):
            """
         return tag('cloud',
                    domain            = context['request'].getRequestHostname(),
-                   port              = context['request'].host[2],
+                   port              = context['request'].host.port,
                    path              = '/RPC2',
                    protocol          = 'xml-rpc',
                    registerProcedure = 'stats.subscribe.rss2',

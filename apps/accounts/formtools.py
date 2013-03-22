@@ -52,8 +52,7 @@ class RadioChoices:
        buttons, while letting the form render each individual button.
        """
     def __init__(self, boundField, enum):
-        self.renderer = boundField.field.widget.get_renderer(boundField.html_name, boundField.data,
-                                                             attrs={'class': 'radio'})
+	self.renderer = boundField.as_widget(boundField.field.widget, attrs={'class': 'radio'})
         self.enum = enum
 
     def __getitem__(self, enumName):

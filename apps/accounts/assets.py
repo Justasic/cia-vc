@@ -163,11 +163,11 @@ class EditAssetForm(forms.Form):
         self.access_levels = formtools.RadioChoices(self['access'], models.ACCESS)
 
     def clean_access(self):
-        return int(self.cleaned_data['access'])
+        return int(self.clean_data['access'])
 
     def should_delete(self):
         """Are we removing access to this asset?"""
-        return self.cleaned_data['access'] == models.ACCESS.NONE
+        return self.clean_data['access'] == models.ACCESS.NONE
 
     def delete(self, request, user_asset):
         """Delete this UserAsset, create a message indicating that we
@@ -182,7 +182,7 @@ class EditAssetForm(forms.Form):
         """Apply changes to a UserAsset, saving information about
            those changes in the provided changeset.
            """
-        new_access = self.cleaned_data['access']
+        new_access = self.clean_data['access']
         if new_access != user_asset.access:
 
             if new_access == models.ACCESS.NONE:
@@ -305,7 +305,7 @@ def conflict(request, asset_type, asset_id):
     if request.POST:
         form.full_clean()
         if form.is_valid():
-            send_conflict_message(request, owner_ua, form.cleaned_data['message'])
+            send_conflict_message(request, owner_ua, form.clean_data['message'])
             request.user.message_set.create(message="Message sent.")
 
             # Make it less convenient to send a bunch of rapid-fire messages
@@ -353,23 +353,23 @@ class StatsMetadataForm(forms.Form):
         )
 
     def clean_subtitle(self):
-        return self.cleaned_data.get('subtitle') or None
+        return self.clean_data.get('subtitle') or None
 
     def clean_url(self):
-        return self.cleaned_data.get('url') or None
+        return self.clean_data.get('url') or None
 
     def clean_description(self):
-        return self.cleaned_data.get('description') or None
+        return self.clean_data.get('description') or None
 
     def clean_photo_id(self):
-        return self.cleaned_data.get('photo_id') or None
+        return self.clean_data.get('photo_id') or None
 
     def clean_icon_id(self):
-        return self.cleaned_data.get('icon_id') or None
+        return self.clean_data.get('icon_id') or None
 
     def apply(self, cset):
         target = cset.asset.target
-        cset.set_field_dict(self.cleaned_data, prefix='target.')
+        cset.set_field_dict(self.clean_data, prefix='target.')
 
         if target.photo:
             target.photo.reference()
@@ -416,7 +416,7 @@ def add_stats_asset(request, asset_type, prefix, template, name=None):
 
     if request.POST:
         if form.is_valid():
-            name = form.cleaned_data['name']
+            name = form.clean_data['name']
     else:
         # Don't show errors if the form hasn't been submitted once
         form.errors = None
@@ -468,7 +468,7 @@ class ProjectForm(forms.Form):
         )
 
     def apply(self, cset, request, repos):
-        use_repository = bool(self.cleaned_data.get('use_repository'))
+        use_repository = bool(self.clean_data.get('use_repository'))
         if cset.asset.repos and cset.asset.repos.is_active and not use_repository:
             # Deactivate repository
 
@@ -529,7 +529,7 @@ class RepositoryForm(forms.Form):
         # be done during apply(), so that it's included in
         # the changeset.
 
-        location = self.cleaned_data['location']
+        location = self.clean_data['location']
         # XXX - Bear hack: Unconditionally probe, so if we reactivated
         # the repository we don't pull all revisions since way back when.
         # Also makes sure the location is still valid.
@@ -539,13 +539,13 @@ class RepositoryForm(forms.Form):
         return location
 
     def clean_revision_url(self):
-        return self.cleaned_data.get('revision_url') or None
+        return self.clean_data.get('revision_url') or None
 
     def clean_path_regexes(self):
         # Remove extra whitespace and blank lines, then parse the resulting regexes.
         regexes = []
         line_no = 1
-        for line in self.cleaned_data.get('path_regexes', '').split('\n'):
+        for line in self.clean_data.get('path_regexes', '').split('\n'):
             line = line.strip()
             if line:
                 try:
@@ -558,7 +558,7 @@ class RepositoryForm(forms.Form):
             return '\n'.join(regexes)
 
     def apply(self, cset):
-        cset.set_field_dict(self.cleaned_data, prefix='repos.')
+        cset.set_field_dict(self.clean_data, prefix='repos.')
 
 
 @authplus.login_required
@@ -581,7 +581,7 @@ def project(request, asset_type, asset_id):
                   post_defaults = {'use_repository': False},
                   defaults = {'use_repository': asset.repos and asset.repos.is_active})
 
-    use_repository = bool(form.ProjectForm.cleaned_data.get('use_repository'))
+    use_repository = bool(form.ProjectForm.clean_data.get('use_repository'))
     if use_repository:
         repos = asset.repos
         if not repos:
