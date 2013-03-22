@@ -32,10 +32,14 @@ an eye on Subversion ;)
 #
 
 # Open our git HEAD file and find the revision, copy it, cut it to about 10 chars, append it to the version
+import os
 
-f = open('../.git/HEAD', 'r')
+def rel_path(p):
+    return os.path.join(os.path.abspath(os.path.split(__file__)[0]), p)
+
+f = open(rel_path('../.git/HEAD'), 'r')
 ref = f.read()[5:].strip()
-g = open('../.git/'+ref, 'r');
+g = open(rel_path('../.git/'+ref), 'r');
 commit = g.read().strip()
 branch = ref[11:]
 shortcommit = commit[:13]
