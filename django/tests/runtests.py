@@ -1,313 +1,150 @@
 #!/usr/bin/env python
-import os
-import shutil
-import subprocess
-import sys
-import tempfile
 
-from django import contrib
-from django.utils._os import upath
-from django.utils import six
+import os, sys, traceback
+import unittest
 
-CONTRIB_DIR_NAME = 'django.contrib'
-
+MODEL_TESTS_DIR_NAME = 'modeltests'
+REGRESSION_TESTS_DIR_NAME = 'regressiontests'
+TEST_DATABASE_NAME = 'django_test_db'
 TEST_TEMPLATE_DIR = 'templates'
 
-RUNTESTS_DIR = os.path.abspath(os.path.dirname(upath(__file__)))
-CONTRIB_DIR = os.path.dirname(upath(contrib.__file__))
-TEMP_DIR = tempfile.mkdtemp(prefix='django_')
-os.environ['DJANGO_TEST_TEMP_DIR'] = TEMP_DIR
-
-SUBDIRS_TO_SKIP = ['templates']
+MODEL_TEST_DIR = os.path.join(os.path.dirname(__file__), MODEL_TESTS_DIR_NAME)
+REGRESSION_TEST_DIR = os.path.join(os.path.dirname(__file__), REGRESSION_TESTS_DIR_NAME)
 
 ALWAYS_INSTALLED_APPS = [
-    'shared_models',
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'django.contrib.sites',
     'django.contrib.flatpages',
     'django.contrib.redirects',
     'django.contrib.sessions',
-    'django.contrib.messages',
     'django.contrib.comments',
     'django.contrib.admin',
-    'django.contrib.admindocs',
-    'django.contrib.staticfiles',
-    'django.contrib.humanize',
-    'staticfiles_tests',
-    'staticfiles_tests.apps.test',
-    'staticfiles_tests.apps.no_label',
 ]
 
-def geodjango(settings):
-    # All databases must have spatial backends to run GeoDjango tests.
-    spatial_dbs = [name for name, db_dict in settings.DATABASES.items()
-                   if db_dict['ENGINE'].startswith('django.contrib.gis')]
-    return len(spatial_dbs) == len(settings.DATABASES)
-
-def get_test_modules():
-    modules = []
-    for loc, dirpath in (
-        (None, RUNTESTS_DIR),
-        (CONTRIB_DIR_NAME, CONTRIB_DIR)):
+def get_test_models():
+    models = []
+    for loc, dirpath in (MODEL_TESTS_DIR_NAME, MODEL_TEST_DIR), (REGRESSION_TESTS_DIR_NAME, REGRESSION_TEST_DIR):
         for f in os.listdir(dirpath):
-            if ('.' in f or
-                # Python 3 byte code dirs (PEP 3147)
-                f == '__pycache__' or
-                f.startswith('sql') or
-                os.path.basename(f) in SUBDIRS_TO_SKIP or
-                os.path.isfile(f)):
+            if f.startswith('__init__') or f.startswith('.') or f.startswith('sql') or f.startswith('invalid'):
                 continue
-            modules.append((loc, f))
-    return modules
+            models.append((loc, f))
+    return models
 
-def setup(verbosity, test_labels):
+def get_invalid_models():
+    models = []
+    for loc, dirpath in (MODEL_TESTS_DIR_NAME, MODEL_TEST_DIR), (REGRESSION_TESTS_DIR_NAME, REGRESSION_TEST_DIR):
+        for f in os.listdir(dirpath):
+            if f.startswith('__init__') or f.startswith('.') or f.startswith('sql'):
+                continue
+            if f.startswith('invalid'):
+                models.append((loc, f))
+    return models
+
+class InvalidModelTestCase(unittest.TestCase):
+    def __init__(self, model_label):
+        unittest.TestCase.__init__(self)
+        self.model_label = model_label
+
+    def runTest(self):
+        from django.core import management
+        from django.db.models.loading import load_app
+        from cStringIO import StringIO
+
+        try:
+            module = load_app(self.model_label)
+        except Exception, e:
+            self.fail('Unable to load invalid model module')
+
+        s = StringIO()
+        count = management.get_validation_errors(s, module)
+        s.seek(0)
+        error_log = s.read()
+        actual = error_log.split('\n')
+        expected = module.model_errors.split('\n')
+
+        unexpected = [err for err in actual if err not in expected]
+        missing = [err for err in expected if err not in actual]
+
+        self.assert_(not unexpected, "Unexpected Errors: " + '\n'.join(unexpected))
+        self.assert_(not missing, "Missing Errors: " + '\n'.join(missing))
+
+def django_tests(verbosity, tests_to_run):
     from django.conf import settings
-    from django.db.models.loading import get_apps, load_app
-    state = {
-        'INSTALLED_APPS': settings.INSTALLED_APPS,
-        'ROOT_URLCONF': getattr(settings, "ROOT_URLCONF", ""),
-        'TEMPLATE_DIRS': settings.TEMPLATE_DIRS,
-        'LANGUAGE_CODE': settings.LANGUAGE_CODE,
-        'STATIC_URL': settings.STATIC_URL,
-        'STATIC_ROOT': settings.STATIC_ROOT,
-    }
+
+    old_installed_apps = settings.INSTALLED_APPS
+    old_test_database_name = settings.TEST_DATABASE_NAME
+    old_root_urlconf = settings.ROOT_URLCONF
+    old_template_dirs = settings.TEMPLATE_DIRS
+    old_use_i18n = settings.USE_I18N
+    old_middleware_classes = settings.MIDDLEWARE_CLASSES
 
     # Redirect some settings for the duration of these tests.
+    settings.TEST_DATABASE_NAME = TEST_DATABASE_NAME
     settings.INSTALLED_APPS = ALWAYS_INSTALLED_APPS
     settings.ROOT_URLCONF = 'urls'
-    settings.STATIC_URL = '/static/'
-    settings.STATIC_ROOT = os.path.join(TEMP_DIR, 'static')
-    settings.TEMPLATE_DIRS = (os.path.join(RUNTESTS_DIR, TEST_TEMPLATE_DIR),)
-    settings.LANGUAGE_CODE = 'en'
-    settings.SITE_ID = 1
+    settings.TEMPLATE_DIRS = (os.path.join(os.path.dirname(__file__), TEST_TEMPLATE_DIR),)
+    settings.USE_I18N = True
+    settings.MIDDLEWARE_CLASSES = (
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.middleware.common.CommonMiddleware',
+    )
 
     # Load all the ALWAYS_INSTALLED_APPS.
+    # (This import statement is intentionally delayed until after we
+    # access settings because of the USE_I18N dependency.)
+    from django.db.models.loading import get_apps, load_app
     get_apps()
 
     # Load all the test model apps.
-    test_labels_set = set([label.split('.')[0] for label in test_labels])
-    test_modules = get_test_modules()
+    test_models = []
+    for model_dir, model_name in get_test_models():
+        model_label = '.'.join([model_dir, model_name])
+        try:
+            # if the model was named on the command line, or
+            # no models were named (i.e., run all), import
+            # this model and add it to the list to test.
+            if not tests_to_run or model_name in tests_to_run:
+                if verbosity >= 1:
+                    print "Importing model %s" % model_name
+                mod = load_app(model_label)
+                settings.INSTALLED_APPS.append(model_label)
+                test_models.append(mod)
+        except Exception, e:
+            sys.stderr.write("Error while importing %s:" % model_name + ''.join(traceback.format_exception(*sys.exc_info())[1:]))
+            continue
 
-    # If GeoDjango, then we'll want to add in the test applications
-    # that are a part of its test suite.
-    if geodjango(settings):
-        from django.contrib.gis.tests import geo_apps
-        test_modules.extend(geo_apps(runtests=True))
-        settings.INSTALLED_APPS.extend(['django.contrib.gis', 'django.contrib.sitemaps'])
-
-    for module_dir, module_name in test_modules:
-        if module_dir:
-            module_label = '.'.join([module_dir, module_name])
-        else:
-            module_label = module_name
-        # if the module was named on the command line, or
-        # no modules were named (i.e., run all), import
-        # this module and add it to the list to test.
-        if not test_labels or module_name in test_labels_set:
-            if verbosity >= 2:
-                print("Importing application %s" % module_name)
-            mod = load_app(module_label)
-            if mod:
-                if module_label not in settings.INSTALLED_APPS:
-                    settings.INSTALLED_APPS.append(module_label)
-
-    return state
-
-def teardown(state):
-    from django.conf import settings
-    # Removing the temporary TEMP_DIR. Ensure we pass in unicode
-    # so that it will successfully remove temp trees containing
-    # non-ASCII filenames on Windows. (We're assuming the temp dir
-    # name itself does not contain non-ASCII characters.)
-    shutil.rmtree(six.text_type(TEMP_DIR))
-    # Restore the old settings.
-    for key, value in state.items():
-        setattr(settings, key, value)
-
-def django_tests(verbosity, interactive, failfast, test_labels):
-    from django.conf import settings
-    state = setup(verbosity, test_labels)
+    # Add tests for invalid models.
     extra_tests = []
-
-    # If GeoDjango is used, add it's tests that aren't a part of
-    # an application (e.g., GEOS, GDAL, Distance objects).
-    if geodjango(settings) and (not test_labels or 'gis' in test_labels):
-        from django.contrib.gis.tests import geodjango_suite
-        extra_tests.append(geodjango_suite(apps=False))
+    for model_dir, model_name in get_invalid_models():
+        model_label = '.'.join([model_dir, model_name])
+        if not tests_to_run or model_name in tests_to_run:
+            extra_tests.append(InvalidModelTestCase(model_label))
 
     # Run the test suite, including the extra validation tests.
-    from django.test.utils import get_runner
-    if not hasattr(settings, 'TEST_RUNNER'):
-        settings.TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
-    TestRunner = get_runner(settings)
+    from django.test.simple import run_tests
+    run_tests(test_models, verbosity, extra_tests=extra_tests)
 
-    test_runner = TestRunner(verbosity=verbosity, interactive=interactive,
-        failfast=failfast)
-    failures = test_runner.run_tests(test_labels, extra_tests=extra_tests)
-
-    teardown(state)
-    return failures
-
-
-def bisect_tests(bisection_label, options, test_labels):
-    state = setup(int(options.verbosity), test_labels)
-
-    if not test_labels:
-        # Get the full list of test labels to use for bisection
-        from django.db.models.loading import get_apps
-        test_labels = [app.__name__.split('.')[-2] for app in get_apps()]
-
-    print('***** Bisecting test suite: %s' % ' '.join(test_labels))
-
-    # Make sure the bisection point isn't in the test list
-    # Also remove tests that need to be run in specific combinations
-    for label in [bisection_label, 'model_inheritance_same_model_name']:
-        try:
-            test_labels.remove(label)
-        except ValueError:
-            pass
-
-    subprocess_args = [
-        sys.executable, upath(__file__), '--settings=%s' % options.settings]
-    if options.failfast:
-        subprocess_args.append('--failfast')
-    if options.verbosity:
-        subprocess_args.append('--verbosity=%s' % options.verbosity)
-    if not options.interactive:
-        subprocess_args.append('--noinput')
-
-    iteration = 1
-    while len(test_labels) > 1:
-        midpoint = len(test_labels)/2
-        test_labels_a = test_labels[:midpoint] + [bisection_label]
-        test_labels_b = test_labels[midpoint:] + [bisection_label]
-        print('***** Pass %da: Running the first half of the test suite' % iteration)
-        print('***** Test labels: %s' % ' '.join(test_labels_a))
-        failures_a = subprocess.call(subprocess_args + test_labels_a)
-
-        print('***** Pass %db: Running the second half of the test suite' % iteration)
-        print('***** Test labels: %s' % ' '.join(test_labels_b))
-        print('')
-        failures_b = subprocess.call(subprocess_args + test_labels_b)
-
-        if failures_a and not failures_b:
-            print("***** Problem found in first half. Bisecting again...")
-            iteration = iteration + 1
-            test_labels = test_labels_a[:-1]
-        elif failures_b and not failures_a:
-            print("***** Problem found in second half. Bisecting again...")
-            iteration = iteration + 1
-            test_labels = test_labels_b[:-1]
-        elif failures_a and failures_b:
-            print("***** Multiple sources of failure found")
-            break
-        else:
-            print("***** No source of failure found... try pair execution (--pair)")
-            break
-
-    if len(test_labels) == 1:
-        print("***** Source of error: %s" % test_labels[0])
-    teardown(state)
-
-def paired_tests(paired_test, options, test_labels):
-    state = setup(int(options.verbosity), test_labels)
-
-    if not test_labels:
-        print("")
-        # Get the full list of test labels to use for bisection
-        from django.db.models.loading import get_apps
-        test_labels = [app.__name__.split('.')[-2] for app in get_apps()]
-
-    print('***** Trying paired execution')
-
-    # Make sure the constant member of the pair isn't in the test list
-    # Also remove tests that need to be run in specific combinations
-    for label in [paired_test, 'model_inheritance_same_model_name']:
-        try:
-            test_labels.remove(label)
-        except ValueError:
-            pass
-
-    subprocess_args = [
-        sys.executable, upath(__file__), '--settings=%s' % options.settings]
-    if options.failfast:
-        subprocess_args.append('--failfast')
-    if options.verbosity:
-        subprocess_args.append('--verbosity=%s' % options.verbosity)
-    if not options.interactive:
-        subprocess_args.append('--noinput')
-
-    for i, label in enumerate(test_labels):
-        print('***** %d of %d: Check test pairing with %s' % (
-              i + 1, len(test_labels), label))
-        failures = subprocess.call(subprocess_args + [label, paired_test])
-        if failures:
-            print('***** Found problem pair with %s' % label)
-            return
-
-    print('***** No problem pair found')
-    teardown(state)
+    # Restore the old settings.
+    settings.INSTALLED_APPS = old_installed_apps
+    settings.TESTS_DATABASE_NAME = old_test_database_name
+    settings.ROOT_URLCONF = old_root_urlconf
+    settings.TEMPLATE_DIRS = old_template_dirs
+    settings.USE_I18N = old_use_i18n
+    settings.MIDDLEWARE_CLASSES = old_middleware_classes
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    usage = "%prog [options] [module module module ...]"
+    usage = "%prog [options] [model model model ...]"
     parser = OptionParser(usage=usage)
-    parser.add_option(
-        '-v', '--verbosity', action='store', dest='verbosity', default='1',
-        type='choice', choices=['0', '1', '2', '3'],
-        help='Verbosity level; 0=minimal output, 1=normal output, 2=all '
-             'output')
-    parser.add_option(
-        '--noinput', action='store_false', dest='interactive', default=True,
-        help='Tells Django to NOT prompt the user for input of any kind.')
-    parser.add_option(
-        '--failfast', action='store_true', dest='failfast', default=False,
-        help='Tells Django to stop running the test suite after first failed '
-             'test.')
-    parser.add_option(
-        '--settings',
-        help='Python path to settings module, e.g. "myproject.settings". If '
-             'this isn\'t provided, the DJANGO_SETTINGS_MODULE environment '
-             'variable will be used.')
-    parser.add_option(
-        '--bisect', action='store', dest='bisect', default=None,
-        help='Bisect the test suite to discover a test that causes a test '
-             'failure when combined with the named test.')
-    parser.add_option(
-        '--pair', action='store', dest='pair', default=None,
-        help='Run the test suite in pairs with the named test to find problem '
-             'pairs.')
-    parser.add_option(
-        '--liveserver', action='store', dest='liveserver', default=None,
-        help='Overrides the default address where the live server (used with '
-             'LiveServerTestCase) is expected to run from. The default value '
-             'is localhost:8081.')
-    parser.add_option(
-        '--selenium', action='store_true', dest='selenium',
-        default=False,
-        help='Run the Selenium tests as well (if Selenium is installed)')
+    parser.add_option('-v','--verbosity', action='store', dest='verbosity', default='0',
+        type='choice', choices=['0', '1', '2'],
+        help='Verbosity level; 0=minimal output, 1=normal output, 2=all output')
+    parser.add_option('--settings',
+        help='Python path to settings module, e.g. "myproject.settings". If this isn\'t provided, the DJANGO_SETTINGS_MODULE environment variable will be used.')
     options, args = parser.parse_args()
     if options.settings:
         os.environ['DJANGO_SETTINGS_MODULE'] = options.settings
-    elif "DJANGO_SETTINGS_MODULE" not in os.environ:
-        parser.error("DJANGO_SETTINGS_MODULE is not set in the environment. "
-                      "Set it or use --settings.")
-    else:
-        options.settings = os.environ['DJANGO_SETTINGS_MODULE']
 
-    if options.liveserver is not None:
-        os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = options.liveserver
-
-    if options.selenium:
-        os.environ['DJANGO_SELENIUM_TESTS'] = '1'
-
-    if options.bisect:
-        bisect_tests(options.bisect, options, args)
-    elif options.pair:
-        paired_tests(options.pair, options, args)
-    else:
-        failures = django_tests(int(options.verbosity), options.interactive,
-                                options.failfast, args)
-        if failures:
-            sys.exit(bool(failures))
+    django_tests(int(options.verbosity), args)

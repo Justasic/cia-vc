@@ -6,32 +6,19 @@ and returns a dictionary to add to the context.
 These are referenced from the setting TEMPLATE_CONTEXT_PROCESSORS and used by
 RequestContext.
 """
-from __future__ import unicode_literals
 
 from django.conf import settings
-from django.middleware.csrf import get_token
-from django.utils import six
-from django.utils.encoding import smart_text
-from django.utils.functional import lazy
 
-
-def csrf(request):
+def auth(request):
     """
-    Context processor that provides a CSRF token, or the string 'NOTPROVIDED' if
-    it has not been provided by either a view decorator or the middleware
+    Returns context variables required by apps that use Django's authentication
+    system.
     """
-    def _get_val():
-        token = get_token(request)
-        if token is None:
-            # In order to be able to provide debugging info in the
-            # case of misconfiguration, we use a sentinel value
-            # instead of returning an empty dict.
-            return 'NOTPROVIDED'
-        else:
-            return smart_text(token)
-    _get_val = lazy(_get_val, six.text_type)
-
-    return {'csrf_token': _get_val() }
+    return {
+        'user': request.user,
+        'messages': request.user.get_and_delete_messages(),
+        'perms': PermWrapper(request.user),
+    }
 
 def debug(request):
     "Returns context variables helpful for debugging."
@@ -43,33 +30,40 @@ def debug(request):
     return context_extras
 
 def i18n(request):
-    from django.utils import translation
-
     context_extras = {}
     context_extras['LANGUAGES'] = settings.LANGUAGES
-    context_extras['LANGUAGE_CODE'] = translation.get_language()
+    if hasattr(request, 'LANGUAGE_CODE'):
+        context_extras['LANGUAGE_CODE'] = request.LANGUAGE_CODE
+    else:
+        context_extras['LANGUAGE_CODE'] = settings.LANGUAGE_CODE
+
+    from django.utils import translation
     context_extras['LANGUAGE_BIDI'] = translation.get_language_bidi()
 
     return context_extras
 
-def tz(request):
-    from django.utils import timezone
-
-    return {'TIME_ZONE': timezone.get_current_timezone_name()}
-
-def static(request):
-    """
-    Adds static-related context variables to the context.
-
-    """
-    return {'STATIC_URL': settings.STATIC_URL}
-
-def media(request):
-    """
-    Adds media-related context variables to the context.
-
-    """
-    return {'MEDIA_URL': settings.MEDIA_URL}
-
 def request(request):
     return {'request': request}
+
+# PermWrapper and PermLookupDict proxy the permissions system into objects that
+# the template system can understand.
+
+class PermLookupDict(object):
+    def __init__(self, user, module_name):
+        self.user, self.module_name = user, module_name
+
+    def __repr__(self):
+        return str(self.user.get_all_permissions())
+
+    def __getitem__(self, perm_name):
+        return self.user.has_perm("%s.%s" % (self.module_name, perm_name))
+
+    def __nonzero__(self):
+        return self.user.has_module_perms(self.module_name)
+
+class PermWrapper(object):
+    def __init__(self, user):
+        self.user = user
+
+    def __getitem__(self, module_name):
+        return PermLookupDict(self.user, module_name)

@@ -1,13 +1,7 @@
-from django.contrib.sites.models import Site
-from django.core import urlresolvers, paginator
-from django.core.exceptions import ImproperlyConfigured
-try:
-    from urllib.parse import urlencode
-    from urllib.request import urlopen
-except ImportError:     # Python 2
-    from urllib import urlencode, urlopen
+from django.core import urlresolvers
+import urllib
 
-PING_URL = "http://www.google.com/webmasters/tools/ping"
+PING_URL = "http://www.google.com/webmasters/sitemaps/ping"
 
 class SitemapNotFound(Exception):
     pass
@@ -35,19 +29,11 @@ def ping_google(sitemap_url=None, ping_url=PING_URL):
 
     from django.contrib.sites.models import Site
     current_site = Site.objects.get_current()
-    url = "http://%s%s" % (current_site.domain, sitemap_url)
-    params = urlencode({'sitemap':url})
-    urlopen("%s?%s" % (ping_url, params))
+    url = "%s%s" % (current_site.domain, sitemap_url)
+    params = urllib.urlencode({'sitemap':url})
+    urllib.urlopen("%s?%s" % (ping_url, params))
 
-class Sitemap(object):
-    # This limit is defined by Google. See the index documentation at
-    # http://sitemaps.org/protocol.php#index.
-    limit = 50000
-
-    # If protocol is None, the URLs in the sitemap will use the protocol
-    # with which the sitemap was requested.
-    protocol = None
-
+class Sitemap:
     def __get(self, name, obj, default=None):
         try:
             attr = getattr(self, name)
@@ -63,46 +49,26 @@ class Sitemap(object):
     def location(self, obj):
         return obj.get_absolute_url()
 
-    def _get_paginator(self):
-        return paginator.Paginator(self.items(), self.limit)
-    paginator = property(_get_paginator)
-
-    def get_urls(self, page=1, site=None, protocol=None):
-        # Determine protocol
-        if self.protocol is not None:
-            protocol = self.protocol
-        if protocol is None:
-            protocol = 'http'
-
-        # Determine domain
-        if site is None:
-            if Site._meta.installed:
-                try:
-                    site = Site.objects.get_current()
-                except Site.DoesNotExist:
-                    pass
-            if site is None:
-                raise ImproperlyConfigured("To use sitemaps, either enable the sites framework or pass a Site/RequestSite object in your view.")
-        domain = site.domain
-
+    def get_urls(self):
+        from django.contrib.sites.models import Site
+        current_site = Site.objects.get_current()
         urls = []
-        for item in self.paginator.page(page).object_list:
-            loc = "%s://%s%s" % (protocol, domain, self.__get('location', item))
-            priority = self.__get('priority', item, None)
+        for item in self.items():
+            loc = "http://%s%s" % (current_site.domain, self.__get('location', item))
             url_info = {
-                'item':       item,
                 'location':   loc,
                 'lastmod':    self.__get('lastmod', item, None),
                 'changefreq': self.__get('changefreq', item, None),
-                'priority':   str(priority is not None and priority or ''),
+                'priority':   self.__get('priority', item, None)
             }
             urls.append(url_info)
         return urls
 
 class FlatPageSitemap(Sitemap):
     def items(self):
+        from django.contrib.sites.models import Site
         current_site = Site.objects.get_current()
-        return current_site.flatpage_set.filter(registration_required=False)
+        return current_site.flatpage_set.all()
 
 class GenericSitemap(Sitemap):
     priority = None

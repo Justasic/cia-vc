@@ -1,31 +1,41 @@
-from django.contrib.syndication.views import Feed
-from django.contrib.sites.models import get_current_site
-from django.contrib import comments
-from django.utils.translation import ugettext as _
+from django.conf import settings
+from django.contrib.comments.models import Comment, FreeComment
+from django.contrib.syndication.feeds import Feed
+from django.contrib.sites.models import Site
 
-class LatestCommentFeed(Feed):
-    """Feed of latest comments on the current site."""
+class LatestFreeCommentsFeed(Feed):
+    "Feed of latest comments on the current site."
 
-    def __call__(self, request, *args, **kwargs):
-        self.site = get_current_site(request)
-        return super(LatestCommentFeed, self).__call__(request, *args, **kwargs)
+    comments_class = FreeComment
 
     def title(self):
-        return _("%(site_name)s comments") % dict(site_name=self.site.name)
+        if not hasattr(self, '_site'):
+            self._site = Site.objects.get_current()
+        return "%s comments" % self._site.name
 
     def link(self):
-        return "http://%s/" % (self.site.domain)
+        if not hasattr(self, '_site'):
+            self._site = Site.objects.get_current()
+        return "http://%s/" % (self._site.domain)
 
     def description(self):
-        return _("Latest comments on %(site_name)s") % dict(site_name=self.site.name)
+        if not hasattr(self, '_site'):
+            self._site = Site.objects.get_current()
+        return "Latest comments on %s" % self._site.name
 
     def items(self):
-        qs = comments.get_model().objects.filter(
-            site__pk = self.site.pk,
-            is_public = True,
-            is_removed = False,
-        )
-        return qs.order_by('-submit_date')[:40]
+        return self.comments_class.objects.filter(site__pk=settings.SITE_ID, is_public=True)[:40]
 
-    def item_pubdate(self, item):
-        return item.submit_date
+class LatestCommentsFeed(LatestFreeCommentsFeed):
+    """Feed of latest free comments on the current site"""
+
+    comments_class = Comment
+
+    def items(self):
+        qs = LatestFreeCommentsFeed.items(self)
+        qs = qs.filter(is_removed=False)
+        if settings.COMMENTS_BANNED_USERS_GROUP:
+            where = ['user_id NOT IN (SELECT user_id FROM auth_users_group WHERE group_id = %s)']
+            params = [settings.COMMENTS_BANNED_USERS_GROUP]
+            qs = qs.extra(where=where, params=params)
+        return qs

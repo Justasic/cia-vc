@@ -1,18 +1,8 @@
-import hashlib
-import logging
-import re
-import warnings
-
 from django.conf import settings
-from django.core.mail import mail_managers
-from django.core import urlresolvers
 from django import http
-from django.utils.http import urlquote
-from django.utils import six
-
-
-logger = logging.getLogger('django.request')
-
+from django.core.mail import mail_managers
+import md5
+import re
 
 class CommonMiddleware(object):
     """
@@ -21,14 +11,7 @@ class CommonMiddleware(object):
         - Forbids access to User-Agents in settings.DISALLOWED_USER_AGENTS
 
         - URL rewriting: Based on the APPEND_SLASH and PREPEND_WWW settings,
-          this middleware appends missing slashes and/or prepends missing
-          "www."s.
-
-            - If APPEND_SLASH is set and the initial URL doesn't end with a
-              slash, and it is not found in urlpatterns, a new URL is formed by
-              appending a slash at the end. If this new URL is found in
-              urlpatterns, then an HTTP-redirect is returned to this new URL;
-              otherwise the initial URL is processed as usual.
+          this middleware appends missing slashes and/or prepends missing "www."s.
 
         - ETags: If the USE_ETAGS setting is set, ETags will be calculated from
           the entire page content and Not Modified responses will be returned
@@ -42,126 +25,72 @@ class CommonMiddleware(object):
         """
 
         # Check for denied User-Agents
-        if 'HTTP_USER_AGENT' in request.META:
+        if request.META.has_key('HTTP_USER_AGENT'):
             for user_agent_regex in settings.DISALLOWED_USER_AGENTS:
                 if user_agent_regex.search(request.META['HTTP_USER_AGENT']):
-                    logger.warning('Forbidden (User agent): %s', request.path,
-                        extra={
-                            'status_code': 403,
-                            'request': request
-                        }
-                    )
                     return http.HttpResponseForbidden('<h1>Forbidden</h1>')
 
-        # Check for a redirect based on settings.APPEND_SLASH
-        # and settings.PREPEND_WWW
-        host = request.get_host()
+        # Check for a redirect based on settings.APPEND_SLASH and settings.PREPEND_WWW
+        host = http.get_host(request)
         old_url = [host, request.path]
         new_url = old_url[:]
-
-        if (settings.PREPEND_WWW and old_url[0] and
-                not old_url[0].startswith('www.')):
+        if settings.PREPEND_WWW and old_url[0] and not old_url[0].startswith('www.'):
             new_url[0] = 'www.' + old_url[0]
-
-        # Append a slash if APPEND_SLASH is set and the URL doesn't have a
-        # trailing slash and there is no pattern for the current path
-        if settings.APPEND_SLASH and (not old_url[1].endswith('/')):
-            urlconf = getattr(request, 'urlconf', None)
-            if (not urlresolvers.is_valid_path(request.path_info, urlconf) and
-                    urlresolvers.is_valid_path("%s/" % request.path_info, urlconf)):
-                new_url[1] = new_url[1] + '/'
-                if settings.DEBUG and request.method == 'POST':
-                    raise RuntimeError((""
-                    "You called this URL via POST, but the URL doesn't end "
-                    "in a slash and you have APPEND_SLASH set. Django can't "
-                    "redirect to the slash URL while maintaining POST data. "
-                    "Change your form to point to %s%s (note the trailing "
-                    "slash), or set APPEND_SLASH=False in your Django "
-                    "settings.") % (new_url[0], new_url[1]))
-
-        if new_url == old_url:
-            # No redirects required.
-            return
-        if new_url[0]:
-            newurl = "%s://%s%s" % (
-                request.is_secure() and 'https' or 'http',
-                new_url[0], urlquote(new_url[1]))
-        else:
-            newurl = urlquote(new_url[1])
-        if request.META.get('QUERY_STRING', ''):
-            if six.PY3:
-                newurl += '?' + request.META['QUERY_STRING']
+        # Append a slash if append_slash is set and the URL doesn't have a
+        # trailing slash or a file extension.
+        if settings.APPEND_SLASH and (old_url[1][-1] != '/') and ('.' not in old_url[1].split('/')[-1]):
+            new_url[1] = new_url[1] + '/'
+            if settings.DEBUG and request.method == 'POST':
+                raise RuntimeError, "You called this URL via POST, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining POST data. Change your form to point to %s%s (note the trailing slash), or set APPEND_SLASH=False in your Django settings." % (new_url[0], new_url[1])
+        if new_url != old_url:
+            # Redirect
+            if new_url[0]:
+                newurl = "%s://%s%s" % (request.is_secure() and 'https' or 'http', new_url[0], new_url[1])
             else:
-                # `query_string` is a bytestring. Appending it to the unicode
-                # string `newurl` will fail if it isn't ASCII-only. This isn't
-                # allowed; only broken software generates such query strings.
-                # Better drop the invalid query string than crash (#15152).
-                try:
-                    newurl += '?' + request.META['QUERY_STRING'].decode()
-                except UnicodeDecodeError:
-                    pass
-        return http.HttpResponsePermanentRedirect(newurl)
+                newurl = new_url[1]
+            if request.GET:
+                newurl += '?' + request.GET.urlencode()
+            return http.HttpResponsePermanentRedirect(newurl)
+
+        return None
 
     def process_response(self, request, response):
-        """
-        Calculate the ETag, if needed.
-        """
-        if settings.SEND_BROKEN_LINK_EMAILS:
-            warnings.warn("SEND_BROKEN_LINK_EMAILS is deprecated. "
-                "Use BrokenLinkEmailsMiddleware instead.",
-                PendingDeprecationWarning, stacklevel=2)
-            BrokenLinkEmailsMiddleware().process_response(request, response)
+        "Check for a flat page (for 404s) and calculate the Etag, if needed."
+        if response.status_code == 404:
+            if settings.SEND_BROKEN_LINK_EMAILS:
+                # If the referrer was from an internal link or a non-search-engine site,
+                # send a note to the managers.
+                domain = http.get_host(request)
+                referer = request.META.get('HTTP_REFERER', None)
+                is_internal = _is_internal_request(domain, referer)
+                path = request.get_full_path()
+                if referer and not _is_ignorable_404(path) and (is_internal or '?' not in referer):
+                    ua = request.META.get('HTTP_USER_AGENT', '<none>')
+                    mail_managers("Broken %slink on %s" % ((is_internal and 'INTERNAL ' or ''), domain),
+                        "Referrer: %s\nRequested URL: %s\nUser agent: %s\n" % (referer, request.get_full_path(), ua))
+                return response
 
+        # Use ETags, if requested.
         if settings.USE_ETAGS:
-            if response.has_header('ETag'):
-                etag = response['ETag']
-            elif response.streaming:
-                etag = None
+            etag = md5.new(response.content).hexdigest()
+            if request.META.get('HTTP_IF_NONE_MATCH') == etag:
+                response = http.HttpResponseNotModified()
             else:
-                etag = '"%s"' % hashlib.md5(response.content).hexdigest()
-            if etag is not None:
-                if (200 <= response.status_code < 300
-                    and request.META.get('HTTP_IF_NONE_MATCH') == etag):
-                    cookies = response.cookies
-                    response = http.HttpResponseNotModified()
-                    response.cookies = cookies
-                else:
-                    response['ETag'] = etag
+                response['ETag'] = etag
 
         return response
 
+def _is_ignorable_404(uri):
+    "Returns True if a 404 at the given URL *shouldn't* notify the site managers"
+    for start in settings.IGNORABLE_404_STARTS:
+        if uri.startswith(start):
+            return True
+    for end in settings.IGNORABLE_404_ENDS:
+        if uri.endswith(end):
+            return True
+    return False
 
-class BrokenLinkEmailsMiddleware(object):
-
-    def process_response(self, request, response):
-        """
-        Send broken link emails for relevant 404 NOT FOUND responses.
-        """
-        if response.status_code == 404 and not settings.DEBUG:
-            domain = request.get_host()
-            path = request.get_full_path()
-            referer = request.META.get('HTTP_REFERER', '')
-            is_internal = self.is_internal_request(domain, referer)
-            is_not_search_engine = '?' not in referer
-            is_ignorable = self.is_ignorable_404(path)
-            if referer and (is_internal or is_not_search_engine) and not is_ignorable:
-                ua = request.META.get('HTTP_USER_AGENT', '<none>')
-                ip = request.META.get('REMOTE_ADDR', '<none>')
-                mail_managers(
-                    "Broken %slink on %s" % (('INTERNAL ' if is_internal else ''), domain),
-                    "Referrer: %s\nRequested URL: %s\nUser agent: %s\nIP address: %s\n" % (referer, path, ua, ip),
-                    fail_silently=True)
-        return response
-
-    def is_internal_request(self, domain, referer):
-        """
-        Returns True if the referring URL is the same domain as the current request.
-        """
-        # Different subdomains are treated as different domains.
-        return re.match("^https?://%s/" % re.escape(domain), referer)
-
-    def is_ignorable_404(self, uri):
-        """
-        Returns True if a 404 at the given URL *shouldn't* notify the site managers.
-        """
-        return any(pattern.search(uri) for pattern in settings.IGNORABLE_404_URLS)
+def _is_internal_request(domain, referer):
+    "Return true if the referring URL is the same domain as the current request"
+    # Different subdomains are treated as different domains.
+    return referer is not None and re.match("^https?://%s/" % re.escape(domain), referer)

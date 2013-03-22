@@ -2,13 +2,11 @@
 Module for abstract serializer/unserializer base classes.
 """
 
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 from django.db import models
-from django.utils.encoding import smart_text
-from django.utils import six
-
-class SerializerDoesNotExist(KeyError):
-    """The requested serializer was not found."""
-    pass
 
 class SerializationError(Exception):
     """Something bad happened during serialization."""
@@ -23,44 +21,49 @@ class Serializer(object):
     Abstract serializer base class.
     """
 
-    # Indicates if the implemented serializer is only available for
-    # internal Django use.
-    internal_use_only = False
-
     def serialize(self, queryset, **options):
         """
         Serialize a queryset.
         """
         self.options = options
 
-        self.stream = options.pop("stream", six.StringIO())
-        self.selected_fields = options.pop("fields", None)
-        self.use_natural_keys = options.pop("use_natural_keys", False)
+        self.stream = options.get("stream", StringIO())
+        self.selected_fields = options.get("fields")
 
         self.start_serialization()
-        self.first = True
         for obj in queryset:
             self.start_object(obj)
-            # Use the concrete parent class' _meta instead of the object's _meta
-            # This is to avoid local_fields problems for proxy models. Refs #17717.
-            concrete_model = obj._meta.concrete_model
-            for field in concrete_model._meta.local_fields:
-                if field.serialize:
-                    if field.rel is None:
-                        if self.selected_fields is None or field.attname in self.selected_fields:
-                            self.handle_field(obj, field)
-                    else:
-                        if self.selected_fields is None or field.attname[:-3] in self.selected_fields:
-                            self.handle_fk_field(obj, field)
-            for field in concrete_model._meta.many_to_many:
-                if field.serialize:
+            for field in obj._meta.fields:
+                if field is obj._meta.pk:
+                    continue
+                elif field.rel is None:
                     if self.selected_fields is None or field.attname in self.selected_fields:
-                        self.handle_m2m_field(obj, field)
+                        self.handle_field(obj, field)
+                else:
+                    if self.selected_fields is None or field.attname[:-3] in self.selected_fields:
+                        self.handle_fk_field(obj, field)
+            for field in obj._meta.many_to_many:
+                if self.selected_fields is None or field.attname in self.selected_fields:
+                    self.handle_m2m_field(obj, field)
             self.end_object(obj)
-            if self.first:
-                self.first = False
         self.end_serialization()
         return self.getvalue()
+
+    def get_string_value(self, obj, field):
+        """
+        Convert a field's value to a string.
+        """
+        if isinstance(field, models.DateTimeField):
+            value = getattr(obj, field.name)
+            if value is None:
+                value = ''
+            else:
+                value = value.strftime("%Y-%m-%d %H:%M:%S")
+        elif isinstance(field, models.FileField):
+            value = getattr(obj, "get_%s_url" % field.name, lambda: None)()
+        else:
+            value = field.flatten_data(follow=None, obj=obj).get(field.name, "")
+        return str(value)
 
     def start_serialization(self):
         """
@@ -106,13 +109,11 @@ class Serializer(object):
 
     def getvalue(self):
         """
-        Return the fully serialized queryset (or None if the output stream is
-        not seekable).
+        Return the fully serialized queryset.
         """
-        if callable(getattr(self.stream, 'getvalue', None)):
-            return self.stream.getvalue()
+        return self.stream.getvalue()
 
-class Deserializer(six.Iterator):
+class Deserializer(object):
     """
     Abstract base deserializer class.
     """
@@ -122,8 +123,8 @@ class Deserializer(six.Iterator):
         Init this serializer given a stream or a string
         """
         self.options = options
-        if isinstance(stream_or_string, six.string_types):
-            self.stream = six.StringIO(stream_or_string)
+        if isinstance(stream_or_string, basestring):
+            self.stream = StringIO(stream_or_string)
         else:
             self.stream = stream_or_string
         # hack to make sure that the models have all been loaded before
@@ -134,13 +135,13 @@ class Deserializer(six.Iterator):
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def next(self):
         """Iteration iterface -- return the next item in the stream"""
         raise NotImplementedError
 
 class DeserializedObject(object):
     """
-    A deserialized model.
+    A deserialzed model.
 
     Basically a container for holding the pre-saved deserialized data along
     with the many-to-many data saved with the object.
@@ -155,16 +156,10 @@ class DeserializedObject(object):
         self.m2m_data = m2m_data
 
     def __repr__(self):
-        return "<DeserializedObject: %s.%s(pk=%s)>" % (
-            self.object._meta.app_label, self.object._meta.object_name, self.object.pk)
+        return "<DeserializedObject: %s>" % str(self.object)
 
-    def save(self, save_m2m=True, using=None):
-        # Call save on the Model baseclass directly. This bypasses any
-        # model-defined save. The save is also forced to be raw.
-        # This ensures that the data that is deserialized is literally
-        # what came from the file, not post-processed by pre_save/save
-        # methods.
-        models.Model.save_base(self.object, using=using, raw=True)
+    def save(self, save_m2m=True):
+        self.object.save()
         if self.m2m_data and save_m2m:
             for accessor_name, object_list in self.m2m_data.items():
                 setattr(self.object, accessor_name, object_list)

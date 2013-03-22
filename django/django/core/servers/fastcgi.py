@@ -1,5 +1,5 @@
 """
-FastCGI (or SCGI, or AJP1.3 ...) server that implements the WSGI protocol.
+FastCGI server that implements the WSGI protocol.
 
 Uses the flup python package: http://www.saddi.com/software/flup/
 
@@ -12,15 +12,52 @@ Run with the extra option "help" for a list of additional options you can
 pass to this server.
 """
 
-import os
-import sys
-from django.utils import importlib
+import sys, os
 
 __version__ = "0.1"
 __all__ = ["runfastcgi"]
 
+FASTCGI_HELP = r"""runfcgi:
+  Run this project as a fastcgi application. To do this, the
+  flup package from http://www.saddi.com/software/flup/ is
+  required.
+
+Usage:
+   django-admin.py runfcgi --settings=yourproject.settings [fcgi settings]
+   manage.py runfcgi [fcgi settings]
+
+Optional Fcgi settings: (setting=value)
+  host=HOSTNAME        hostname to listen on..
+  port=PORTNUM         port to listen on.
+  socket=FILE          UNIX socket to listen on.
+  method=IMPL          prefork or threaded (default prefork)
+  maxrequests=NUMBER   number of requests a child handles before it is 
+                       killed and a new child is forked (0 = no limit).
+  maxspare=NUMBER      max number of spare processes / threads
+  minspare=NUMBER      min number of spare processes / threads.
+  maxchildren=NUMBER   hard limit number of processes / threads
+  daemonize=BOOL       whether to detach from terminal.
+  pidfile=FILE         write the spawned process-id to this file.
+  workdir=DIRECTORY    change to this directory when daemonizing
+
+Examples:
+  Run a "standard" fastcgi process on a file-descriptor
+  (for webservers which spawn your processes for you)
+    $ manage.py runfcgi method=threaded
+
+  Run a fastcgi server on a TCP host/port
+    $ manage.py runfcgi method=prefork host=127.0.0.1 port=8025
+
+  Run a fastcgi server on a UNIX domain socket (posix platforms only)
+    $ manage.py runfcgi method=prefork socket=/tmp/fcgi.sock
+
+  Run a fastCGI as a daemon and write the spawned PID in a file
+    $ manage.py runfcgi socket=/tmp/fcgi.sock method=prefork \
+        daemonize=true pidfile=/var/run/django-fcgi.pid
+
+"""
+
 FASTCGI_OPTIONS = {
-    'protocol': 'fcgi',
     'host': None,
     'port': None,
     'socket': None,
@@ -32,59 +69,12 @@ FASTCGI_OPTIONS = {
     'minspare': 2,
     'maxchildren': 50,
     'maxrequests': 0,
-    'debug': None,
-    'outlog': None,
-    'errlog': None,
-    'umask': None,
 }
 
-FASTCGI_HELP = r"""
-  Run this project as a fastcgi (or some other protocol supported
-  by flup) application. To do this, the flup package from
-  http://www.saddi.com/software/flup/ is required.
-
-   runfcgi [options] [fcgi settings]
-
-Optional Fcgi settings: (setting=value)
-  protocol=PROTOCOL    fcgi, scgi, ajp, ... (default %(protocol)s)
-  host=HOSTNAME        hostname to listen on.
-  port=PORTNUM         port to listen on.
-  socket=FILE          UNIX socket to listen on.
-  method=IMPL          prefork or threaded (default %(method)s).
-  maxrequests=NUMBER   number of requests a child handles before it is
-                       killed and a new child is forked (0 = no limit).
-  maxspare=NUMBER      max number of spare processes / threads (default %(maxspare)s).
-  minspare=NUMBER      min number of spare processes / threads (default %(minspare)s).
-  maxchildren=NUMBER   hard limit number of processes / threads (default %(maxchildren)s).
-  daemonize=BOOL       whether to detach from terminal.
-  pidfile=FILE         write the spawned process-id to this file.
-  workdir=DIRECTORY    change to this directory when daemonizing (default %(workdir)s).
-  debug=BOOL           set to true to enable flup tracebacks.
-  outlog=FILE          write stdout to this file.
-  errlog=FILE          write stderr to this file.
-  umask=UMASK          umask to use when daemonizing, in octal notation (default 022).
-
-Examples:
-  Run a "standard" fastcgi process on a file-descriptor
-  (for Web servers which spawn your processes for you)
-    $ manage.py runfcgi method=threaded
-
-  Run a scgi server on a TCP host/port
-    $ manage.py runfcgi protocol=scgi method=prefork host=127.0.0.1 port=8025
-
-  Run a fastcgi server on a UNIX domain socket (posix platforms only)
-    $ manage.py runfcgi method=prefork socket=/tmp/fcgi.sock
-
-  Run a fastCGI as a daemon and write the spawned PID in a file
-    $ manage.py runfcgi socket=/tmp/fcgi.sock method=prefork \
-        daemonize=true pidfile=/var/run/django-fcgi.pid
-
-""" % FASTCGI_OPTIONS
-
 def fastcgi_help(message=None):
-    print(FASTCGI_HELP)
+    print FASTCGI_HELP
     if message:
-        print(message)
+        print message
     return False
 
 def runfastcgi(argset=[], **kwargs):
@@ -102,45 +92,36 @@ def runfastcgi(argset=[], **kwargs):
 
     try:
         import flup
-    except ImportError as e:
-        sys.stderr.write("ERROR: %s\n" % e)
-        sys.stderr.write("  Unable to load the flup package.  In order to run django\n")
-        sys.stderr.write("  as a FastCGI application, you will need to get flup from\n")
-        sys.stderr.write("  http://www.saddi.com/software/flup/   If you've already\n")
-        sys.stderr.write("  installed flup, then make sure you have it in your PYTHONPATH.\n")
+    except ImportError, e:
+        print >> sys.stderr, "ERROR: %s" % e
+        print >> sys.stderr, "  Unable to load the flup package.  In order to run django"
+        print >> sys.stderr, "  as a FastCGI application, you will need to get flup from"
+        print >> sys.stderr, "  http://www.saddi.com/software/flup/   If you've already"
+        print >> sys.stderr, "  installed flup, then make sure you have it in your PYTHONPATH."
         return False
 
-    flup_module = 'server.' + options['protocol']
-
     if options['method'] in ('prefork', 'fork'):
+        from flup.server.fcgi_fork import WSGIServer
         wsgi_opts = {
             'maxSpare': int(options["maxspare"]),
             'minSpare': int(options["minspare"]),
             'maxChildren': int(options["maxchildren"]),
-            'maxRequests': int(options["maxrequests"]),
+            'maxRequests': int(options["maxrequests"]), 
         }
-        flup_module += '_fork'
     elif options['method'] in ('thread', 'threaded'):
+        from flup.server.fcgi import WSGIServer
         wsgi_opts = {
             'maxSpare': int(options["maxspare"]),
             'minSpare': int(options["minspare"]),
             'maxThreads': int(options["maxchildren"]),
         }
     else:
-        return fastcgi_help("ERROR: Implementation must be one of prefork or "
-                            "thread.")
+        return fastcgi_help("ERROR: Implementation must be one of prefork or thread.")
 
-    wsgi_opts['debug'] = options['debug'] is not None
-
-    try:
-        module = importlib.import_module('.%s' % flup_module, 'flup')
-        WSGIServer = module.WSGIServer
-    except Exception:
-        print("Can't import flup." + flup_module)
-        return False
+    wsgi_opts['debug'] = False # Turn off flup tracebacks
 
     # Prep up and go
-    from django.core.servers.basehttp import get_internal_wsgi_application
+    from django.core.handlers.wsgi import WSGIHandler
 
     if options["host"] and options["port"] and not options["socket"]:
         wsgi_opts['bindAddress'] = (options["host"], int(options["port"]))
@@ -160,26 +141,18 @@ def runfastcgi(argset=[], **kwargs):
         elif options["daemonize"].lower() in ('false', 'no', 'f'):
             daemonize = False
         else:
-            return fastcgi_help("ERROR: Invalid option for daemonize "
-                                "parameter.")
-
-    daemon_kwargs = {}
-    if options['outlog']:
-        daemon_kwargs['out_log'] = options['outlog']
-    if options['errlog']:
-        daemon_kwargs['err_log'] = options['errlog']
-    if options['umask']:
-        daemon_kwargs['umask'] = int(options['umask'], 8)
+            return fastcgi_help("ERROR: Invalid option for daemonize parameter.")
 
     if daemonize:
         from django.utils.daemonize import become_daemon
-        become_daemon(our_home_dir=options["workdir"], **daemon_kwargs)
+        become_daemon(our_home_dir=options["workdir"])
 
     if options["pidfile"]:
-        with open(options["pidfile"], "w") as fp:
-            fp.write("%d\n" % os.getpid())
+        fp = open(options["pidfile"], "w")
+        fp.write("%d\n" % os.getpid())
+        fp.close()
 
-    WSGIServer(get_internal_wsgi_application(), **wsgi_opts).run()
+    WSGIServer(WSGIHandler(), **wsgi_opts).run()
 
 if __name__ == '__main__':
     runfastcgi(sys.argv[1:])

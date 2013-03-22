@@ -1,79 +1,42 @@
-from __future__ import unicode_literals
-
 import datetime
-import decimal
-import hashlib
-import logging
 from time import time
 
-from django.conf import settings
-from django.utils.encoding import force_bytes
-from django.utils.timezone import utc
-
-
-logger = logging.getLogger('django.db.backends')
-
-
-class CursorWrapper(object):
+class CursorDebugWrapper(object):
     def __init__(self, cursor, db):
         self.cursor = cursor
         self.db = db
 
-    def __getattr__(self, attr):
-        if attr in ('execute', 'executemany', 'callproc'):
-            self.db.set_dirty()
-        cursor_attr = getattr(self.cursor, attr)
-        if attr in ('callproc', 'close', 'execute', 'executemany',
-                    'fetchone', 'fetchmany', 'fetchall', 'nextset'):
-            return self.db.wrap_database_errors()(cursor_attr)
-        else:
-            return cursor_attr
-
-    def __iter__(self):
-        return iter(self.cursor)
-
-
-class CursorDebugWrapper(CursorWrapper):
-
     def execute(self, sql, params=()):
-        self.db.set_dirty()
         start = time()
         try:
-            with self.db.wrap_database_errors():
-                return self.cursor.execute(sql, params)
+            return self.cursor.execute(sql, params)
         finally:
             stop = time()
-            duration = stop - start
-            sql = self.db.ops.last_executed_query(self.cursor, sql, params)
+            # If params was a list, convert it to a tuple, because string
+            # formatting with '%' only works with tuples or dicts.
+            if not isinstance(params, (tuple, dict)):
+                params = tuple(params)
             self.db.queries.append({
-                'sql': sql,
-                'time': "%.3f" % duration,
+                'sql': sql % params,
+                'time': "%.3f" % (stop - start),
             })
-            logger.debug('(%.3f) %s; args=%s' % (duration, sql, params),
-                extra={'duration': duration, 'sql': sql, 'params': params}
-            )
 
     def executemany(self, sql, param_list):
-        self.db.set_dirty()
         start = time()
         try:
-            with self.db.wrap_database_errors():
-                return self.cursor.executemany(sql, param_list)
+            return self.cursor.executemany(sql, param_list)
         finally:
             stop = time()
-            duration = stop - start
-            try:
-                times = len(param_list)
-            except TypeError:           # param_list could be an iterator
-                times = '?'
             self.db.queries.append({
-                'sql': '%s times: %s' % (times, sql),
-                'time': "%.3f" % duration,
+                'sql': 'MANY: ' + sql + ' ' + str(tuple(param_list)),
+                'time': "%.3f" % (stop - start),
             })
-            logger.debug('(%.3f) %s; args=%s' % (duration, sql, param_list),
-                extra={'duration': duration, 'sql': sql, 'params': param_list}
-            )
 
+    def __getattr__(self, attr):
+        if self.__dict__.has_key(attr):
+            return self.__dict__[attr]
+        else:
+            return getattr(self.cursor, attr)
 
 ###############################################
 # Converters from database (string) to Python #
@@ -114,42 +77,44 @@ def typecast_timestamp(s): # does NOT store time zone information
         seconds, microseconds = seconds.split('.')
     else:
         microseconds = '0'
-    tzinfo = utc if settings.USE_TZ else None
     return datetime.datetime(int(dates[0]), int(dates[1]), int(dates[2]),
-        int(times[0]), int(times[1]), int(seconds),
-        int((microseconds + '000000')[:6]), tzinfo)
+        int(times[0]), int(times[1]), int(seconds), int(float('.'+microseconds) * 1000000))
 
-def typecast_decimal(s):
-    if s is None or s == '':
-        return None
-    return decimal.Decimal(s)
+def typecast_boolean(s):
+    if s is None: return None
+    if not s: return False
+    return str(s)[0].lower() == 't'
 
 ###############################################
 # Converters from Python to database (string) #
 ###############################################
 
-def rev_typecast_decimal(d):
-    if d is None:
+def rev_typecast_boolean(obj, d):
+    return obj and '1' or '0'
+
+##################################################################################
+# Helper functions for dictfetch* for databases that don't natively support them #
+##################################################################################
+
+def _dict_helper(desc, row):
+    "Returns a dictionary for the given cursor.description and result row."
+    return dict(zip([col[0] for col in desc], row))
+
+def dictfetchone(cursor):
+    "Returns a row from the cursor as a dict"
+    row = cursor.fetchone()
+    if not row:
         return None
-    return str(d)
+    return _dict_helper(cursor.description, row)
 
-def truncate_name(name, length=None, hash_len=4):
-    """Shortens a string to a repeatable mangled version with the given length.
-    """
-    if length is None or len(name) <= length:
-        return name
+def dictfetchmany(cursor, number):
+    "Returns a certain number of rows from a cursor as a dict"
+    desc = cursor.description
+    for row in cursor.fetchmany(number):
+        yield _dict_helper(desc, row)
 
-    hsh = hashlib.md5(force_bytes(name)).hexdigest()[:hash_len]
-    return '%s%s' % (name[:length-hash_len], hsh)
-
-def format_number(value, max_digits, decimal_places):
-    """
-    Formats a number into a string with the requisite number of digits and
-    decimal places.
-    """
-    if isinstance(value, decimal.Decimal):
-        context = decimal.getcontext().copy()
-        context.prec = max_digits
-        return '%s' % str(value.quantize(decimal.Decimal(".1") ** decimal_places, context=context))
-    else:
-        return "%.*f" % (decimal_places, value)
+def dictfetchall(cursor):
+    "Returns all rows from a cursor as a dict"
+    desc = cursor.description
+    for row in cursor.fetchall():
+        yield _dict_helper(desc, row)

@@ -1,70 +1,30 @@
-import warnings
-
-from django.contrib.sites.models import get_current_site
+from django.http import HttpResponse, Http404
+from django.template import loader
+from django.contrib.sites.models import Site
 from django.core import urlresolvers
-from django.core.paginator import EmptyPage, PageNotAnInteger
-from django.http import Http404
-from django.template.response import TemplateResponse
-from django.utils import six
 
-def index(request, sitemaps,
-          template_name='sitemap_index.xml', content_type='application/xml',
-          sitemap_url_name='django.contrib.sitemaps.views.sitemap',
-          mimetype=None):
-
-    if mimetype:
-        warnings.warn("The mimetype keyword argument is deprecated, use "
-            "content_type instead", DeprecationWarning, stacklevel=2)
-        content_type = mimetype
-
-    req_protocol = 'https' if request.is_secure() else 'http'
-    req_site = get_current_site(request)
-
+def index(request, sitemaps):
+    current_site = Site.objects.get_current()
     sites = []
-    for section, site in sitemaps.items():
-        if callable(site):
-            site = site()
-        protocol = req_protocol if site.protocol is None else site.protocol
-        sitemap_url = urlresolvers.reverse(
-                sitemap_url_name, kwargs={'section': section})
-        absolute_url = '%s://%s%s' % (protocol, req_site.domain, sitemap_url)
-        sites.append(absolute_url)
-        for page in range(2, site.paginator.num_pages + 1):
-            sites.append('%s?p=%s' % (absolute_url, page))
+    protocol = request.is_secure() and 'https' or 'http'
+    for section in sitemaps.keys():
+        sitemap_url = urlresolvers.reverse('django.contrib.sitemaps.views.sitemap', kwargs={'section': section})
+        sites.append('%s://%s%s' % (protocol, current_site.domain, sitemap_url))
+    xml = loader.render_to_string('sitemap_index.xml', {'sitemaps': sites})
+    return HttpResponse(xml, mimetype='application/xml')
 
-    return TemplateResponse(request, template_name, {'sitemaps': sites},
-                            content_type=content_type)
-
-def sitemap(request, sitemaps, section=None,
-            template_name='sitemap.xml', content_type='application/xml',
-            mimetype=None):
-
-    if mimetype:
-        warnings.warn("The mimetype keyword argument is deprecated, use "
-            "content_type instead", DeprecationWarning, stacklevel=2)
-        content_type = mimetype
-
-    req_protocol = 'https' if request.is_secure() else 'http'
-    req_site = get_current_site(request)
-
+def sitemap(request, sitemaps, section=None):
+    maps, urls = [], []
     if section is not None:
-        if section not in sitemaps:
+        if not sitemaps.has_key(section):
             raise Http404("No sitemap available for section: %r" % section)
-        maps = [sitemaps[section]]
+        maps.append(sitemaps[section])
     else:
-        maps = list(six.itervalues(sitemaps))
-    page = request.GET.get("p", 1)
-
-    urls = []
+        maps = sitemaps.values()
     for site in maps:
-        try:
-            if callable(site):
-                site = site()
-            urls.extend(site.get_urls(page=page, site=req_site,
-                                      protocol=req_protocol))
-        except EmptyPage:
-            raise Http404("Page %s empty" % page)
-        except PageNotAnInteger:
-            raise Http404("No page '%s'" % page)
-    return TemplateResponse(request, template_name, {'urlset': urls},
-                            content_type=content_type)
+        if callable(site):
+            urls.extend(site().get_urls())
+        else:
+            urls.extend(site.get_urls())
+    xml = loader.render_to_string('sitemap.xml', {'urlset': urls})
+    return HttpResponse(xml, mimetype='application/xml')

@@ -1,12 +1,56 @@
 """
 Formtools Preview application.
+
+This is an abstraction of the following workflow:
+
+    "Display an HTML form, force a preview, then do something with the submission."
+
+Given a django.newforms.Form object that you define, this takes care of the
+following:
+
+    * Displays the form as HTML on a Web page.
+    * Validates the form data once it's submitted via POST.
+        * If it's valid, displays a preview page.
+        * If it's not valid, redisplays the form with error messages.
+    * At the preview page, if the preview confirmation button is pressed, calls
+      a hook that you define -- a done() method.
+
+The framework enforces the required preview by passing a shared-secret hash to
+the preview page. If somebody tweaks the form parameters on the preview page,
+the form submission will fail the hash comparison test.
+
+Usage
+=====
+
+Subclass FormPreview and define a done() method:
+
+    def done(self, request, clean_data):
+        # ...
+
+This method takes an HttpRequest object and a dictionary of the form data after
+it has been validated and cleaned. It should return an HttpResponseRedirect.
+
+Then, just instantiate your FormPreview subclass by passing it a Form class,
+and pass that to your URLconf, like so:
+
+    (r'^post/$', MyFormPreview(MyForm)),
+
+The FormPreview class has a few other hooks. See the docstrings in the source
+code below.
+
+The framework also uses two templates: 'formtools/preview.html' and
+'formtools/form.html'. You can override these by setting 'preview_template' and
+'form_template' attributes on your FormPreview subclass. See
+django/contrib/formtools/templates for the default templates.
 """
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import Http404
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
-from django.utils.crypto import constant_time_compare
-from django.contrib.formtools.utils import form_hmac
+import cPickle as pickle
+import md5
 
 AUTO_ID = 'formtools_%s' # Each form here uses this as its auto_id parameter.
 
@@ -39,7 +83,7 @@ class FormPreview(object):
         """
         while 1:
             try:
-                f = self.form.base_fields[name]
+                f = self.form.fields[name]
             except KeyError:
                 break # This field name isn't being used by the form.
             name += '_'
@@ -47,60 +91,35 @@ class FormPreview(object):
 
     def preview_get(self, request):
         "Displays the form"
-        f = self.form(auto_id=self.get_auto_id(), initial=self.get_initial(request))
+        f = self.form(auto_id=AUTO_ID)
         return render_to_response(self.form_template,
-            self.get_context(request, f),
+            {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state},
             context_instance=RequestContext(request))
 
     def preview_post(self, request):
         "Validates the POST data. If valid, displays the preview page. Else, redisplays form."
-        f = self.form(request.POST, auto_id=self.get_auto_id())
-        context = self.get_context(request, f)
+        f = self.form(request.POST, auto_id=AUTO_ID)
+        context = {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state}
         if f.is_valid():
-            self.process_preview(request, f, context)
             context['hash_field'] = self.unused_name('hash')
             context['hash_value'] = self.security_hash(request, f)
             return render_to_response(self.preview_template, context, context_instance=RequestContext(request))
         else:
             return render_to_response(self.form_template, context, context_instance=RequestContext(request))
 
-    def _check_security_hash(self, token, request, form):
-        expected = self.security_hash(request, form)
-        return constant_time_compare(token, expected)
-
     def post_post(self, request):
         "Validates the POST data. If valid, calls done(). Else, redisplays form."
-        f = self.form(request.POST, auto_id=self.get_auto_id())
+        f = self.form(request.POST, auto_id=AUTO_ID)
         if f.is_valid():
-            if not self._check_security_hash(request.POST.get(self.unused_name('hash'), ''),
-                                             request, f):
+            if self.security_hash(request, f) != request.POST.get(self.unused_name('hash')):
                 return self.failed_hash(request) # Security hash failed.
-            return self.done(request, f.cleaned_data)
+            return self.done(request, f.clean_data)
         else:
             return render_to_response(self.form_template,
-                self.get_context(request, f),
+                {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state},
                 context_instance=RequestContext(request))
 
     # METHODS SUBCLASSES MIGHT OVERRIDE IF APPROPRIATE ########################
-
-    def get_auto_id(self):
-        """
-        Hook to override the ``auto_id`` kwarg for the form. Needed when
-        rendering two form previews in the same template.
-        """
-        return AUTO_ID
-
-    def get_initial(self, request):
-        """
-        Takes a request argument and returns a dictionary to pass to the form's
-        ``initial`` kwarg when the form is being created from an HTTP get.
-        """
-        return {}
-
-    def get_context(self, request, form):
-        "Context for template rendering."
-        return {'form': form, 'stage_field': self.unused_name('stage'), 'state': self.state}
-
 
     def parse_params(self, *args, **kwargs):
         """
@@ -118,21 +137,22 @@ class FormPreview(object):
         """
         pass
 
-    def process_preview(self, request, form, context):
-        """
-        Given a validated form, performs any extra processing before displaying
-        the preview page, and saves any extra data in context.
-        """
-        pass
-
     def security_hash(self, request, form):
         """
-        Calculates the security hash for the given HttpRequest and Form instances.
+        Calculates the security hash for the given Form instance.
 
-        Subclasses may want to take into account request-specific information,
+        This creates a list of the form field names/values in a deterministic
+        order, pickles the result with the SECRET_KEY setting and takes an md5
+        hash of that.
+
+        Subclasses may want to take into account request-specific information
         such as the IP address.
         """
-        return form_hmac(form)
+        data = [(bf.name, bf.data) for bf in form] + [settings.SECRET_KEY]
+        # Use HIGHEST_PROTOCOL because it's the most efficient. It requires
+        # Python 2.3, but Django requires 2.3 anyway, so that's OK.
+        pickled = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
+        return md5.new(pickled).hexdigest()
 
     def failed_hash(self, request):
         "Returns an HttpResponse in the case of an invalid security hash."
@@ -140,9 +160,6 @@ class FormPreview(object):
 
     # METHODS SUBCLASSES MUST OVERRIDE ########################################
 
-    def done(self, request, cleaned_data):
-        """
-        Does something with the cleaned_data and returns an
-        HttpResponseRedirect.
-        """
+    def done(self, request, clean_data):
+        "Does something with the clean_data and returns an HttpResponseRedirect."
         raise NotImplementedError('You must define a done() method on your %s subclass.' % self.__class__.__name__)

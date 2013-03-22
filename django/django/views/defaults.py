@@ -1,73 +1,89 @@
-import warnings
-
+from django.core.exceptions import ObjectDoesNotExist
+from django.template import Context, RequestContext, loader
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.sites.models import Site
 from django import http
-from django.template import (Context, RequestContext,
-                             loader, Template, TemplateDoesNotExist)
-from django.views.decorators.csrf import requires_csrf_token
 
+def shortcut(request, content_type_id, object_id):
+    "Redirect to an object's page based on a content-type ID and an object ID."
+    # Look up the object, making sure it's got a get_absolute_url() function.
+    try:
+        content_type = ContentType.objects.get(pk=content_type_id)
+        obj = content_type.get_object_for_this_type(pk=object_id)
+    except ObjectDoesNotExist:
+        raise http.Http404, "Content type %s object %s doesn't exist" % (content_type_id, object_id)
+    try:
+        absurl = obj.get_absolute_url()
+    except AttributeError:
+        raise http.Http404, "%s objects don't have get_absolute_url() methods" % content_type.name
 
-# This can be called when CsrfViewMiddleware.process_view has not run,
-# therefore need @requires_csrf_token in case the template needs
-# {% csrf_token %}.
-@requires_csrf_token
+    # Try to figure out the object's domain, so we can do a cross-site redirect
+    # if necessary.
+
+    # If the object actually defines a domain, we're done.
+    if absurl.startswith('http://'):
+        return http.HttpResponseRedirect(absurl)
+
+    object_domain = None
+
+    # Otherwise, we need to introspect the object's relationships for a
+    # relation to the Site object
+    opts = obj._meta
+
+    # First, look for an many-to-many relationship to sites
+    for field in opts.many_to_many:
+        if field.rel.to is Site:
+            try:
+                object_domain = getattr(obj, field.name).all()[0].domain
+            except IndexError:
+                pass
+            if object_domain is not None:
+                break
+
+    # Next look for a many-to-one relationship to site
+    if object_domain is None:
+        for field in obj._meta.fields:
+            if field.rel and field.rel.to is Site:
+                try:
+                    object_domain = getattr(obj, field.name).domain
+                except Site.DoesNotExist:
+                    pass
+                if object_domain is not None:
+                    break
+
+    # Fall back to the current site (if possible)
+    if object_domain is None:
+        try:
+            object_domain = Site.objects.get_current().domain
+        except Site.DoesNotExist:
+            pass
+
+    # If all that malarkey found an object domain, use it; otherwise fall back
+    # to whatever get_absolute_url() returned.
+    if object_domain is not None:
+        return http.HttpResponseRedirect('http://%s%s' % (object_domain, absurl))
+    else:
+        return http.HttpResponseRedirect(absurl)
+
 def page_not_found(request, template_name='404.html'):
     """
-    Default 404 handler.
+    Default 404 handler, which looks for the requested URL in the redirects
+    table, redirects if found, and displays 404 page if not redirected.
 
-    Templates: :template:`404.html`
+    Templates: `404.html`
     Context:
         request_path
             The path of the requested URL (e.g., '/app/pages/bad_page/')
     """
-    try:
-        template = loader.get_template(template_name)
-    except TemplateDoesNotExist:
-        template = Template(
-            '<h1>Not Found</h1>'
-            '<p>The requested URL {{ request_path }} was not found on this server.</p>')
-    return http.HttpResponseNotFound(template.render(RequestContext(request, {'request_path': request.path})))
+    t = loader.get_template(template_name)
+    return http.HttpResponseNotFound(t.render(RequestContext(request, {'request_path': request.path})))
 
-
-@requires_csrf_token
 def server_error(request, template_name='500.html'):
     """
     500 error handler.
 
-    Templates: :template:`500.html`
+    Templates: `500.html`
     Context: None
     """
-    try:
-        template = loader.get_template(template_name)
-    except TemplateDoesNotExist:
-        return http.HttpResponseServerError('<h1>Server Error (500)</h1>')
-    return http.HttpResponseServerError(template.render(Context({})))
-
-
-# This can be called when CsrfViewMiddleware.process_view has not run,
-# therefore need @requires_csrf_token in case the template needs
-# {% csrf_token %}.
-@requires_csrf_token
-def permission_denied(request, template_name='403.html'):
-    """
-    Permission denied (403) handler.
-
-    Templates: :template:`403.html`
-    Context: None
-
-    If the template does not exist, an Http403 response containing the text
-    "403 Forbidden" (as per RFC 2616) will be returned.
-    """
-    try:
-        template = loader.get_template(template_name)
-    except TemplateDoesNotExist:
-        return http.HttpResponseForbidden('<h1>403 Forbidden</h1>')
-    return http.HttpResponseForbidden(template.render(RequestContext(request)))
-
-
-def shortcut(request, content_type_id, object_id):
-    warnings.warn(
-        "django.views.defaults.shortcut will be removed in Django 1.8. "
-        "Import it from django.contrib.contenttypes.views instead.",
-        PendingDeprecationWarning, stacklevel=2)
-    from django.contrib.contenttypes.views import shortcut as real_shortcut
-    return real_shortcut(request, content_type_id, object_id)
+    t = loader.get_template(template_name)
+    return http.HttpResponseServerError(t.render(Context({})))

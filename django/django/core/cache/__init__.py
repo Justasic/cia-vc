@@ -12,50 +12,32 @@ get_cache() function made available here. get_cache() takes a backend URI
 (e.g. "memcached://127.0.0.1:11211/") and returns an instance of a backend
 cache class.
 
-See docs/topics/cache.txt for information on the public API.
+See docs/cache.txt for information on the public API.
 """
-try:
-    from urllib.parse import parse_qsl
-except ImportError:     # Python 2
-    from urlparse import parse_qsl
 
+from cgi import parse_qsl
 from django.conf import settings
-from django.core import signals
-from django.core.cache.backends.base import (
-    InvalidCacheBackendError, CacheKeyWarning, BaseCache)
-from django.core.exceptions import ImproperlyConfigured
-from django.utils import importlib
-from django.utils.module_loading import import_by_path
+from django.core.cache.backends.base import InvalidCacheBackendError
+from django.utils.translation import gettext as _
 
-
-__all__ = [
-    'get_cache', 'cache', 'DEFAULT_CACHE_ALIAS'
-]
-
-# Name for use in settings file --> name of module in "backends" directory.
-# Any backend scheme that is not in this dictionary is treated as a Python
-# import path to a custom backend.
 BACKENDS = {
+    # name for use in settings file --> name of module in "backends" directory
     'memcached': 'memcached',
+    'simple': 'simple',
     'locmem': 'locmem',
     'file': 'filebased',
     'db': 'db',
     'dummy': 'dummy',
 }
 
-DEFAULT_CACHE_ALIAS = 'default'
-
-def parse_backend_uri(backend_uri):
-    """
-    Converts the "backend_uri" into a cache scheme ('db', 'memcached', etc), a
-    host and any extra params that are required for the backend. Returns a
-    (scheme, host, params) tuple.
-    """
+def get_cache(backend_uri):
     if backend_uri.find(':') == -1:
-        raise InvalidCacheBackendError("Backend URI must start with scheme://")
+        raise InvalidCacheBackendError, "Backend URI must start with scheme://"
     scheme, rest = backend_uri.split(':', 1)
     if not rest.startswith('//'):
-        raise InvalidCacheBackendError("Backend URI must start with scheme://")
+        raise InvalidCacheBackendError, "Backend URI must start with scheme://"
+    if scheme not in BACKENDS:
+        raise InvalidCacheBackendError, "%r is not a valid cache backend" % scheme
 
     host = rest[2:]
     qpos = rest.find('?')
@@ -67,75 +49,7 @@ def parse_backend_uri(backend_uri):
     if host.endswith('/'):
         host = host[:-1]
 
-    return scheme, host, params
+    cache_class = getattr(__import__('django.core.cache.backends.%s' % BACKENDS[scheme], {}, {}, ['']), 'CacheClass')
+    return cache_class(host, params)
 
-if DEFAULT_CACHE_ALIAS not in settings.CACHES:
-    raise ImproperlyConfigured("You must define a '%s' cache" % DEFAULT_CACHE_ALIAS)
-
-def parse_backend_conf(backend, **kwargs):
-    """
-    Helper function to parse the backend configuration
-    that doesn't use the URI notation.
-    """
-    # Try to get the CACHES entry for the given backend name first
-    conf = settings.CACHES.get(backend, None)
-    if conf is not None:
-        args = conf.copy()
-        args.update(kwargs)
-        backend = args.pop('BACKEND')
-        location = args.pop('LOCATION', '')
-        return backend, location, args
-    else:
-        try:
-            # Trying to import the given backend, in case it's a dotted path
-            backend_cls = import_by_path(backend)
-        except ImproperlyConfigured as e:
-            raise InvalidCacheBackendError("Could not find backend '%s': %s" % (
-                backend, e))
-        location = kwargs.pop('LOCATION', '')
-        return backend, location, kwargs
-
-def get_cache(backend, **kwargs):
-    """
-    Function to load a cache backend dynamically. This is flexible by design
-    to allow different use cases:
-
-    To load a backend with the old URI-based notation::
-
-        cache = get_cache('locmem://')
-
-    To load a backend that is pre-defined in the settings::
-
-        cache = get_cache('default')
-
-    To load a backend with its dotted import path,
-    including arbitrary options::
-
-        cache = get_cache('django.core.cache.backends.memcached.MemcachedCache', **{
-            'LOCATION': '127.0.0.1:11211', 'TIMEOUT': 30,
-        })
-
-    """
-    try:
-        if '://' in backend:
-            # for backwards compatibility
-            backend, location, params = parse_backend_uri(backend)
-            if backend in BACKENDS:
-                backend = 'django.core.cache.backends.%s' % BACKENDS[backend]
-            params.update(kwargs)
-            mod = importlib.import_module(backend)
-            backend_cls = mod.CacheClass
-        else:
-            backend, location, params = parse_backend_conf(backend, **kwargs)
-            backend_cls = import_by_path(backend)
-    except (AttributeError, ImportError, ImproperlyConfigured) as e:
-        raise InvalidCacheBackendError(
-            "Could not find backend '%s': %s" % (backend, e))
-    cache = backend_cls(location, params)
-    # Some caches -- python-memcached in particular -- need to do a cleanup at the
-    # end of a request cycle. If not implemented in a particular backend
-    # cache.close is a no-op
-    signals.request_finished.connect(cache.close)
-    return cache
-
-cache = get_cache(DEFAULT_CACHE_ALIAS)
+cache = get_cache(settings.CACHE_BACKEND)

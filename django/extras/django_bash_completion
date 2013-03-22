@@ -33,40 +33,87 @@
 
 _django_completion()
 {
-    COMPREPLY=( $( COMP_WORDS="${COMP_WORDS[*]}" \
-                   COMP_CWORD=$COMP_CWORD \
-	               DJANGO_AUTO_COMPLETE=1 $1 ) )
-}
-complete -F _django_completion -o default django-admin.py manage.py django-admin
+    local cur prev opts actions action_shell_opts action_runfcgi_opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-_python_django_completion()
-{
-    if [[ ${COMP_CWORD} -ge 2 ]]; then
-        PYTHON_EXE=${COMP_WORDS[0]##*/}
-        echo $PYTHON_EXE | egrep "python([2-9]\.[0-9])?" >/dev/null 2>&1
-        if [[ $? == 0 ]]; then
-            PYTHON_SCRIPT=${COMP_WORDS[1]##*/}
-            echo $PYTHON_SCRIPT | egrep "manage\.py|django-admin(\.py)?" >/dev/null 2>&1
-            if [[ $? == 0 ]]; then
-                COMPREPLY=( $( COMP_WORDS="${COMP_WORDS[*]:1}" \
-                               COMP_CWORD=$(( COMP_CWORD-1 )) \
-                               DJANGO_AUTO_COMPLETE=1 ${COMP_WORDS[*]} ) )
-            fi
-        fi
+    # Standalone options
+    opts="--help --settings --pythonpath --version"
+    # Actions
+    actions="adminindex createcachetable dbshell diffsettings \
+             inspectdb install reset runfcgi runserver \
+             shell sql sqlall sqlclear sqlindexes sqlinitialdata \
+             sqlreset sqlsequencereset startapp startproject \
+             syncdb validate"
+    # Action's options
+    action_shell_opts="--plain"
+    action_runfcgi_opts="host port socket method maxspare minspare maxchildren daemonize pidfile workdir"
+
+    if [[ # django-admin.py, ./manage, manage.py
+          ( ${COMP_CWORD} -eq 1 &&
+            ( ${COMP_WORDS[0]} == django-admin.py ||
+              ${COMP_WORDS[0]} == ./manage.py ||
+              ${COMP_WORDS[0]} == manage.py ) )
+          ||
+          # python manage.py, /some/path/python manage.py (if manage.py exists)
+          ( ${COMP_CWORD} -eq 2 &&
+            ( $( basename ${COMP_WORDS[0]} ) == python ) &&
+            ( $( basename ${COMP_WORDS[1]} ) == manage.py) &&
+            ( -r ${COMP_WORDS[1]} ) ) ]] ; then
+
+        case ${cur} in
+            -*)
+                COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+                action=$COMPREPLY
+                return 0
+                ;;
+            *)
+                COMPREPLY=( $(compgen -W "${actions}" -- ${cur}) )
+                action=$COMPREPLY
+                return 0
+                ;;
+        esac
+    else
+        case ${prev} in
+            adminindex|install|reset| \
+            sql|sqlall|sqlclear|sqlindexes| \
+            sqlinitialdata|sqlreset|sqlsequencereset)
+            # App completion isn't yet implemented, but here's where that
+            # would go.
+            # COMPREPLY=( $(compgen -W "auth core" -- ${cur}) )
+            COMPREPLY=()
+            return 0
+            ;;
+
+            createcachetable|dbshell|diffsettings| \
+            inspectdb|runserver|startapp|startproject|syncdb| \
+            validate)
+                COMPREPLY=()
+                return 0
+                ;;
+            shell)
+                COMPREPLY=( $(compgen -W "$action_shell_opts" -- ${cur}) )
+                return 0
+                ;;
+            runfcgi)
+                COMPREPLY=( $(compgen -W "$action_runfcgi_opts" -- ${cur}) )
+                return 0
+                ;;
+            host*|port*|socket*|method*|maxspare*|minspare*|maxchildren*|daemonize*|pidfile*|workdir*)
+                if [ "$action"  == "runfcgi" ] ; then
+                    COMPREPLY=( $(compgen -W "$action_runfcgi_opts" -- ${cur}) )
+                    return 0
+                fi
+                return 0
+                ;;
+            *)
+                #COMPREPLY=( $(compgen -W "auth core" -- ${cur}) )
+                COMPREPLY=()
+                return 0
+                ;;
+        esac
     fi
 }
 
-# Support for multiple interpreters.
-unset pythons
-if command -v whereis &>/dev/null; then
-    python_interpreters=$(whereis python | cut -d " " -f 2-)
-    for python in $python_interpreters; do
-        pythons="${pythons} ${python##*/}"
-    done
-    pythons=$(echo $pythons | tr " " "\n" | sort -u | tr "\n" " ")
-else
-    pythons=python
-fi
-
-complete -F _python_django_completion -o default $pythons
-
+complete -F _django_completion django-admin.py manage.py
