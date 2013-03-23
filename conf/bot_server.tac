@@ -9,8 +9,18 @@
 #
 
 from twisted.application import service, internet
-from twisted.conch.manhole_tap import makeService
+#from twisted.conch.manhole_tap import makeService 
 from LibCIA.IRC import Bots
+
+# This shit is all for the stupid console authentication
+from twisted.conch.manhole import ColoredManhole
+from twisted.conch.insults import insults
+from twisted.conch.telnet import TelnetTransport, TelnetBootstrapProtocol
+from twisted.conch.manhole_ssh import ConchFactory, TerminalRealm
+
+from twisted.internet import protocol
+from twisted.application import internet, service
+from twisted.cred import checkers, portal
 
 application = service.Application("bot_server")
 
@@ -32,17 +42,54 @@ internet.UNIXServer(botSocketName, Bots.CommandHandlerFactory(botNet)).setServic
 # This server starts and you should be able to login with any user on
 # the running box. Allows for remote use of the daemon and changes without
 # restarting the system
-options = {
-	# for some reason, these must
-	# all exist, even if None
-	'namespace'  : botNet,
-	'passwd'     : '~/.daemon_passwds',
-	'sshPort'    : 'tcp:2231',
-	'telnetPort' : 'tcp:2230',
-	'interface'  : 'localhost',
-}
 
-shell_service = makeService(options)
-shell_service.setServiceParent(application)
+def makeService(args):
+    checker = checkers.InMemoryUsernamePasswordDatabaseDontUse(cia="letmein")
+
+    f = protocol.ServerFactory()
+    f.protocol = lambda: TelnetTransport(TelnetBootstrapProtocol,
+                                         insults.ServerProtocol,
+                                         args['protocolFactory'],
+                                         *args.get('protocolArgs', ()),
+                                         **args.get('protocolKwArgs', {}))
+    tsvc = internet.TCPServer(args['telnet'], f)
+
+    def chainProtocolFactory():
+        return insults.ServerProtocol(
+            args['protocolFactory'],
+            *args.get('protocolArgs', ()),
+            **args.get('protocolKwArgs', {}))
+
+    rlm = TerminalRealm()
+    rlm.chainedProtocolFactory = chainProtocolFactory
+    ptl = portal.Portal(rlm, [checker])
+    f = ConchFactory(ptl)
+    csvc = internet.TCPServer(args['ssh'], f)
+
+    m = service.MultiService()
+    tsvc.setServiceParent(m)
+    csvc.setServiceParent(m)
+    return m
+
+#application = service.Application("Interactive Python Interpreter")
+namespace = {"botNet": botNet}
+
+makeService({'protocolFactory': ColoredManhole,
+             'protocolArgs': (namespace,),
+             'telnet': 6023,
+             'ssh': 6022}).setServiceParent(application)
+
+# options = {
+# 	# for some reason, these must
+# 	# all exist, even if None
+# 	'namespace'  : botNet,
+# 	'passwd'     : '~/.bots.passwd',
+# 	'sshPort'    : 'tcp:2231',
+# 	'telnetPort' : 'tcp:2230',
+# 	'interface'  : 'localhost',
+# }
+
+# shell_service = makeService(options)
+# shell_service.setServiceParent(application)
 
 ### The End ###

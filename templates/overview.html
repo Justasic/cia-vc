@@ -1,0 +1,32 @@
+{% extends 'stats_base.html' %}
+
+{% block title %}
+CIA.vc - Overview
+{% endblock %}
+
+{% block titleElements %}
+	<img height="52" width="329" alt="CIA.vc: The open source version control informant." class="banner" src="/media/img/banner-70-nb.png"/>
+{% endblock %}
+
+{% block leftColumn %}
+	{% for tab in tabs %}
+		<span class="section">{{ tab.title }}</span>
+		<div class="section">
+			<div class="sectionTop"></div>
+			{% for link in tab.links %}
+				<a href="{{ link.link|escape }}">{{ link.title }}</a>
+			{% endfor %}
+		</div>
+	{% endfor %}
+{% endblock %}
+
+{% block mainColumn %}
+	<div class="pageBody">
+		{# Sometimes, We will have annpuncements. This box is nice for them. #}
+		{% if announcement_available %}
+			{{ announcement_text }}
+		{% else %}
+			This is a brief overview of the information collected recently. <a href="/doc">Learn more about CIA</a>
+		{% endif %}
+	</div>
+{% endblock %}
