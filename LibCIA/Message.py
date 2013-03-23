@@ -33,7 +33,7 @@ import XML, RpcServer
 def rel_path(p):
     return os.path.join(os.path.abspath(os.path.split(__file__)[0]), p)
 
-QUEUE_PREFIX = rel_path("../queue/rpc/xml.")
+QUEUE_PREFIX = rel_path("../data/queue/rpc/xml.")
 
 class DiskBackedQueue(object):
     """A simple disk backed queue.
