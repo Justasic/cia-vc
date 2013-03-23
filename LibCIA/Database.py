@@ -42,6 +42,8 @@ from _mysql import escape_string as quoteBlob
 # injection attack..
 from LibCIA.DatabaseQuote import quote
 
+# Keep ourselves connected to the mysql server
+from twisted.internet import task, reactor
 
 # Disable the silly BLOB-to-array() conversion
 # in the latest versions of python-mysqldb
@@ -55,6 +57,9 @@ except:
     pass
 
 
+def PingMysqlServer(self, connection):
+	connection.ping(True)
+
 class ConnectionPool(adbapi.ConnectionPool):
     """Our own ConnectionPool subclass, sets the connection
        encoding for MySQL 5.x automatically.
@@ -65,6 +70,9 @@ class ConnectionPool(adbapi.ConnectionPool):
         cur.execute("SET NAMES UTF8")
         cur.close()
         conn.commit()
+	ping = task.LoopingCall(PingMysqlServer)
+	ping.start(60.0)
+	reactor.callLater(5, ping, conn)
         return conn
 
 

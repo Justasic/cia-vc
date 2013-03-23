@@ -27,7 +27,13 @@ from twisted.internet import defer, reactor
 import glob, os, time, types, re
 import XML, RpcServer
 
-QUEUE_PREFIX = "/home/cia/cia/data/queue/rpc/xml."
+# Because we cannot import django settings into the Twisted part of 
+# CIA, Use rel_path to get a relative path to this file and
+# then use whatever we need from there..
+def rel_path(p):
+    return os.path.join(os.path.abspath(os.path.split(__file__)[0]), p)
+
+QUEUE_PREFIX = rel_path("../queue/rpc/xml.")
 
 class DiskBackedQueue(object):
     """A simple disk backed queue.

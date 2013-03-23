@@ -1,9 +1,10 @@
 from django import http
 from django.utils import simplejson, html
+from django.conf import settings
 
 import xmlrpclib
 
-SERVER_URL = "http://cia.vc"
+SERVER_URL = settings.CIA_RPC_URL
 
 PROJECT_TRANS = {
     'cia-vc': 'CIA.vc'

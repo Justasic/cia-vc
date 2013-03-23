@@ -9,7 +9,7 @@
 #
 
 from twisted.application import service, internet
-from twisted.manhole.telnet import ShellFactory
+from twisted.conch.manhole_tap import makeService
 from LibCIA.IRC import Bots
 
 application = service.Application("bot_server")
@@ -28,17 +28,21 @@ botSocketName = "bots.socket"
 internet.UNIXServer(botSocketName, Bots.CommandHandlerFactory(botNet)).setServiceParent(application)
 
 # For maintaining the bot server without restarting, if necessary, run
-# a twisted.manhole telnet console. We only start the server if a password
-# has been provided in the "bots.passwd" file.
-try:
-    passwd = open("bots.passwd").read().strip()
-except IOError:
-    pass
-else:
-    console = ShellFactory()
-    console.username = 'cia'
-    console.password = passwd
-    console.namespace['botNet'] = botNet
-    internet.TCPServer(2230, console, interface='localhost').setServiceParent(application)
+# a twisted.conch.manhole_tap telnet/ssh console.
+# This server starts and you should be able to login with any user on
+# the running box. Allows for remote use of the daemon and changes without
+# restarting the system
+options = {
+	# for some reason, these must
+	# all exist, even if None
+	'namespace'  : botNet,
+	'passwd'     : '~/.daemon_passwds',
+	'sshPort'    : 'tcp:2231',
+	'telnetPort' : 'tcp:2230',
+	'interface'  : 'localhost',
+}
+
+shell_service = makeService(options)
+shell_service.setServiceParent(application)
 
 ### The End ###
