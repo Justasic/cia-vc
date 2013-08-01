@@ -79,6 +79,15 @@ makeService({'protocolFactory': ColoredManhole,
              'telnet': 6023,
              'ssh': 6022}).setServiceParent(application)
 
+
+# Though we could have made something much simpler like this;
+# twisted's makeService does not work like it should in that
+# it's password files do not authenticate correctly
+# and therefore we have to override it with the above pile of crap
+# all for one line:
+# checker = checkers.InMemoryUsernamePasswordDatabaseDontUse(cia="letmein")
+#
+
 # options = {
 # 	# for some reason, these must
 # 	# all exist, even if None

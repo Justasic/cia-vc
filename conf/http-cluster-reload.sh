@@ -2,7 +2,7 @@ export LOGDIR=/var/log/cia
 export REQUEST_HOST=cia.vc
 export REQUEST_PORT=80
 
-for port in 3930 3931 3932; do # 3933
+for port in 3930 3931 3932 3933; do
     export PORT=$port
     pidfile=server-$PORT.pid
 

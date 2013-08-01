@@ -14,7 +14,9 @@ CIA.vc - Overview
 		<div class="section">
 			<div class="sectionTop"></div>
 			{% for link in tab.links %}
-				<a href="{{ link.link|escape }}">{{ link.title }}</a>
+				<div class="row">
+					<a href="{{ link.link|escape }}">{{ link.title }}</a>
+				</div>
 			{% endfor %}
 		</div>
 	{% endfor %}
