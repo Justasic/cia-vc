@@ -2,4 +2,30 @@
 Install Instructions
 ====================
 
-Sorry.. this document still needs to be written :(
+1. Install the following libraries:
+ - Python 2.*
+ - twisted latest (11 as of this document)
+ - Nginx (1.5.3 as of this document)
+ - GCC, C++, ubuntu-buildessentials or similar package
+ - MySQL
+ - Git
+ - pkg-config
+
+2. ``git clone https://github.com/Justasic/cia-vc/ ~/cia``
+3. ``cd ~/cia/django; sudo python setup.py install``
+4. ``cd ~/cia/Nouvelle; sudo python setup.py install``
+5. ``cd ~/cia/; make``
+6. Edit any settings needed in ~/cia/settings.py (database settings are located in a file called ~/.cia_db, edit them there)
+7. ``cd ~/cia/; ./manage syncdb``
+8. merge ~/cia/init-7.noInnoDB.sql into the existing CIA database
+9. Generate a new django secret and place it in ~/.django_secret
+10. Install crontabs from ~/cia/conf/crontab
+11. (optional) setup a mailserver based on documents from ~/cia/mail
+12. ``cd ~/cia/; conf/bootstrap.sh``
+
+CIA will now be running properly but nginx or pound/lighttpd must be setup to use any web services.
+NOTE: This CIA installaton is in a non-root user's home directory. This is not necessary but recommended as CIA has run
+in home directories and hard-coded paths may cause problems.
+
+If you change a file in ~/cia/media-src, re-run ``make media`` in the root directory to apply the change.
+
