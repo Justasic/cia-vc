@@ -49,7 +49,7 @@ class ActivitySection(Template.Section):
         STAT.%(counter_attrib)s,
         ICO.width,
         ICO.height
-    FROM stats_counters STAT %(hint)s
+    FROM stats_counters STAT FORCE INDEX (%(counter_attrib)s)
         LEFT OUTER JOIN stats_catalog  T           ON (STAT.target_path = T.target_path)
         LEFT OUTER JOIN stats_statstarget ST       ON (T.target_path = ST.path)
         LEFT OUTER JOIN images_imageinstance ICO   ON (ICO.source_id = IF(ST.icon_id IS NOT NULL, ST.icon_id, ST.photo_id) AND ICO.thumbnail_size = 32)

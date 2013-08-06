@@ -4,22 +4,39 @@
 CIA.vc - Overview
 {% endblock %}
 
+
 {% block titleElements %}
 	<img height="52" width="329" alt="CIA.vc: The open source version control informant." class="banner" src="/media/img/banner-70-nb.png"/>
 {% endblock %}
 
 {% block leftColumn %}
+	<script src="http://draggabilly.desandro.com/draggabilly.pkgd.js" type="text/javascript"></script>
+
+	<div class="sidebar">
 	{% for tab in tabs %}
-		<span class="section">{{ tab.title }}</span>
-		<div class="section">
-			<div class="sectionTop"></div>
-			{% for link in tab.links %}
-				<div class="row">
-					<a href="{{ link.link|escape }}">{{ link.title }}</a>
-				</div>
-			{% endfor %}
+		<div class="tab">
+			<span class="section">{{ tab.title }}</span>
+			<div class="section">
+				<div class="sectionTop"></div>
+				{% for link in tab.links %}
+					<div class="row">
+						<a href="{{ link.link|escape }}">{{ link.title }}</a>
+					</div>
+				{% endfor %}
+			</div>
 		</div>
 	{% endfor %}
+	</div>
+
+	<script type="text/javascript">
+		var container = document.querySelector('#container');
+		var elems = document.querySelectorAll('.sidebar');
+    		for (var i=0, len = elems.length; i < len; i++)
+		{
+		      var elem = elems[i];
+		      new Draggabilly( elem, { containment: '.columns' });
+		}
+	</script>
 {% endblock %}
 
 {% block mainColumn %}
@@ -31,4 +48,34 @@ CIA.vc - Overview
 			This is a brief overview of the information collected recently. <a href="/doc">Learn more about CIA</a>
 		{% endif %}
 	</div>
+
+	<table class="sectionGrid">
+	{% for section in sections %}
+		<tr class="sectionGrid">
+		{% for tab in section.tabs %}
+			<td class="sectionGrid">
+				<div class="section">
+					<div class="sectionTop">&nbsp;</div>
+					<div class="row">
+					<table>
+						<tbody>
+							<tr><th>title</th></tr>
+						</tbody>
+					</table>
+					</div>
+					{# Show authors and shit. #}
+					{% for row in tab.rows %}
+					<table>
+						<tbody>
+							<tr><th>{{ row.title }}</th></tr>
+						</tbody>
+					</table>
+					</div>
+					{% endfor %}
+				</div>
+			</td>
+		{% endfor %} {# for tab in section.tabs #}
+		</tr>
+	{% endfor %} {# for section in sections #}
+	</table>
 {% endblock %}

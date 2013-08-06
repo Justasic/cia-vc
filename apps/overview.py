@@ -8,7 +8,7 @@ def _loadSidebar(path):
            links are made by lines of the form 'title :: URL'.
            Other lines are ignored.
            """
-    tabs = []
+	tabs = []
 	section = {"links": []}
        	for line in open(path).xreadlines():
 		line = line.strip()
@@ -16,7 +16,8 @@ def _loadSidebar(path):
 			continue
 
 		if line[0] == '-':
-			tabs.append(section)
+			if section["links"]:
+				tabs.append(section)
 			section = {"links": []}
 			section["title"] = line[1:].strip()
 	                #sections.append(line[1:].strip())
@@ -26,52 +27,14 @@ def _loadSidebar(path):
        		if len(pieces) > 1:
                		title, url = pieces
 			section["links"].append({"title": title.strip(), "link": url.strip()})
-               		#sections[-1].rows.append( tag('a', href=url.strip())[title.strip()] )
 
+	tabs.append(section)
 	return tabs
 
 def rel_path(p):
     return os.path.join(os.path.abspath(os.path.split(__file__)[0]), p)
 
-
-
 def main(request):
-
-	tabs = [
-		{
-			'title': 'Stats',
-			'links': [
-				{
-					'title': 'Overview',
-					'link': '/',
-				},
-				{
-					'title': 'Projects',
-					'link': '/stats/project',
-				},
-				{
-					'title': 'Authors',
-					'link': '/stats/author',
-				},
-				{
-					'title': 'System',
-					'link': '/stats/project',
-				},
-				{
-					'title': 'All Commits',
-					'link': '/stats/total/commits',
-				},
-			]
-		},
-	]
-
-	tabs2 = [
-		{
-			'title': 'Stats'
-		}
-
-	]
-
 	ctx = RequestContext(request, {
 		'announcement_available': False,
 		'announcement_text': "Hello!",

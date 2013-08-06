@@ -5,6 +5,7 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponse
 from django.template.context import RequestContext
+from django.conf import settings
 from cia.esquilax import _fidtool
 from cia.apps.api.util import json_result
 import os, time, datetime
@@ -21,7 +22,7 @@ def dayGrid(t):
 
 @json_result
 def fidtool_counts(request):
-    fd = os.open(FID_TESTFILE, os.O_RDONLY)
+    fd = os.open(settings.rel_path("../../../"+FID_TESTFILE), os.O_RDONLY)
 
     now = int(time.time())
     d = {}
