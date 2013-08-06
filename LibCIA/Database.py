@@ -56,23 +56,17 @@ try:
 except:
     pass
 
-
-def PingMysqlServer(self, connection):
-	connection.ping(True)
-
 class ConnectionPool(adbapi.ConnectionPool):
     """Our own ConnectionPool subclass, sets the connection
        encoding for MySQL 5.x automatically.
        """
     def connect(self):
         conn = adbapi.ConnectionPool.connect(self)
+	conn.ping(True)
         cur = conn.cursor()
         cur.execute("SET NAMES UTF8")
         cur.close()
         conn.commit()
-	ping = task.LoopingCall(PingMysqlServer)
-	ping.start(60.0)
-	reactor.callLater(5, ping, conn)
         return conn
 
 
