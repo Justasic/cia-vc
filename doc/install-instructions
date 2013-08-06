@@ -10,7 +10,6 @@ Install Instructions
  - MySQL
  - Git
  - pkg-config
-
 2. ``git clone https://github.com/Justasic/cia-vc/ ~/cia``
 3. ``cd ~/cia/django; sudo python setup.py install``
 4. ``cd ~/cia/Nouvelle; sudo python setup.py install``
@@ -24,6 +23,7 @@ Install Instructions
 12. ``cd ~/cia/; conf/bootstrap.sh``
 
 CIA will now be running properly but nginx or pound/lighttpd must be setup to use any web services.
+
 NOTE: This CIA installaton is in a non-root user's home directory. This is not necessary but recommended as CIA has run
 in home directories and hard-coded paths may cause problems.
 
