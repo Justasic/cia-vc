@@ -60,7 +60,7 @@ class Interface(xmlrpc.XMLRPC):
             args, functionPath = xmlrpclib.loads(request.content.read())
         except xml.parsers.expat.ExpatError:
             request.setHeader("content-type", "text/xml")
-            self._cbRender( xmlrpc.Fault(self.NOT_FOUND, "no such function"), request)
+            self._cbRender( xmlrpc.Fault(32700, "invalid or malformed XML request"), request)
 
         try:
             function = self._getFunction(functionPath)
