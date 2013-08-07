@@ -50,12 +50,18 @@ class Interface(xmlrpc.XMLRPC):
            nested subhandlers
        """
     def render(self, request):
+        import xml
         """This is a modified version of render() from XMLRPC that will
            pass keyword arguments with extra state information if it can.
            Currently this just consists of the current request.
            """
         request.content.seek(0, 0)
-        args, functionPath = xmlrpclib.loads(request.content.read())
+        try:
+            args, functionPath = xmlrpclib.loads(request.content.read())
+        except xml.parsers.expat.ExpatError:
+            request.setHeader("content-type", "text/xml")
+            self._cbRender( xmlrpc.Fault(self.NOT_FOUND, "no such function"), request)
+
         try:
             function = self._getFunction(functionPath)
         except xmlrpc.NoSuchFunction:
