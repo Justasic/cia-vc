@@ -10,6 +10,11 @@ Install Instructions
  - MySQL
  - Git
  - pkg-config
+ - glib2 (or glib-2.0) development libraries
+ - python development libraries
+ - libpng
+ - python-docutils
+ - python-flup
 2. ``git clone https://github.com/Justasic/cia-vc/ ~/cia``
 3. ``cd ~/cia/django; sudo python setup.py install``
 4. ``cd ~/cia/Nouvelle; sudo python setup.py install``
