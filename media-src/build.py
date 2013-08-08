@@ -5,6 +5,8 @@
 #
 
 from lib import *
+from glob import glob
+import os
 
 os.chdir('media-src')
 DEST = '../media/'

@@ -39,8 +39,8 @@ def search(request, limit=10):
     if not query:
         return { 'results': [] }
 
-    assert isinstance(query, unicode)
-    utf8Query = query.encode('utf8')    
+   # assert isinstance(query, unicode)
+    utf8Query = query.encode('utf8')
     try:
         asciiQuery = query.encode('ascii', 'strict')
     except UnicodeEncodeError:
@@ -86,7 +86,7 @@ def search(request, limit=10):
     if asciiQuery:
         for catalog in StatsCatalog.objects.filter(path__icontains = asciiQuery)[:limit]:
             results.append(statsTargetResult(StatsTarget(path=catalog.path)))
-            
+
     return {
         'results': removeDuplicates(results),
         }
