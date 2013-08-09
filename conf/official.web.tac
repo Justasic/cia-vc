@@ -45,6 +45,10 @@ rpc.putSubHandler('stats', Stats.Interface.StatsInterface())
 # The user-navigable areas of our site are all Component instances
 site.putComponent('stats', Web.Stats.Component())
 
+# Stats crap
+site.putComponent('info', Web.Info.Component())
+
+
 # External components, implemented in Django
 site.putComponent('doc', Web.Server.Component("About"))
 site.putComponent('blog', Web.Server.Component("Blog"))
