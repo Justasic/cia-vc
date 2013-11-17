@@ -85,20 +85,53 @@ History
     server to separate web interface and backend daemons. This new area
     of the web site is the first to use Django_.
 
+- May 11, 2011
+
+    CIA transfers ownership from `Micah Dowty`_ to `Atheme.org`_ and is
+    moved to a new server for performance improvements.
+
+- September 27, 2012
+
+   A miscommunication with the hosting provider deleted the wrong server
+   and due to lack of proper backups, CIA.vc died and no one was willing
+   to step in, host it, and maintain it. CIA.vc's domain has a project
+   which looks promising.
+
+- July 10, 2013
+
+   CIA.vc's domain never showed a promising project and Micah restored the
+   domain to have a simple message which states that the project is dead
+   and has a list of alternatives.
+   As a result, `Justin Crawford`_ has started the process of restoring the
+   site to its original glory as well as updating much of the project and
+   cleaning up a lot of unfinished work.
+
+- September 10, 2013
+
+   CIA now fully functional and hosted at http://cia.stacksmash.net/ on
+   a home DSL line and server at `Justin Crawford`_'s house.
 
 Brought to you by...
 --------------------
 
-CIA is written and maintained by `Micah Dowty`_.
+CIA was originally written by `Micah Dowty`_.
+CIA's previous maintainers:
+ - `Micah Dowty`_
+ - `William Pitcock`_
+ - Karsten Behrmann
+
+CIA is currently maintained by `Justin Crawford`_.
 
 CIA makes extensive use of many fine open source projects, including
-Python_, Django_, Twisted_, Procmail_, MySQL_, Subversion_,
-Pound_, Lighttpd_, and Linux_.
+Python_, Django_, Twisted_, Procmail_, MySQL_, Nginx_ and Linux_.
+
+CIA used to use Pound_ and Lighttpd_ but that has been deprecated for Nginx_.
 
 CIA uses open standards, including XHTML, CSS2, and XML-RPC.
 
 .. _Pound: http://www.apsis.ch/pound/
 .. _Lighttpd: http://www.lighttpd.net/
+.. _Nginx: http://nginx.org/
 .. _Your Account: /account/
 .. _Django: http://djangoproject.com
 .. _IRC log: /historical/first-24-hours.html
@@ -108,13 +141,16 @@ CIA uses open standards, including XHTML, CSS2, and XML-RPC.
 .. _client script: /doc/clients
 .. _GNU GPL: /doc/COPYING
 .. _Micah Dowty: mailto:micah@navi.cx
+.. _Justin Crawford: mailto:justasic@gmail.com
+.. _William Pitcock: mailto:nenolod@atheme.net
+.. _Atheme.org: http://atheme.org/
 .. _Python: http://python.org
 .. _Twisted: http://twistedmatrix.com
 .. _Procmail: http://www.procmail.org
 .. _MySQL: http://www.mysql.com
 .. _Freenode: http://freenode.org
 .. _PicoGUI: http://picogui.org
-.. _repository: http://cia-vc.googlecode.com/svn/trunk/cia/
+.. _repository: https://github.com/Justasic/cia-vc 
 .. _Subversion: http://subversion.tigris.org/
 .. _architecture: /doc/how-cia-works
 .. _Docutils: http://docutils.sourceforge.net/

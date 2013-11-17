@@ -37,6 +37,13 @@ Frequently Asked Questions
 
 .. _Savannah: http://savannah.gnu.org
 
+* Does CIA work with GitHub_?
+
+    Yes! GitHub actually has an integrated script. Follow the `GitHub HOWTO`_
+
+.. _GitHub: https://github.com/
+.. _GitHub HOWTO: /doc/github-howto/
+
 * Can I put messages from CIA on my web site?
 
     Yes. CIA exports RSS feeds for every stats target, so you can use any existing RSS aggregation

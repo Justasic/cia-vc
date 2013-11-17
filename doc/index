@@ -47,7 +47,7 @@ up a notification bot: you're joining an established community.
       library? Use CIA to keep an eye on the projects you depend
       on and the projects who depend on you.
 
-  - Your commits show up in a central IRC channel, **#commits** on Freenode_.
+  - Your commits show up in a central IRC channel, **#commits** on Azuru_.
 
       Users and developers gather there out of curiosity,
       to find something new, or just to watch in amazement as
@@ -87,6 +87,7 @@ You'll also need a CIA account. `Register an account`_ if you
 don't already have one, then `add your project`_.
 
 .. _Freenode: http://freenode.net
+.. _Azuru: http://azuru.net
 .. _SourceForge.net: http://sourceforge.net
 .. _Gna!: http://gna.org
 .. _CIA client script: /doc/clients/
