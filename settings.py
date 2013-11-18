@@ -40,10 +40,11 @@ BANNED_IPS = ('195.225.178.23', '203.144.144.164', '83.69.224.164', '69.217.73.5
 GOOGLE_ANALYTICS_ACCOUNT = "UA-247340-1"
 
 ADMINS = (
-    ('Micah Dowty', 'micah@navi.cx'),
-    ('Karsten Behrmann', 'bear-cia@gmx.net'),
-    ('Lewis Cawte', 'lewiscawte@googlemail.com'),
-    ('William Pitcock', 'nenolod@atheme.org'),
+#    ('Micah Dowty', 'micah@navi.cx'),
+#    ('Karsten Behrmann', 'bear-cia@gmx.net'),
+#    ('Lewis Cawte', 'lewiscawte@googlemail.com'),
+#    ('William Pitcock', 'nenolod@atheme.org'),
+     ('Justin Crawford', 'Justasic@gmail.com'),
 )
 
 DEFAULT_FROM_EMAIL = 'webmaster@cia.vc'
@@ -71,14 +72,14 @@ DATABASE_ENGINE = 'mysql'
 DATABASE_NAME = CIA_DB_SETTINGS.get('db', 'cia')
 DATABASE_USER = CIA_DB_SETTINGS.get('user', 'root')
 DATABASE_PASSWORD = CIA_DB_SETTINGS.get('passwd', '')
-DATABASE_HOST = CIA_DB_SETTINGS.get('host', '') 
-DATABASE_PORT = CIA_DB_SETTINGS.get('port', '') 
+DATABASE_HOST = CIA_DB_SETTINGS.get('host', '')
+DATABASE_PORT = CIA_DB_SETTINGS.get('port', '')
 
 #
 # CIA data files
 #
 CIA_DOC_PATH = rel_path('doc')
-CIA_DATA_PATH = rel_path('data') 
+CIA_DATA_PATH = rel_path('data')
 
 #
 # Caching setup

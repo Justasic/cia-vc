@@ -103,7 +103,7 @@ randomProject = JoinedList(
 
 randomLog = JoinedList(
     Optional(RandomList('oops... ', 'Scratch that. ', 'Maybe it would help if I added this file correctly... ',
-                        'Wow, a duck. ', 'Good thing I was wearing my bullet-proof socks. '),
+                        'Wow, a duck. ', 'Good thing I was wearing my bullet-proof socks. ', 'Wow. A dog!'),
              0.1),
     RandomRepeat(RandomList(JoinedList(RandomList('Updated ', 'Rewrote ', 'Fixed ', 'Retested '),
                                        RandomList('this', 'everything', 'this module', 'the makefile'),
@@ -118,7 +118,7 @@ randomLog = JoinedList(
                             JoinedList(RandomList('Update ', 'Frobnicate ', 'Break ', 'Explode ', 'Revert ', 'Test ', 'Rewrite '),
                                        RandomList('all ', 'the ', 'a few ', '', '', '', ''),
                                        RandomList('recent ', 'old ', 'tasty ', '', '', ''),
-                                       RandomList('bits ', 'files ', 'classes ', 'squirrels '),
+                                       RandomList('bits ', 'files ', 'classes ', 'squirrels ', 'dogs ', 'objects '),
                                        RandomList('in ', 'in ', 'in ', 'near '),
                                        RandomList('the ',),
                                        RandomList('database ', 'network ', 'operating system ', 'lego ', 'graphics ', 'build system '),

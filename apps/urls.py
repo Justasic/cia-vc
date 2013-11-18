@@ -12,7 +12,7 @@ urlpatterns = patterns('',
     (r'^images/', include('cia.apps.images.urls')),
     (r'^stats-experimental/', include('cia.apps.stats.urls')),
     (r'^feedback/', 'cia.apps.feedback.feedback'),
-    (r'^overview/', 'cia.apps.overview.main'),
+    (r'^overview/', 'cia.apps.overview.overview.main'),
 )
 
 # XXX: Experimental
@@ -30,4 +30,4 @@ if settings.DEBUG:
             'show_indexes': True,
         })
     )
-    
+

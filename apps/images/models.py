@@ -30,7 +30,7 @@ class ImageMagick:
        manipulation operations in a separate address space. This just calls
        out to ImageMagick using popen.
        """
-    
+
     # Note the 'composite' option: Some input images are treated as
     # multi-image sequences. A common example is the Windows .ico format.
     #
@@ -94,12 +94,11 @@ class ImageMagick:
             #   2. Reading and writing the child process simultaneously,
             #      without introducing deadlocks, would significantly
             #      complicate this function.
-
             f = open(src_path, "wb")
             f.write(data)
             f.close()
             del data
-            
+
             child = Popen4("%s %s %s" % (
                 self.CONVERT,
                 commands.mkarg(src_path),
@@ -245,7 +244,7 @@ class ImageInstanceManager(models.Manager):
 
         thumb.update_image_size()
         thumb.save()
-                                    
+
 
 class ImageInstance(models.Model):
     """An image file representing a source image in a particular

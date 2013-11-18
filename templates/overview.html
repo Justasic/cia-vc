@@ -49,33 +49,109 @@ CIA.vc - Overview
 		{% endif %}
 	</div>
 
-	<table class="sectionGrid">
-	{% for section in sections %}
-		<tr class="sectionGrid">
-		{% for tab in section.tabs %}
-			<td class="sectionGrid">
-				<div class="section">
-					<div class="sectionTop">&nbsp;</div>
-					<div class="row">
-					<table>
-						<tbody>
-							<tr><th>title</th></tr>
-						</tbody>
-					</table>
-					</div>
-					{# Show authors and shit. #}
-					{% for row in tab.rows %}
-					<table>
-						<tbody>
-							<tr><th>{{ row.title }}</th></tr>
-						</tbody>
-					</table>
-					</div>
-					{% endfor %}
-				</div>
-			</td>
-		{% endfor %} {# for tab in section.tabs #}
-		</tr>
-	{% endfor %} {# for section in sections #}
-	</table>
+    {% comment %}
+    <pre>{{ active_authors }}</pre>
+    <pre>{{ active_projects }}</pre>
+    <pre>{{ new_authors }}</pre>
+    <pre>{{ new_projects }}</pre>
+    {% endcomment %}
+
+    {% comment %}
+    {% for stat in active_authors %}
+    <pre>Project: {{ stat.target_path }} - {{ stat.first_time }}</pre>
+    {% endfor %}
+
+    {% endcomment %}
+
+    <table class="sectionGrid">
+        <tbody>
+            {# Section 1 - Upper tabs #}
+            <tr class="sectionGrid">
+                <td class="sectionGrid"> {# Section 1, tab left #}
+                    <span class="section">Most active projects today</span>
+                    <div class="section">
+                        <div class="sectionTop"></div>
+                        <div class="row">
+                            <table>
+                                <tbody>
+                                    <tr><th>title</th><th>events today</th></tr>
+                                    {% for row in active_projects %}
+                                        <tr>
+                                            <td><a href="/stats/project/{{ row.title|urlencode }}">{{ row.title }}</a></td>
+                                            <td><span class="bargraph" style="padding: {{ row.bargraph }}">
+                                                    {{ row.event_count }}
+                                            </span></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+                <td class="sectionGrid"> {# Section 1, tab right #}
+                    <span class="section">Most active authors today</span>
+                    <div class="section">
+                        <div class="sectionTop"></div>
+                        <div class="row">
+                            <table>
+                                <tbody>
+                                    <tr><th>title</th><th>events today</th></tr>
+                                    {% for row in active_authors %}
+                                        <tr>
+                                            <td><a href="/stats/project/{{ row.title|urlencode }}">{{ row.title }}</a></td>
+                                            <td><span class="bargraph" style="padding: {{ row.bargraph }}">
+                                                    {{ row.event_count }}
+                                        </span></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {# Section 2 - Lower tabs#}
+            <tr class="sectionGrid">
+                <td class="sectionGrid"> {# Section 2, tab left #}
+                    <span class="section">Newest projects</span>
+                    <div class="section">
+                        <div class="sectionTop"></div>
+                        <div class="row">
+                            <table>
+                                <tbody>
+                                    <tr><th>title</th><th>first event</th></tr>
+                                    {% for row in new_projects %}
+                                        <tr>
+                                            <td><a href="/stats/project/{{ row.title|urlencode }}">{{ row.title }}</a></td>
+                                            <td>{{ row.first_time|timesince }} ago</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+                <td class="sectionGrid"> {# Section 2, tab right - Authors #}
+                    <span class="section">Newest authors</span>
+                    <div class="section">
+                        <div class="sectionTop"></div>
+                        <div class="row">
+                            <table>
+                                <tbody>
+                                    <tr><th>title</th><th>first event</th></tr>
+                                    {% for row in new_authors %}
+                                    <tr>
+                                            <td><a href="/stats/author/{{ row.title|urlencode }}">{{ row.title }}</a></td>
+                                            <td>{{ row.first_time|timesince }} ago</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+         </tbody>
+    </table>
 {% endblock %}
+
