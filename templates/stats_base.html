@@ -20,7 +20,11 @@
 			<li>&raquo; <a href="/stats">Stats</a></li>
 			<li>&raquo; <a href="/doc">About</a></li>
 			<li>&raquo; <a href="/blog">Blog</a></li>
-			<li>&raquo; <a href="/account">Your Account</a></li>
+            {% if user.is_authenticated %}
+            <li>&raquo; <a href="/account">{{ user.get_full_name|escape }}</a></li>
+            {% else %}
+            <li>&raquo; <a href="/account">Your Account</a></li>
+            {% endif %}
 		</ul>
 		{% block logoElements %}
 		{% endblock %}
