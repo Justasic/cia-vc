@@ -4,6 +4,11 @@ To-do List
 Current priorities
 ------------------
 
+- **UPDATES!**
+
+  - Get CIA running on the latest libraries. Twisted has already been updated to run on whatever latest version
+    exists (Twisted 11?) but Django's front end needs a serious overhaul and update.
+
 - Usability improvements
 
   - Now that it's finally easy to get started with CIA and easy to administer
@@ -175,6 +180,31 @@ user accounts and assets (such as bots, projects, and authors).
   - Optimize the resulting PNG files. Look into using optipng or pngcrush
 
   - Ditch PIL's buggy thumbnailing code (and all my workarounds)
+
+- IRC operator administration panel to allow IRC operators to control how the bots connect to their network
+
+  - Operators should be verified by using SearchIRC-style oper verification.
+    The user would rename to a nickname given by the bot core, the core waits 5
+    minutes for the user to get around to renaming, the core then dispatches a
+    "verification" bot which only connects and sends a WHOIS line to that nickname.
+    The whois query should return 313 numeric (IsAnOper) for access to be allowed.
+  
+  - Verified operators can overtake any bot for any channel connected to their 
+    network. This means that if a bot is spamming a channel, operators can remove
+    the bot or even prevent it from rejoining the channel until the dispute has 
+    been resolved.
+  
+  - Operators can also prevent bots from connecting to the listed network entirely
+    (instead of G-Lining them). This allows the bot server to state something like 
+    "We're sorry but this network has been closed for connections from CIA, please
+    contact a network administrator" or something.
+
+  - Possible server linking? Make the bot core support many common IRCd protocols
+    (such as InspIRCd and Hybrid) to allow CIA to 'link' as a virtual service, 
+    eliminating hundreds of connections and work-arounds for the bots to connect on
+    both CIA-side and Network-side. This would require a large rewrite of most of
+    the bot core (which requires it anyway) or a sepret bot daemon entirely.
+
 
 New Syndication Methods
 -----------------------
