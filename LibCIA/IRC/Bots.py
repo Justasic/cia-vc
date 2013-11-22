@@ -317,6 +317,7 @@ class SequentialNickAllocator(NickAllocator):
             return False
 
     def generate(self):
+
         i = 1
         while True:
             yield self.prefix + str(i)
@@ -915,6 +916,14 @@ class Bot(irc.IRCClient):
         self.nicknames.append(tempNick)
         self.setNick(tempNick)
 
+
+    def irc_ERR_UNAVAILRESOURCE(self, prefix, params):
+        """On Freenode this error happens when we cant find a proper nickname
+           Retry with a temporary nick from irc_ERR_NICKNAMEINUSE."""
+        if isinstance(self.network, Network.Freenode):
+            self.irc_ERR_NICKNAMEINUSE(prefix, params)
+
+
     def sendLine(self, line):
         # Override sendLine() to update txByteCount.
         # Note that the text of 'line' doesn't count a CRLF,
@@ -1001,6 +1010,16 @@ class Bot(irc.IRCClient):
            WHOIS, we end up with an ugly nick rather than sitting in an infinite loop.
            """
         result = defer.Deferred()
+
+        """Because some jackass on freenode registered CIA-1
+           it casues the bot core to freak out when services
+           renames to Guest????? nicks. This is a bug in the CIA
+           core and should be fixed later.
+           """
+        if isinstance(self.network, Network.Freenode) and nick == "CIA-1":
+            log.msg("Bot server tried to rename to %s on Freenode." % nick)
+            result.callback(True)
+            return result
 
         # First check whether any of our own bots are using this nick
         for bot in self.botNet.networks.get(self.network, []):
