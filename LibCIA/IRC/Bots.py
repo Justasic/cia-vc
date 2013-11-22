@@ -288,7 +288,7 @@ class NickAllocator:
        and generating a list of valid nicks. This is an abstract base class.
        """
     username = 'CIA'
-    realname = 'CIA Bot (http://cia.vc)'
+    realname = 'CIA Bot (http://cia.stacksmash.net/)'
 
     def isValid(self, nick):
         """Returns True if the given nickname would be a valid output for our generator"""
@@ -1340,7 +1340,7 @@ class Bot(irc.IRCClient):
             # If we'd go above the hard limit, we can't send the message.
             if predictedFill > self.network.bufferSize:
                 break
-            
+
             self.msg(target, text)
             self._messageQueue.flush()
 
@@ -1355,7 +1355,7 @@ class Bot(irc.IRCClient):
 
         elif text == 'kicks %s' % me:
             self.say(channel, 'ow')
-        
+
         elif text == 'kills %s' % me:
             self.me(channel, 'dies')
 
