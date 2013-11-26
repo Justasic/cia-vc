@@ -13,7 +13,7 @@
     <li class="spacer"></li>
 
     {% block user_assets %}
-      {% for user_asset in user_assets|dictsort:"asset.__str__" %}
+      {% for user_asset in user_assets|dictsort:"asset" %}
 	{% ifequal user_asset.id asset_id %} <li class="active"> {% else %} <li><a href="/account/{{ asset_type }}/{{ user_asset.id }}/"> {% endifequal %}
 
         {{ user_asset.asset }}
