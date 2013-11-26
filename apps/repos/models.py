@@ -41,32 +41,32 @@ class Repository(models.Model):
 
     # Repository identity
     type = models.PositiveSmallIntegerField(choices=repos_type_choices, default=REPOS_TYPE.SUBVERSION)
-    location = models.CharField("Repository location", maxlength=255, blank=False)
+    location = models.CharField("Repository location", max_length=255, blank=False)
 
     # Optional polling
     enable_polling = models.BooleanField(default=False, choices=yes_no_choices)
     poll_frequency = models.PositiveIntegerField("Polling frequency in minutes", default=15)
 
     # Optional e-mail pinger
-    pinger_name = models.CharField(maxlength=64, db_index=True)
+    pinger_name = models.CharField(max_length=64, db_index=True)
     forward_pinger_mail = models.BooleanField(default=False, choices=yes_no_choices)
 
     # Who owns this repository?
-    project_name = models.CharField(maxlength=128, db_index=True, blank=False)
+    project_name = models.CharField(max_length=128, db_index=True, blank=False)
     created_by = models.ForeignKey(User, null=True)
 
     # Other project configuration
-    default_module_name = models.CharField(maxlength=64, null=True)
+    default_module_name = models.CharField(max_length=64, null=True)
     path_regexes = models.TextField("Path regular expressions", null=True)
-    revision_url = models.CharField("Revision URL pattern", maxlength=255, null=True)
+    revision_url = models.CharField("Revision URL pattern", max_length=255, null=True)
 
     # Repository state
-    root_url = models.CharField("Repository root URL", maxlength=255, null=True)
-    uuid = models.CharField("Repository UUID", maxlength=255, null=True)
+    root_url = models.CharField("Repository root URL", max_length=255, null=True)
+    uuid = models.CharField("Repository UUID", max_length=255, null=True)
     last_revision = models.PositiveIntegerField(default=0, null=True)
     last_update_time = models.DateTimeField(null=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return "%s repository at %s" % (self.get_type_display(), self.location)
 
     def get_pinger_email(self):

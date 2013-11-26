@@ -1,4 +1,4 @@
-import django.newforms as forms
+import django.forms as forms
 from cia.apps.api.util import json_result
 
 def validation_result(view_func):

@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.db.models import signals
-from django.dispatch import dispatcher
+from django.core.signals import got_request_exception
 import os, re, commands, random
 from popen2 import Popen4
 
@@ -172,7 +172,7 @@ class ImageSource(models.Model):
             self.get_thumbnail(size=64).to_html(),
             )
 
-    def __str__(self):
+    def __unicode__(self):
         original = self.get_original()
         s = "Image #%d (%dx%d)" % (self.id, original.width, original.height)
         if self.is_temporary:
@@ -258,7 +258,7 @@ class ImageInstance(models.Model):
     is_original = models.BooleanField(default=False)
     thumbnail_size = models.PositiveIntegerField(null=True, blank=True)
 
-    path = models.CharField(maxlength=32)
+    path = models.CharField(max_length=32)
     delete_file = models.BooleanField(default=True)
 
     width = models.PositiveIntegerField()
@@ -284,11 +284,11 @@ class ImageInstance(models.Model):
         return '<img src="%s" width="%d" height="%d" />' % (
             self.get_url(), self.width, self.height)
 
-def remove_deleted_instance(instance):
+def remove_deleted_instance(instance, **kwargs):
     if instance.delete_file:
         try:
             os.unlink(instance.get_path())
         except OSError:
             pass
 
-dispatcher.connect(remove_deleted_instance, signal=signals.post_delete, sender=ImageInstance)
+got_request_exception.connect(remove_deleted_instance, sender=ImageInstance)

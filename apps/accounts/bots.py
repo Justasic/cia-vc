@@ -1,6 +1,6 @@
 from cia.apps.accounts import models, assets, authplus, formtools
 from cia.apps.legacy import bots
-from django import newforms as forms
+from django import forms as forms
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
@@ -50,7 +50,7 @@ class AddBotForm(forms.Form):
     def clean_network(self):
         if not self.is_other_network():
             try:
-                return models.Network.objects.get(pk=int(self.clean_data['network']))
+                return models.Network.objects.get(pk=int(self.cleaned_data['network']))
             except (ValueError, models.Network.DoesNotExist):
                 raise forms.ValidationError("Select a network.")
 
@@ -63,11 +63,11 @@ class AddNetworkForm(forms.Form):
         """Look up an existing network using this server name,
            creating one if it doesn't already exist.
            """
-        uri = "irc://%s/" % self.clean_data['server']
+        uri = "irc://%s/" % self.cleaned_data['server']
         return models.Network.objects.get_or_create(
             uri__iexact = uri,
             defaults = dict(uri = uri,
-                            description = self.clean_data['netname'],
+                            description = self.cleaned_data['netname'],
                             created_by = request.user),
             )[0]
 
@@ -82,8 +82,8 @@ def add_bot(request, asset_type):
 
         if form.is_valid():
             # Get/create the network, now that we know all forms validated
-            network = form.clean_data['network'] or form.AddNetworkForm.get_or_create(request)
-            location = normalize_channel_to_location(form.clean_data['channel'])
+            network = form.cleaned_data['network'] or form.AddNetworkForm.get_or_create(request)
+            location = normalize_channel_to_location(form.cleaned_data['channel'])
 
             # Now look up a matching bot. We might have to create this too.
             defaults = dict(
@@ -148,12 +148,12 @@ class EditBotForm(forms.Form):
         self.filter_modes = formtools.RadioChoices(self['filter_mode'], models.FILTER)
 
     def clean_filter_mode(self):
-        return int(self.clean_data['filter_mode'])
+        return int(self.cleaned_data['filter_mode'])
 
     def clean_project_list(self):
         # Remove extra whitespace, split into individual projects.
         projects = []
-        for line in self.clean_data['project_list'].split('\n'):
+        for line in self.cleaned_data['project_list'].split('\n'):
             line = line.strip()
             if line:
                 projects.append(line)
@@ -178,10 +178,10 @@ class EditBotForm(forms.Form):
         # Use LibCIA to validate the ruleset. It would be nice to
         # hilight errors, or even interactively validate rulesets on
         # the client side.. but this is sufficient for now.
-        return models.validate_ruleset(self.clean_data['custom_ruleset'], allow_empty)
+        return models.validate_ruleset(self.cleaned_data['custom_ruleset'], allow_empty)
 
     def apply(self, cset):
-        cset.set_field_dict(self.clean_data)
+        cset.set_field_dict(self.cleaned_data)
         cset.asset.syncToServer()
 
 

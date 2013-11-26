@@ -1,4 +1,4 @@
-from django import newforms as forms
+from django import forms as forms
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.core.mail import send_mail
@@ -18,8 +18,8 @@ class FeedbackForm(forms.Form):
     token = forms.CharField()
 
     def clean_token(self):
-        if FeedbackToken.get(self.clean_data['token']):
-            return self.clean_data['token']
+        if FeedbackToken.get(self.cleaned_data['token']):
+            return self.cleaned_data['token']
         else:
             # We should only get here in the event of:
             #  1. A spam bot
@@ -32,20 +32,20 @@ class FeedbackForm(forms.Form):
             raise forms.ValidationError("Your session expired. Please try again.")
 
 def send_feedback_mail(form):
-    if form.clean_data.get('email'):
-        from_addr = get_email_with_name(form.clean_data.get('name'),
-                                        form.clean_data.get('email'))
+    if form.cleaned_data.get('email'):
+        from_addr = get_email_with_name(form.cleaned_data.get('name'),
+                                        form.cleaned_data.get('email'))
     else:
         from_addr = settings.SERVER_EMAIL
 
     subject = "%s User feedback: %s..." % (
         settings.EMAIL_SUBJECT_PREFIX,
-        re.sub(r'\s+', ' ', form.clean_data['comment'])[:30].strip())
+        re.sub(r'\s+', ' ', form.cleaned_data['comment'])[:30].strip())
 
     message = unicode("Name: %(name)s\n"
                       "E-mail: %(email)s\n"
                       "Referrer: %(referrer)s\n"
-                      "\n%(comment)s" % form.clean_data).encode("utf-8")
+                      "\n%(comment)s" % form.cleaned_data).encode("utf-8")
 
     send_mail(subject, message, from_addr, [a[1] for a in settings.MANAGERS])
 
@@ -58,7 +58,7 @@ def feedback(request, referrer='/'):
         form = FeedbackForm(data)
         if form.is_valid():
             send_feedback_mail(form)
-            return HttpResponseRedirect(form.clean_data['referrer'])
+            return HttpResponseRedirect(form.cleaned_data['referrer'])
 
     elif request.user.is_authenticated():
         form = FeedbackForm({

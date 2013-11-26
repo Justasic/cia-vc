@@ -8,5 +8,7 @@ urlpatterns = patterns('cia.apps.blog.views',
    (r'^feed/$',                                              'blog_feed'),
    (r'^comment-feed/$',                                      'comment_feed'),
    (r'^post-comment/$',                                      'post_comment'),
+   (r'^delete-comment/(\d+)/(\d+)/$',                        'delete_comment'),
+   (r'^delete-comment/(\d+)/$',                              'delete_comment'),
    (r'^new-post/$',                                          'detail'),
 )

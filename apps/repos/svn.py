@@ -3,7 +3,7 @@ from django.conf import settings
 from django.template import loader
 from django.template.context import Context
 from django.contrib.sites.models import Site
-import django.newforms as forms
+import django.forms as forms
 import re, xmlrpclib, datetime
 import pysvn, httplib, urlparse, urllib
 

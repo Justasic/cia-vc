@@ -39,7 +39,7 @@ making keys map to pickled callable objects would be too fragile.
 from twisted.web import xmlrpc
 from twisted.internet import defer
 from twisted.python import failure, log
-import string, os, md5, time, cPickle
+import string, os, time, cPickle, hashlib
 from cStringIO import StringIO
 import Database, RpcServer
 
@@ -403,7 +403,7 @@ class User:
             cursor.execute("INSERT IGNORE INTO capabilities (uid, cap_md5, cap_repr)"
                            " VALUES(%d, %s, %s)" % (
                 uid,
-                Database.quote(md5.new(rep).hexdigest(), 'char'),
+                Database.quote(hashlib.new(rep).hexdigest(), 'char'),
                 Database.quote(rep, 'text')))
 
     def require(self, *capabilities):
@@ -430,7 +430,7 @@ class User:
         if capabilities:
             return "SELECT 1 FROM capabilities WHERE uid = %d AND (%s) LIMIT 1" % (
                 uid,
-                " OR ".join(["cap_md5 = " + Database.quote(md5.new(repr(c)).hexdigest(),
+                " OR ".join(["cap_md5 = " + Database.quote(hashlib.new(repr(c)).hexdigest(),
                                                            'char') for c in capabilities]),
                 )
         else:
