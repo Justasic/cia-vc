@@ -11,7 +11,7 @@ from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.contrib.contenttypes.models import ContentType
 import django.forms as forms
-from django.forms.util import smart_unicode
+from django.utils.encoding import smart_unicode
 from django.template import loader
 import re
 

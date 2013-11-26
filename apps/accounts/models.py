@@ -5,7 +5,8 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 import django.forms as forms
-from django.forms.util import smart_unicode, StrAndUnicode
+from django.forms.util import StrAndUnicode
+from django.utils.encoding import smart_unicode
 from cia.apps.stats.models import StatsTarget
 from cia.apps.repos.models import Repository
 import urlparse, xmlrpclib, re, difflib
@@ -70,11 +71,11 @@ class UserAssetManager(models.Manager):
 
 class UserAsset(models.Model):
     objects = UserAssetManager()
-    
+
     user = models.ForeignKey(User)
 
     content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()    
+    object_id = models.PositiveIntegerField()
     asset = generic.GenericForeignKey()
 
     access = models.PositiveSmallIntegerField(choices = access_choices,
@@ -124,7 +125,7 @@ class Network(models.Model):
 
     def id_string(self):
         return str(self.id)
-    
+
     def __unicode__(self):
         return self.description
 
@@ -265,7 +266,7 @@ class AssetChangeset(models.Model):
 
         self._request.user.message_set.create(
             message = "Your %s was updated successfully." %
-            self.asset.__class__._meta.verbose_name)        
+            self.asset.__class__._meta.verbose_name)
 
 
 special_changes = {
@@ -488,7 +489,7 @@ def validate_ruleset(content, allow_empty=False):
 
     # Disable LibCIA's XPath cache- it will fill up quickly
     # if we cache every random XPath that we validate for our users.
-    XML.enableXPathCache = False    
+    XML.enableXPathCache = False
 
     # Wrap the ruleset using no newlines, so the line numbers match
     wrapped = "<ruleset>%s</ruleset>" % content
@@ -624,7 +625,7 @@ class Bot(models.Model):
            """
         if self.filter_mode == FILTER.INACTIVE:
             self._storeRuleset(None)
-            
+
         elif self.filter_mode == FILTER.CUSTOM:
             self._storeRuleset(self.custom_ruleset)
 
