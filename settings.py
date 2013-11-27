@@ -68,12 +68,16 @@ for line in open(os.path.expanduser('~/.cia_db')):
     except ValueError:
         pass
 
-DATABASE_ENGINE = 'mysql'
-DATABASE_NAME = CIA_DB_SETTINGS.get('db', 'cia')
-DATABASE_USER = CIA_DB_SETTINGS.get('user', 'root')
-DATABASE_PASSWORD = CIA_DB_SETTINGS.get('passwd', '')
-DATABASE_HOST = CIA_DB_SETTINGS.get('host', '')
-DATABASE_PORT = CIA_DB_SETTINGS.get('port', '')
+DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': CIA_DB_SETTINGS.get('db', 'cia'),
+            'USER': CIA_DB_SETTINGS.get('user', 'root'),
+            'PASSWORD': CIA_DB_SETTINGS.get('passwd', ''),
+            'HOST': CIA_DB_SETTINGS.get('host', ''),
+            'PORT': CIA_DB_SETTINGS.get('port', ''),
+        }
+}
 
 #
 # CIA data files
@@ -104,7 +108,7 @@ CIA_INCOMING_MAIL_DOMAIN = "cia.vc"
 
 # Local time zone for this installation. All choices can be found here:
 # http://www.postgresql.org/docs/current/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
-TIME_ZONE = 'PST'
+TIME_ZONE = 'America/Los_Angeles'
 
 # Language code for this installation. All choices can be found here:
 # http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
@@ -117,7 +121,6 @@ SITE_ID = 1
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = rel_path('media')
-print MEDIA_ROOT
 
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
@@ -135,13 +138,12 @@ SECRET_KEY = open(os.path.expanduser('~/.django_secret')).read().strip()
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
-#     'django.template.loaders.eggs.load_template_source',
+    'django.template.loaders.app_directories.Loader',
+    'django.template.loaders.filesystem.Loader',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.core.context_processors.auth',
+    'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'cia.apps.context_processors.analytics',

@@ -124,7 +124,11 @@ class Post(models.Model):
         return '"%s" posted by %s at %s' % (self.title, self.posted_by, self.pub_date)
 
     def get_absolute_url(self):
-        return '/blog/%04d/%02d/%s/' % (self.pub_date.year, self.pub_date.month, self.slug)
+        """ New posts we don't need to worry about getting the url, just return empty string """
+        if self.pub_date is None:
+            return ""
+        else:
+            return '/blog/%04d/%02d/%s/' % (self.pub_date.year, self.pub_date.month, self.slug)
 
     def invalidate_cache(self):
         cache.delete('cia.apps.blog.%d' % self.id)
