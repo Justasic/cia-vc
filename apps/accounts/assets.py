@@ -10,6 +10,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.contrib.contenttypes.models import ContentType
+from django.contrib import messages
 import django.forms as forms
 from django.utils.encoding import smart_unicode
 from django.template import loader
@@ -174,7 +175,9 @@ class EditAssetForm(forms.Form):
            were successful, then redirect back to the 'add' page.
            """
         user_asset.delete()
-        request.user.message_set.create(message="Removed access to %s" % user_asset.asset)
+
+        messages.add_message(request, messages.INFO, "Removed access to %s" % user_asset.asset)
+
         return HttpResponseRedirect("/account/%s/add/" %
                                     user_asset.asset._meta.asset_type)
 
@@ -193,7 +196,8 @@ class EditAssetForm(forms.Form):
             elif new_access == models.ACCESS.COMMUNITY:
                 # Decreasing the access level
 
-                request.user.message_set.create(message="You now have community-level access to %s" % user_asset.asset)
+                messages.add_message(request, messages.INFO, "You now have community-level access to %s" % user_asset.asset)
+
                 assert user_asset.access > new_access
                 cset.set_meta('_community_access')
                 user_asset.access = new_access
@@ -204,7 +208,7 @@ class EditAssetForm(forms.Form):
                 # access also means revoking access from any other
                 # (community-access) users!
 
-                request.user.message_set.create(message="You have taken exclusive access to %s" % user_asset.asset)
+                messages.add_message(request, messages.INFO, "You have taken exclusive access to %s" % user_asset.asset)
                 cset.set_meta('_exclusive_access')
                 user_asset.access = new_access
                 user_asset.save()
@@ -316,7 +320,7 @@ def conflict(request, asset_type, asset_id):
         form.full_clean()
         if form.is_valid():
             send_conflict_message(request, owner_ua, form.cleaned_data['message'])
-            request.user.message_set.create(message="Message sent.")
+            messages.add_message(request, messages.INFO, "Message sent.")
 
             # Make it less convenient to send a bunch of rapid-fire messages
             disable_submit = True

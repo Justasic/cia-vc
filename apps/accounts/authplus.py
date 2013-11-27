@@ -8,6 +8,7 @@ from django.template import loader
 from django.template.context import RequestContext, Context
 from cia.apps.mailutil import send_mail_to_user
 from cia.apps.token import TokenClass
+from django.contrib import messages
 import datetime, urllib
 
 
@@ -239,7 +240,7 @@ def do_change_password(request):
     if not form.errors:
         request.user.set_password(form.cleaned_data['new_password'])
         request.user.save()
-        request.user.message_set.create(message="Your password was changed successfully.")
+        messages.add_message(request, messages.INFO, "Your password was changed successfully.")
     return form
 
 class ChangeProfileForm(forms.Form):
@@ -254,5 +255,5 @@ def do_change_profile(request):
         for key, value in form.cleaned_data.items():
             setattr(request.user, key, value)
         request.user.save()
-        request.user.message_set.create(message="Your profile was updated successfully.")
+        messages.add_message(request, messages.INFO, "Your profile was updated successfully.")
     return form

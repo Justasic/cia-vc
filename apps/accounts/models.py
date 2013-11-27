@@ -9,6 +9,7 @@ from django.forms.util import StrAndUnicode
 from django.utils.encoding import smart_unicode
 from cia.apps.stats.models import StatsTarget
 from cia.apps.repos.models import Repository
+from django.contrib import messages
 import urlparse, xmlrpclib, re, difflib
 
 
@@ -264,9 +265,7 @@ class AssetChangeset(models.Model):
         for model in self._changed_models:
             model.save()
 
-        self._request.user.message_set.create(
-            message = "Your %s was updated successfully." %
-            self.asset.__class__._meta.verbose_name)
+        messages.add_message(self._request, messages.INFO, "Your %s was updated successfully." % self.asset.__class__._meta.verbose_name)
 
 
 special_changes = {
