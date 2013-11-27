@@ -11,11 +11,14 @@ class TokenClass(SessionBase):
        """
     def __init__(self, key, expire_hours=2):
         self.key = key
-	self._session_key = None
+        self._session_key = None
         self.expiration = datetime.timedelta(hours=expire_hours)
 
     def new(self, data={}):
         token = self._get_session_key()
+
+        if token is None:
+            token = self._get_new_session_key()
 
         d = {self.key: True}
         d.update(data)
@@ -38,7 +41,7 @@ class TokenClass(SessionBase):
         decoded = session.get_decoded()
         if not decoded.get(self.key):
             return None
-        
+
         return decoded
 
     def delete(self, token):

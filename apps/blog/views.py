@@ -1,6 +1,6 @@
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
-from django.contrib.syndication.feeds import Feed
+from django.contrib.syndication.views import Feed
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.template.defaultfilters import slugify
 from django.conf import settings

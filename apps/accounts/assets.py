@@ -398,12 +398,12 @@ def stats_asset(request, asset_type, asset_id):
     asset = user_asset.asset
     asset.target.enforce_defaults()
 
-    print user_asset
-    print ctx
+    #print user_asset
+    #print ctx
 
     form = formtools.MultiForm(request.POST)
     form.validate(EditAssetForm, user_asset)
-    print form.EditAssetForm.access_levels
+    #print form.EditAssetForm.access_levels
     form.validate(StatsMetadataForm, asset.target)
     ctx['form'] = form
 
