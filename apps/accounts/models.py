@@ -5,8 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 import django.forms as forms
-from django.forms.util import StrAndUnicode
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_unicode, StrAndUnicode
 from cia.apps.stats.models import StatsTarget
 from cia.apps.repos.models import Repository
 from django.contrib import messages

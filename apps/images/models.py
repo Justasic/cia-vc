@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.db.models import signals
 from django.core.signals import got_request_exception
-import os, re, commands, random
-from popen2 import Popen4
+import os, re, commands, random, subprocess
+#from popen2 import Popen4
 
 # These must be listed from largest to smallest
 THUMBNAIL_SIZES = (512, 256, 128, 64, 32, 16)
@@ -43,7 +43,7 @@ class ImageMagick:
     def get_image_size(self, file_path):
         """Probe the size of an on-disk image, returning a (width, height) tuple.
            """
-        child = Popen4("%s -ping %s" % (self.IDENTIFY, commands.mkarg(file_path)))
+        child = subprocess.Popen("%s -ping %s" % (self.IDENTIFY, commands.mkarg(file_path)))
         output = child.fromchild.read()
         status = child.wait()
         match = re.search(r" (\d+)x(\d+) ", output)

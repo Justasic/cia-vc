@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 from django.conf import settings
 import django.contrib.auth.views
 from django.contrib import auth
@@ -12,7 +12,7 @@ login_page = {
     'next_page': settings.LOGIN_URL,
 }
 
-lost_pages = {   
+lost_pages = {
     'next_page': settings.LOGIN_URL,
     'recovery_page': '/account/reset/%s/',
 }

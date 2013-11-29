@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 from cia.apps.blog import models
 
 urlpatterns = patterns('cia.apps.blog.views',

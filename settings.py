@@ -6,7 +6,7 @@
 # control, so all information within must be public.
 #
 
-import django.contrib.auth
+#import django.contrib.auth
 import os
 
 def rel_path(p):
@@ -37,7 +37,8 @@ BANNED_IPS = ('195.225.178.23', '203.144.144.164', '83.69.224.164', '69.217.73.5
 #
 # XXX: This value must be defined separately for the old site, in official.web.tac
 #
-GOOGLE_ANALYTICS_ACCOUNT = "UA-247340-1"
+#GOOGLE_ANALYTICS_ACCOUNT = "UA-247340-1"
+GOOGLE_ANALYTICS_ACCOUNT = "UA-46071704-1"
 
 ADMINS = (
 #    ('Micah Dowty', 'micah@navi.cx'),
@@ -134,7 +135,7 @@ LOGIN_URL = '/account/login/'
 ADMIN_MEDIA_PREFIX = MEDIA_URL +'admin/'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = open(os.path.expanduser('~/.django_secret')).read().strip()
+SECRET_KEY = "1234" #open(os.path.expanduser('~/.django_secret')).read().strip()
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -150,6 +151,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'cia.apps.context_processors.site',
     'django.core.context_processors.request',
 )
+
+import sys
+print sys.path
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',

@@ -1,11 +1,15 @@
 #!/usr/bin/env python
-from django.core.management import execute_manager
-try:
-    import settings # Assumed to be in the same directory.
-except ImportError:
-    import sys
-    sys.stderr.write("Error: Can't find the file 'settings.py' in the directory containing %r. It appears you've customized things.\nYou'll have to run django-admin.py, passing it your settings module.\n(If the file settings.py does indeed exist, it's causing an ImportError somehow.)\n" % __file__)
-    sys.exit(1)
+import os
+import sys
 
 if __name__ == "__main__":
-    execute_manager(settings)
+    # because we're not as updated as django 1.5 on how our project should be structured
+    # We must add whatever directory we're in + up a dir to make manage.py be recognized
+    # inside the project directory
+    sys.path.append(os.path.expanduser(".."))
+    sys.path.append(os.path.expanduser("~"))
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cia.settings")
+
+    from django.core.management import execute_from_command_line
+
+    execute_from_command_line(sys.argv)

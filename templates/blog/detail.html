@@ -24,7 +24,7 @@
       <div class="comment comment-{% cycle odd,even %}" id="c{{ c.id }}">
 	<div>
 	  <a id="c{{ c.id }}" href="#c{{ c.id }}">#{{ forloop.counter }}</a>
-      {% if can_post %}<a href="{% url cia.apps.blog.views.delete_comment post.pk c.pk %}" class="X_button">X</a>{% endif %}
+      {% if can_post %}<a href="{% url "cia.apps.blog.views.delete_comment" post.pk c.pk %}" class="X_button">X</a>{% endif %}
 	  <strong>{{ c.person_name|escape }}</strong> wrote, on {{ c.submit_date|date:"Y-m-d" }}:
     </div>
     {{ c.comment|escape|linebreaks }}
@@ -38,7 +38,7 @@
 
     <div class="comment-form">
 	{% if comment_form %}
-		<form action="{% url cia.apps.blog.views.post_comment %}" method="post">{#% csrf_token %#}
+		<form action="{% url "cia.apps.blog.views.post_comment" %}" method="post">{#% csrf_token %#}
             <p><label for="id_person_name">Your Name: {{ comment_form.person_name }}</label></p>
             <p><label for="comment_id">Comment on <em>{{ post.title }}</em>: {{ comment_form.comment }}</label></p>
             <input type="hidden" name="post_id" value="{{ post.pk }}">
