@@ -28,7 +28,7 @@ from twisted.protocols import basic
 from twisted.words.protocols import irc
 from twisted.internet import protocol, reactor, defer
 from twisted.python import log, util
-import time, random, Queue
+import time, random, Queue, copy
 from LibCIA import TimeUtil
 from LibCIA.IRC import Network
 
@@ -617,7 +617,7 @@ class BotNetwork:
     def botInactivityCallback(self, bot):
         """Bots that have been unused for a while eventually end up here, and are disconnected"""
         log.msg("Disconnecting inactive bot %r" % bot)
-        bot.quit()
+        bot.quit("Disconnecting due to inactivity")
 
     def botConnected(self, bot):
         """Called by a bot when it has been successfully connected."""
@@ -692,6 +692,26 @@ class BotNetwork:
                 totals['unfulfilled'] += 1
 
         return totals
+
+    def disconnectAll(self, reason):
+        """ Disconnect all bots on all networks (e.g, core shutdown) """
+        # This seems like a nasty hack.. - Justasic
+        botstogo = []
+        for n in self.networks.itervalues():
+            # First, iterate the networks and their bots
+            # Then add them to a list
+            for bot in n:
+                botstogo.append(bot)
+
+        # Then start disconnecting the bots globally.
+        for bot in botstogo:
+            self.botDisconnected(bot)
+            bot.quit(reason)
+
+    def shutdown(self, reason):
+        """ Disconnect all bots with a reason and exit the process cleanly """
+        self.disconnectAll(reason)
+        reactor.stop()
 
 
 class ChannelInfo:
