@@ -205,5 +205,13 @@ class Comment(models.Model):
     def get_text(self):
         return self.comment
 
+    def getDescription(self, length=300):
+        if len(self.comment) <= length:
+            return self.comment
+        else:
+            return self.comment[:length].rsplit(" ", 1)[0] + "..."
+
+
+
     class Admin:
         pass

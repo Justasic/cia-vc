@@ -168,6 +168,12 @@ class CommentFeed(Feed):
     def items(self):
         return get_recent_comments()
 
+    def item_title(self, item):
+        return item.getDescription(50) + " posted by " + self.item_author_name(item) + " on " + item.post.title
+
+    def item_description(self, item):
+       return item.getDescription()
+
     def item_author_name(self, item):
         return item.person_name
 
@@ -175,21 +181,8 @@ class CommentFeed(Feed):
         return item.submit_date
 
     def item_link(self, item):
-        obj = item.get_content_object()
-        if obj:
-            item_url = obj.get_absolute_url()
-        else:
-            # The object doesn't exist any more, but this will at
-            # least give us a unique URL for the comment.
-            item_url = '/'
+        item_url = item.post.get_absolute_url()
         return "%s#c%d" % (item_url, item.id)
-
-
-def comment_feed(request):
-    f = CommentFeed('comment', request.path).get_feed()
-    response = HttpResponse(mimetype = f.mime_type)
-    f.write(response, 'utf-8')
-    return response
 
 def post_comment(request):
     """Post a comment, and redirect back to the blog entry on success."""
