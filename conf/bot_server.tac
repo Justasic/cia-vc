@@ -11,6 +11,7 @@
 from twisted.application import service, internet
 #from twisted.conch.manhole_tap import makeService 
 from LibCIA.IRC import Bots
+from settings import rel_path
 
 # This shit is all for the stupid console authentication
 from twisted.conch.manhole import ColoredManhole
@@ -33,7 +34,7 @@ application = service.Application("bot_server")
 botNet = Bots.BotNetwork(Bots.SequentialNickAllocator("CIA-"))
 
 # The bot server listens on a UNIX socket rather than TCP/IP, for security
-botSocketName = "bots.socket"
+botSocketName = rel_path("bots.socket")
 
 internet.UNIXServer(botSocketName, Bots.CommandHandlerFactory(botNet)).setServiceParent(application)
 
