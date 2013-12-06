@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template.context import RequestContext
 from django.contrib.syndication.views import Feed
 from django.http import HttpResponse, Http404, HttpResponseRedirect
@@ -28,8 +28,6 @@ def get_blog_context(request):
         'posts': posts,
         'archive_dates': posts.dates('pub_date', 'month')[::-1],
         'can_post': is_admin,
-        'comment_list': get_recent_comments().order_by('-id'),
-        'comment_count': int(len(get_recent_comments())),
         })
 
 def archive(request, num_latest=None, year=None, month=None):
@@ -82,13 +80,9 @@ def detail(request, year=None, month=None, slug=None):
 
     else :
         # Look up an existing post. The slug and date must both match.
-
-        try:
-            post = Post.objects.get(pub_date__year = int(year),
-                                    pub_date__month = int(month),
-                                    slug = slug)
-        except Post.DoesNotExist:
-            raise Http404
+        post = get_object_or_404(Post, slug = slug,
+                                 pub_date__year = int(year),
+                                 pub_date__month= int(month))
 
     # Show an editing form if this user is allowed to make posts
     # and if they own the current post.

@@ -16,6 +16,6 @@
   <div class="by-line">Posted by {{ post.posted_by.get_full_name|escape }}</div>
   <span>&raquo;</span>
   <a href="{{ post.get_absolute_url|escape }}">Permanent Link /
-    {{ comment_count }} Comment{{ comment_count|pluralize }}</a>
+    {{ post.getCommentCount }} Comment{{ post.getCommentCount|pluralize }}</a>
 </div>
 

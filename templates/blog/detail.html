@@ -18,9 +18,10 @@
 
   {% if post.listed %}
 
-    {% if comment_list %}
+  {#% if comment_list %#}
+  {% if post.getCommentCount > 0 %}
     <div class="comments">
-    {% for c in comment_list %}
+    {% for c in post.getComments %}
       <div class="comment comment-{% cycle odd,even %}" id="c{{ c.id }}">
 	<div>
 	  <a id="c{{ c.id }}" href="#c{{ c.id }}">#{{ forloop.counter }}</a>

@@ -133,6 +133,12 @@ class Post(models.Model):
     def invalidate_cache(self):
         cache.delete('cia.apps.blog.%d' % self.id)
 
+    def getComments(self):
+        return Comment.objects.filter(post=self, is_public=True)
+
+    def getCommentCount(self):
+        return Comment.objects.filter(post=self, is_public=True).count()
+
     def reference_images(self):
         """Find all images used by this blog post, and reference them
            permanently. This prevents the images from being treated
