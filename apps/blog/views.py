@@ -149,18 +149,17 @@ class BlogFeed(Feed):
             listed = True,
             ).order_by('-pub_date')[:20]
 
+    def item_title(self, item):
+        return item.title
+
+    def item_description(self, item):
+        return item.getDescription()
+
     def item_author_name(self, item):
         return item.posted_by.get_full_name()
 
     def item_pubdate(self, item):
         return item.pub_date
-
-def blog_feed(request):
-    f = BlogFeed('blog', request.path).get_feed()
-    response = HttpResponse(mimetype = f.mime_type)
-    f.write(response, 'utf-8')
-    return response
-
 
 class CommentFeed(Feed):
     title = 'CIA Blog Comments'

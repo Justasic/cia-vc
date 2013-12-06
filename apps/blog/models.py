@@ -139,6 +139,13 @@ class Post(models.Model):
     def getCommentCount(self):
         return Comment.objects.filter(post=self, is_public=True).count()
 
+    def getDescription(self):
+        length = 300
+        if len(self.content) <= length:
+            return self.content
+        else:
+            return self.content[:length].rsplit(" ", 1)[0] + "..."
+
     def reference_images(self):
         """Find all images used by this blog post, and reference them
            permanently. This prevents the images from being treated
