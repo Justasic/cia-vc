@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 from cia.apps.images import views
 from django.conf import settings
 import os

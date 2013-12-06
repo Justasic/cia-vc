@@ -47,7 +47,7 @@
     <h2 class="tabset_label">Basic Filtering</h2>
 
     <div class="form-row">
-      {{ form.EditBotForm.filter_modes.INACTIVE }}
+      {{ form.EditBotForm.filter_mode.1.tag }} {{ form.EditBotForm.filter_mode.1.choice_label }}
       <div class="radio">
 	<p class="note">
 	  The bot will be disabled. All settings will be preserved,
@@ -57,7 +57,7 @@
     </div>
 
     <div class="form-row">
-      {{ form.EditBotForm.filter_modes.PROJECT_LIST }}
+      {{ form.EditBotForm.filter_mode.3.tag }} {{ form.EditBotForm.filter_mode.3.choice_label }}
       <div class="radio">
 	<p class="note">
 	  The bot will report commits to any of the following projects.
@@ -74,7 +74,7 @@
     </div>
 
     <div class="form-row">
-      {{ form.EditBotForm.filter_modes.CUSTOM }}
+      {{ form.EditBotForm.filter_mode.2.tag }} {{ form.EditBotForm.filter_mode.2.choice_label }}
       <div class="radio">
 	<p class="note">
 	  You can define and edit a custom filter using the

@@ -193,7 +193,7 @@ class AssetChangeset(models.Model):
     asset = generic.GenericForeignKey()
 
     def __unicode__(self):
-        return "Change %d for %s by %s" % (self.id, self.asset, self.user)
+        return "Change %d for %s by %s" % (self.id or 0, self.asset, self.user)
 
     def _lookup_model(self, field):
         """Parse dotted fields, looking up their model instance.
@@ -658,8 +658,7 @@ class Bot(models.Model):
                 return
             content = ''
 
-        server.ruleset.store(settings.CIA_KEY,
-                             self._wrapRuleset(content))
+        server.ruleset.store(settings.CIA_KEY, self._wrapRuleset(content))
 
     def __unicode__(self):
         return "%s on %s" % (self.location, self.network)

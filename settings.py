@@ -152,9 +152,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
 )
 
-import sys
-print sys.path
-
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'cia.apps.middleware.BehindReverseProxy',
