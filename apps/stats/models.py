@@ -1,7 +1,7 @@
 from django.db import models
 from urllib import quote
 from cia.apps.images.models import ImageSource, ImageInstance
-from django.newforms.util import smart_unicode, StrAndUnicode
+from django.utils.encoding import smart_unicode, StrAndUnicode
 
 class StatsTargetManager(models.Manager):
     def withIcons(self, size):
@@ -40,13 +40,13 @@ class StatsTarget(StrAndUnicode, models.Model):
        Esquilax query along with an individual URL.
        """
     objects = StatsTargetManager()
-    
-    path = models.CharField(maxlength=255, db_index=True)
+
+    path = models.CharField(max_length=255, db_index=True)
 
     # User-editable Stats metadata
-    title = models.CharField(maxlength=128, null=True, blank=True)
-    subtitle = models.CharField(maxlength=128, null=True, blank=True)
-    url = models.CharField(maxlength=255, null=True, blank=True)
+    title = models.CharField(max_length=128, null=True, blank=True)
+    subtitle = models.CharField(max_length=128, null=True, blank=True)
+    url = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     photo = models.ForeignKey(ImageSource, null=True, related_name='targets_by_photo')
     icon = models.ForeignKey(ImageSource, null=True, related_name='targets_by_icon')

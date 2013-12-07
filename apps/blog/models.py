@@ -47,7 +47,7 @@ class ImageTranslator(nodes.SparseNodeVisitor):
     def __init__(self, document):
         nodes.SparseNodeVisitor.__init__(self, document)
         self.images = []
-    
+
     def visit_image(self, node):
         m = re.match(r"^#(\d+)(/(\d*))?$", node['uri'])
         if not m:
@@ -103,7 +103,7 @@ class ImageTranslator(nodes.SparseNodeVisitor):
             instance.width, instance.height,
             styles.get('img', ''),
             ))
-    
+
         if href:
             parts.append('</a>')
         if 'div' in styles:
@@ -113,22 +113,38 @@ class ImageTranslator(nodes.SparseNodeVisitor):
 
 
 class Post(models.Model):
-    slug = models.SlugField('slug', unique_for_date='pub_date',
-                            prepopulate_from=['title'], db_index=True)
+    slug = models.SlugField('slug', unique_for_date='pub_date', db_index=True)
     pub_date = models.DateTimeField(db_index=True)
     posted_by = models.ForeignKey(User)
     listed = models.BooleanField('Listed in public indexes?', default=False)
-    title = models.CharField(maxlength=100)
+    title = models.CharField(max_length=100)
     content = models.TextField()
 
-    def __str__(self):
+    def __unicode__(self):
         return '"%s" posted by %s at %s' % (self.title, self.posted_by, self.pub_date)
 
     def get_absolute_url(self):
-        return '/blog/%04d/%02d/%s/' % (self.pub_date.year, self.pub_date.month, self.slug)
+        """ New posts we don't need to worry about getting the url, just return empty string """
+        if self.pub_date is None:
+            return ""
+        else:
+            return '/blog/%04d/%02d/%s/' % (self.pub_date.year, self.pub_date.month, self.slug)
 
     def invalidate_cache(self):
         cache.delete('cia.apps.blog.%d' % self.id)
+
+    def getComments(self):
+        return Comment.objects.filter(post=self, is_public=True)
+
+    def getCommentCount(self):
+        return Comment.objects.filter(post=self, is_public=True).count()
+
+    def getDescription(self):
+        length = 300
+        if len(self.content) <= length:
+            return self.content
+        else:
+            return self.content[:length].rsplit(" ", 1)[0] + "..."
 
     def reference_images(self):
         """Find all images used by this blog post, and reference them
@@ -172,6 +188,30 @@ class Post(models.Model):
 
             cache.set(key, parts)
         return parts
+
+    class Admin:
+        pass
+
+class Comment(models.Model):
+    submit_date = models.DateTimeField(auto_now_add=True)
+    person_name = models.CharField(max_length=60)
+    comment = models.TextField()
+    post = models.ForeignKey(Post)
+    is_public = models.BooleanField()
+
+    def __unicode__(self):
+        return unicode("%s: %s" % (self.post, self.comment[:60]))
+
+    def get_text(self):
+        return self.comment
+
+    def getDescription(self, length=300):
+        if len(self.comment) <= length:
+            return self.comment
+        else:
+            return self.comment[:length].rsplit(" ", 1)[0] + "..."
+
+
 
     class Admin:
         pass

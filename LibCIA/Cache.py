@@ -24,7 +24,7 @@ A generic object cache. Arbitrary python objects are mapped to files or strings.
 
 from twisted.internet import defer
 from twisted.python import log
-import time, md5, os, random, cPickle, traceback, sys
+import time, os, random, cPickle, traceback, sys, hashlib
 from LibCIA import Files
 
 class CachePerformance:
@@ -119,7 +119,7 @@ class AbstractFileCache:
            and this data type. This combines a hash of args with the name of this class.
            We create the cache directory if necessary.
            """
-        hash = md5.md5(repr(args)).hexdigest()
+        hash = hashlib.md5(repr(args)).hexdigest()
         return Files.getCacheFile(self.__class__.__name__, hash)
 
     def getTempFilename(self):

@@ -98,7 +98,7 @@ CIA.vc - Overview
                                     <tr><th>title</th><th>events today</th></tr>
                                     {% for row in active_authors %}
                                         <tr>
-                                            <td><a href="/stats/project/{{ row.title|urlencode }}">{{ row.title }}</a></td>
+                                            <td><a href="/stats/authors/{{ row.title|urlencode }}">{{ row.title }}</a></td>
                                             <td><span class="bargraph" style="padding: {{ row.bargraph }}">
                                                     {{ row.event_count }}
                                         </span></td>

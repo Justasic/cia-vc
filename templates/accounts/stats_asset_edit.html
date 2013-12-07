@@ -47,12 +47,16 @@
 
     <div class="form-row">
       <label for="id_photo_id_iframe">Primary image:</label>
+      {% autoescape off %}
       {{ form.photo_id }}
+      {% endautoescape%}
     </div>
 
     <div class="form-row">
       <label for="id_icon_id_iframe">Icon image:</label>
+      {% autoescape off %}
       {{ form.icon_id }}
+      {% endautoescape %}
     </div>
 
   </div>

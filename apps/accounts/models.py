@@ -3,10 +3,12 @@ from django.conf import settings
 from django.utils.html import escape
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
-import django.newforms as forms
-from django.newforms.util import smart_unicode, StrAndUnicode
+from django.contrib.contenttypes import generic
+import django.forms as forms
+from django.utils.encoding import smart_unicode, StrAndUnicode
 from cia.apps.stats.models import StatsTarget
 from cia.apps.repos.models import Repository
+from django.contrib import messages
 import urlparse, xmlrpclib, re, difflib
 
 
@@ -69,12 +71,12 @@ class UserAssetManager(models.Manager):
 
 class UserAsset(models.Model):
     objects = UserAssetManager()
-    
+
     user = models.ForeignKey(User)
 
     content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()    
-    asset = models.GenericForeignKey()
+    object_id = models.PositiveIntegerField()
+    asset = generic.GenericForeignKey()
 
     access = models.PositiveSmallIntegerField(choices = access_choices,
                                               default = ACCESS.COMMUNITY)
@@ -82,7 +84,7 @@ class UserAsset(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     trusted_by = models.DateTimeField(null=True, blank=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return "%s access to %s for %s" % (
             self.get_access_display(),
             self.asset,
@@ -113,8 +115,8 @@ class NetworkManager(models.Manager):
 class Network(models.Model):
     objects = NetworkManager()
 
-    uri = models.CharField(maxlength=128)
-    description = models.CharField(maxlength=200)
+    uri = models.CharField(max_length=128)
+    description = models.CharField(max_length=200)
 
     is_popular = models.BooleanField(default=False)
     reviewed_by_admin = models.BooleanField(default=False)
@@ -123,8 +125,8 @@ class Network(models.Model):
 
     def id_string(self):
         return str(self.id)
-    
-    def __str__(self):
+
+    def __unicode__(self):
         return self.description
 
     def getHost(self, requiredScheme):
@@ -184,14 +186,14 @@ class AssetChangeset(models.Model):
 
     time = models.DateTimeField(auto_now_add=True, db_index=True)
     user = models.ForeignKey(User)
-    remote_addr = models.CharField(maxlength=32, null=True)
+    remote_addr = models.CharField(max_length=32, null=True)
 
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField(db_index=True)
-    asset = models.GenericForeignKey()
+    asset = generic.GenericForeignKey()
 
-    def __str__(self):
-        return "Change %d for %s by %s" % (self.id, self.asset, self.user)
+    def __unicode__(self):
+        return "Change %d for %s by %s" % (self.id or 0, self.asset, self.user)
 
     def _lookup_model(self, field):
         """Parse dotted fields, looking up their model instance.
@@ -262,9 +264,7 @@ class AssetChangeset(models.Model):
         for model in self._changed_models:
             model.save()
 
-        self._request.user.message_set.create(
-            message = "Your %s was updated successfully." %
-            self.asset.__class__._meta.verbose_name)        
+        messages.add_message(self._request, messages.INFO, "Your %s was updated successfully." % self.asset.__class__._meta.verbose_name)
 
 
 special_changes = {
@@ -286,7 +286,7 @@ class AssetChangeItem(models.Model):
        in access level.
        """
     changeset = models.ForeignKey(AssetChangeset, related_name='items')
-    field = models.CharField(maxlength=32, db_index=True)
+    field = models.CharField(max_length=32, db_index=True)
 
     # Storing both the new value and old value is redundant, but it should
     # reduce the I/O load on the database relative to storing only diffs, since
@@ -393,7 +393,7 @@ class AssetChangeItem(models.Model):
 
         return chunks
 
-    def __str__(self):
+    def __unicode__(self):
         if self.new_value is None:
             return str(self.field)
         else:
@@ -434,12 +434,12 @@ class AssetManager(models.Manager):
 
 class Project(StrAndUnicode, models.Model):
     objects = AssetManager()
-    assets = models.GenericRelation(UserAsset)
+    assets = generic.GenericRelation(UserAsset)
     target = models.ForeignKey(StatsTarget)
 
     repos = models.ForeignKey(Repository, null=True)
 
-    secret_key = models.CharField(maxlength=64, null=True)
+    secret_key = models.CharField(max_length=64, null=True)
     allow_anonymous_messages = models.BooleanField(default=True, choices=yes_no_choices)
     allow_trusted_messages = models.BooleanField(default=True, choices=yes_no_choices)
 
@@ -457,7 +457,7 @@ class Project(StrAndUnicode, models.Model):
 
 class Author(StrAndUnicode, models.Model):
     objects = AssetManager()
-    assets = models.GenericRelation(UserAsset)
+    assets = generic.GenericRelation(UserAsset)
     target = models.ForeignKey(StatsTarget)
 
     def __unicode__(self):
@@ -487,7 +487,7 @@ def validate_ruleset(content, allow_empty=False):
 
     # Disable LibCIA's XPath cache- it will fill up quickly
     # if we cache every random XPath that we validate for our users.
-    XML.enableXPathCache = False    
+    XML.enableXPathCache = False
 
     # Wrap the ruleset using no newlines, so the line numbers match
     wrapped = "<ruleset>%s</ruleset>" % content
@@ -541,10 +541,10 @@ def clean_up_text(text,
 
 class Bot(models.Model):
     objects = AssetManager()
-    assets = models.GenericRelation(UserAsset)
+    assets = generic.GenericRelation(UserAsset)
 
     network = models.ForeignKey(Network)
-    location = models.CharField(maxlength=64, db_index=True)
+    location = models.CharField(max_length=64, db_index=True)
 
     filter_mode = models.PositiveSmallIntegerField(
         choices=filter_mode_choices, default=FILTER.UNKNOWN)
@@ -623,7 +623,7 @@ class Bot(models.Model):
            """
         if self.filter_mode == FILTER.INACTIVE:
             self._storeRuleset(None)
-            
+
         elif self.filter_mode == FILTER.CUSTOM:
             self._storeRuleset(self.custom_ruleset)
 
@@ -658,10 +658,9 @@ class Bot(models.Model):
                 return
             content = ''
 
-        server.ruleset.store(settings.CIA_KEY,
-                             self._wrapRuleset(content))
+        server.ruleset.store(settings.CIA_KEY, self._wrapRuleset(content))
 
-    def __str__(self):
+    def __unicode__(self):
         return "%s on %s" % (self.location, self.network)
 
     class Admin:

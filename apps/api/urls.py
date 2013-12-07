@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 from cia.apps.api import bots, validator, search
 
 # IRC Network names are like hostnames. They can be fully-qualified

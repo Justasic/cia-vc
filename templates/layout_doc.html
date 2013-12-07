@@ -18,9 +18,11 @@
 {% endif %}
 
 <div class="document">
+{% autoescape off%}
 {{ parts.html_title }}
 {{ parts.html_subtitle }}
 {{ parts.fragment }}
+{% endautoescape %}
 </div>
 
 </div>

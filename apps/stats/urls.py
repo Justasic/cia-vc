@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 from cia.apps.stats import browser
 
 urlpatterns = patterns('',

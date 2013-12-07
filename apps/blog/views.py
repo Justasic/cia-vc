@@ -1,25 +1,18 @@
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template.context import RequestContext
-from django.contrib.syndication.feeds import Feed
-from django.contrib.comments.views.comments import post_free_comment
-from django.contrib.comments.models import FreeComment
+from django.contrib.syndication.views import Feed
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.template.defaultfilters import slugify
 from django.conf import settings
-from cia.apps.blog.models import Post
-import django.newforms as forms
+from cia.apps.blog.models import Post, Comment
+import django.forms as forms
 import datetime
 
 def is_blog_admin(request):
     return request.user.is_authenticated() and request.user.is_staff
 
 def get_recent_comments():
-    return FreeComment.objects.filter(
-        site__pk = settings.SITE_ID,
-        is_public = True,
-        content_type__app_label__exact = 'blog',
-        content_type__model__exact = 'Post',
-        )
+    return Comment.objects.filter(is_public = True)
 
 def get_blog_context(request):
     is_admin = is_blog_admin(request)
@@ -35,7 +28,6 @@ def get_blog_context(request):
         'posts': posts,
         'archive_dates': posts.dates('pub_date', 'month')[::-1],
         'can_post': is_admin,
-        'recent_comments': get_recent_comments().order_by('-id')[:10],
         })
 
 def archive(request, num_latest=None, year=None, month=None):
@@ -65,13 +57,14 @@ def archive(request, num_latest=None, year=None, month=None):
 
 class EditPostForm(forms.Form):
     title = forms.CharField()
-    listed = forms.BooleanField(
-        required = False,
-        widget = forms.CheckboxInput(attrs = {'class': 'checkbox'}),
-        )
-    content = forms.CharField(
-        widget = forms.Textarea,
-        )
+    listed = forms.BooleanField(required = False, widget = forms.CheckboxInput(attrs = {'class': 'checkbox'}),)
+    content = forms.CharField(widget = forms.Textarea,)
+
+
+class CommentForm(forms.ModelForm):
+	class Meta:
+		model = Comment
+		exclude = ["post"]
 
 def detail(request, year=None, month=None, slug=None):
     ctx = get_blog_context(request)
@@ -87,13 +80,9 @@ def detail(request, year=None, month=None, slug=None):
 
     else :
         # Look up an existing post. The slug and date must both match.
-
-        try:
-            post = Post.objects.get(pub_date__year = int(year),
-                                    pub_date__month = int(month),
-                                    slug = slug)
-        except Post.DoesNotExist:
-            raise Http404
+        post = get_object_or_404(Post, slug = slug,
+                                 pub_date__year = int(year),
+                                 pub_date__month= int(month))
 
     # Show an editing form if this user is allowed to make posts
     # and if they own the current post.
@@ -107,13 +96,13 @@ def detail(request, year=None, month=None, slug=None):
             post_form = EditPostForm(model)
 
             if post_form.is_valid():
-                post.content = post_form.clean_data['content']
-                post.title = post_form.clean_data['title']
+                post.content = post_form.cleaned_data['content']
+                post.title = post_form.cleaned_data['title']
 
                 # Bump the publication date if we're transitioning from draft to listed.
-                if (not post.pub_date) or (post_form.clean_data['listed'] and not post.listed):
+                if (not post.pub_date) or (post_form.cleaned_data['listed'] and not post.listed):
                     post.pub_date = datetime.datetime.now()
-                post.listed = post_form.clean_data['listed']
+                post.listed = post_form.cleaned_data['listed']
 
                 # Update the slug if the post is unlisted
                 if (not post.slug) or (not post.listed):
@@ -126,15 +115,24 @@ def detail(request, year=None, month=None, slug=None):
 
                 post.save()
                 post.invalidate_cache()
-            
+
         else:
             post_form = EditPostForm(initial = post.__dict__)
+
+    if request.user.is_authenticated():
+        if request.user.first_name and request.user.last_name:
+            user_full_name = u"%s %s" % (request.user.first_name, request.user.last_name)
+        else:
+            user_full_name = request.user.username
+    else:
+        user_full_name = "Anonymous"
 
     ctx.update({
         'latest': ctx['posts'].order_by('-pub_date')[:15],
         'post': post,
         'post_form': post_form,
-        })        
+        'comment_form': CommentForm(initial={'person_name': user_full_name}),
+        })
     return render_to_response('blog/detail.html', ctx)
 
 
@@ -151,18 +149,17 @@ class BlogFeed(Feed):
             listed = True,
             ).order_by('-pub_date')[:20]
 
+    def item_title(self, item):
+        return item.title
+
+    def item_description(self, item):
+        return item.getDescription()
+
     def item_author_name(self, item):
         return item.posted_by.get_full_name()
 
     def item_pubdate(self, item):
         return item.pub_date
-
-def blog_feed(request):
-    f = BlogFeed('blog', request.path).get_feed()
-    response = HttpResponse(mimetype = f.mime_type)
-    f.write(response, 'utf-8')
-    return response
-
 
 class CommentFeed(Feed):
     title = 'CIA Blog Comments'
@@ -171,6 +168,12 @@ class CommentFeed(Feed):
     def items(self):
         return get_recent_comments()
 
+    def item_title(self, item):
+        return item.getDescription(50) + " posted by " + self.item_author_name(item) + " on " + item.post.title
+
+    def item_description(self, item):
+       return item.getDescription()
+
     def item_author_name(self, item):
         return item.person_name
 
@@ -178,40 +181,46 @@ class CommentFeed(Feed):
         return item.submit_date
 
     def item_link(self, item):
-        obj = item.get_content_object()
-        if obj:
-            item_url = obj.get_absolute_url()
-        else:
-            # The object doesn't exist any more, but this will at
-            # least give us a unique URL for the comment.
-            item_url = '/'
+        item_url = item.post.get_absolute_url()
         return "%s#c%d" % (item_url, item.id)
-
-
-def comment_feed(request):
-    f = CommentFeed('comment', request.path).get_feed()
-    response = HttpResponse(mimetype = f.mime_type)
-    f.write(response, 'utf-8')
-    return response
-
 
 def post_comment(request):
     """Post a comment, and redirect back to the blog entry on success."""
 
-    answer=0
-    try:
-        # El cheapo anti-spammage - only shows up on the preview page
-        answer=request.POST["answer"]
-    except KeyError:
-        pass
-    if answer != '4711' and 'post' in request.POST:
+    if not request.POST:
         raise Http404
 
-    response = post_free_comment(request)
-    if isinstance(response, HttpResponseRedirect):
-        # We can assume content_type refers to Post, since this
-        # comment posting URL is local to the blogging app.
-        target = request.POST['target']
-        content_type_id, object_id = target.split(':')
-        return HttpResponseRedirect(Post.objects.get(pk=int(object_id)).get_absolute_url())
+    p = request.POST
+    object_id = p['post_id']
+    if p.has_key("comment") and p["comment"]:
+        author = "Anonymous"
+        if p["person_name"]:
+            author = p["person_name"]
+
+        comment = Comment(post=Post.objects.get(pk=object_id))
+        cf = CommentForm(p, instance=comment)
+        comment = cf.save(commit=False)
+        comment.author = author
+        comment.is_public = True
+        comment.save()
+
+    response = HttpResponseRedirect(Post.objects.get(pk=int(object_id)).get_absolute_url())
     return response
+
+def delete_comment(request, post_pk, pk=None):
+    """ Delete a blog comment """
+
+    if not request.user.is_staff:
+        raise Http404
+
+    p = request.POST
+    if not pk:
+        pklst = request.POST.getlist("delete")
+    else:
+        pklst = [pk]
+
+    post = Post.objects.get(pk=post_pk)
+    for pkk in pklst:
+        Comment.objects.get(pk=pkk).delete()
+    return HttpResponseRedirect(post.get_absolute_url())
+

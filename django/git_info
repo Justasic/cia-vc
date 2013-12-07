@@ -1,5 +1,0 @@
-Cloned from commit: 0e924c70b1ec5cae635a99d9fe7e279698dc5cd0
-SVN ID: 4485
-Git Repo: https://github.com/django/django/
-Command: git clone https://github.com/django/django ~/cia/django; git checkout 0e924c70b1ec5cae635a99d9fe7e279698dc5cd0
-

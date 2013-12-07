@@ -1,4 +1,4 @@
-from django import newforms as forms
+from django import forms as forms
 from django.conf import settings
 from django.contrib import auth
 from django.contrib.auth.models import User
@@ -8,6 +8,7 @@ from django.template import loader
 from django.template.context import RequestContext, Context
 from cia.apps.mailutil import send_mail_to_user
 from cia.apps.token import TokenClass
+from django.contrib import messages
 import datetime, urllib
 
 
@@ -130,11 +131,11 @@ def reset(request, key, next_page):
         validate_test_cookie(form, request)
 
         if not form.errors:
-            user.set_password(form.clean_data['password'])
+            user.set_password(form.cleaned_data['password'])
             user.save()
 
             # Try to log in using the new password
-            loginError = internal_login(request, user.username, form.clean_data['password'])
+            loginError = internal_login(request, user.username, form.cleaned_data['password'])
             if loginError:
                 # This might happen if the account is deactivated.
                 form.errors['submit'] = forms.util.ErrorList([loginError])
@@ -191,11 +192,11 @@ def register(request, next_page, template_name="accounts/register.html"):
         if not form.errors:
             # The username still might be taken, but let's test for that atomically
             # as a side-effect of trying to create the user.
-            user = auth.models.User(first_name = form.clean_data['first_name'].title(),
-                                    last_name = form.clean_data['last_name'].title(),
-                                    email = form.clean_data['email'],
-                                    username = form.clean_data['username'])
-            user.set_password(form.clean_data['password'])
+            user = auth.models.User(first_name = form.cleaned_data['first_name'].title(),
+                                    last_name = form.cleaned_data['last_name'].title(),
+                                    email = form.cleaned_data['email'],
+                                    username = form.cleaned_data['username'])
+            user.set_password(form.cleaned_data['password'])
             try:
                 user.save()
             except:
@@ -203,7 +204,7 @@ def register(request, next_page, template_name="accounts/register.html"):
                 # To make this portable, we'll do a second check to see if the username
                 # was taken. This is also slightly racy, but much less so than checking
                 # beforehand. Easier to ask forgiveness than permission.
-                if get_user(form.clean_data['username']):
+                if get_user(form.cleaned_data['username']):
                     form.errors['username'] = forms.util.ErrorList(["Sorry, this username is taken."])
                 else:
                     # Something else happened.. pass on the exception
@@ -212,7 +213,7 @@ def register(request, next_page, template_name="accounts/register.html"):
         if not form.errors:
             # Something's wrong internally if we can't log in to the
             # account we just created...
-            assert not internal_login(request, form.clean_data['username'], form.clean_data['password'])
+            assert not internal_login(request, form.cleaned_data['username'], form.cleaned_data['password'])
             return HttpResponseRedirect(next_page)
 
     else:
@@ -237,9 +238,9 @@ def do_change_password(request):
     validate_password_confirmation(form, 'new_password')
     validate_old_password(form, request.user, 'old_password')
     if not form.errors:
-        request.user.set_password(form.clean_data['new_password'])
+        request.user.set_password(form.cleaned_data['new_password'])
         request.user.save()
-        request.user.message_set.create(message="Your password was changed successfully.")
+        messages.add_message(request, messages.INFO, "Your password was changed successfully.")
     return form
 
 class ChangeProfileForm(forms.Form):
@@ -251,8 +252,8 @@ def do_change_profile(request):
     form = ChangeProfileForm(request.POST)
     form.full_clean()
     if not form.errors:
-        for key, value in form.clean_data.items():
+        for key, value in form.cleaned_data.items():
             setattr(request.user, key, value)
         request.user.save()
-        request.user.message_set.create(message="Your profile was updated successfully.")
+        messages.add_message(request, messages.INFO, "Your profile was updated successfully.")
     return form

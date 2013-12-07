@@ -1,4 +1,4 @@
-from django.newforms.widgets import Widget
+from django.forms.widgets import Widget
 from django.utils.html import escape
 
 class ImageWidget(Widget):

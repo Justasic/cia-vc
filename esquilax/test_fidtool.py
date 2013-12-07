@@ -82,12 +82,12 @@ def graph_test(fd, fromTime, toTime):
     f = open("foo.png", "wb")
     _fidtool.graph_png(fd, f, size, colors, scales)
     f.close()
-        
+
 
 if __name__ == "__main__":
-    dataset = map(int, open("timestamps.txt"))
-    #dataset = [x * 5 for x in range(6500)]
-    
+    #dataset = map(int, open("timestamps.txt"))
+    dataset = [x * 5 for x in range(6500)]
+
     fd = os.open("foo", os.O_CREAT | os.O_RDWR, 0666)
 
 #    print "Building FID"
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
 #    print "Testing FID"
 #    test_fid(dataset, fd)
- 
+
     print "Graphing"
     graph_test(fd, dataset[0], dataset[-1])
     os.close(fd)

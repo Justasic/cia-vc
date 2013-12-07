@@ -4,14 +4,15 @@ from cia.apps.images.widgets import ImageWidget
 from cia.apps.stats.models import StatsTarget
 from cia.apps.repos.models import Repository
 from cia.apps.mailutil import get_email_for_user, render_to_email
-from django.core.paginator import ObjectPaginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.mail import mail_managers, send_mail
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.contrib.contenttypes.models import ContentType
-import django.newforms as forms
-from django.newforms.util import smart_unicode
+from django.contrib import messages
+import django.forms as forms
+from django.utils.encoding import smart_unicode
 from django.template import loader
 import re
 
@@ -163,26 +164,28 @@ class EditAssetForm(forms.Form):
         self.access_levels = formtools.RadioChoices(self['access'], models.ACCESS)
 
     def clean_access(self):
-        return int(self.clean_data['access'])
+        return int(self.cleaned_data['access'])
 
     def should_delete(self):
         """Are we removing access to this asset?"""
-        return self.clean_data['access'] == models.ACCESS.NONE
+        return self.cleaned_data['access'] == models.ACCESS.NONE
 
     def delete(self, request, user_asset):
         """Delete this UserAsset, create a message indicating that we
            were successful, then redirect back to the 'add' page.
            """
         user_asset.delete()
-        request.user.message_set.create(message="Removed access to %s" % user_asset.asset)
-        return HttpResponseRedirect("/account/%s/add/" % 
+
+        messages.add_message(request, messages.INFO, "Removed access to %s" % user_asset.asset)
+
+        return HttpResponseRedirect("/account/%s/add/" %
                                     user_asset.asset._meta.asset_type)
 
     def apply(self, cset, request, user_asset):
         """Apply changes to a UserAsset, saving information about
            those changes in the provided changeset.
            """
-        new_access = self.clean_data['access']
+        new_access = self.cleaned_data['access']
         if new_access != user_asset.access:
 
             if new_access == models.ACCESS.NONE:
@@ -193,7 +196,8 @@ class EditAssetForm(forms.Form):
             elif new_access == models.ACCESS.COMMUNITY:
                 # Decreasing the access level
 
-                request.user.message_set.create(message="You now have community-level access to %s" % user_asset.asset)
+                messages.add_message(request, messages.INFO, "You now have community-level access to %s" % user_asset.asset)
+
                 assert user_asset.access > new_access
                 cset.set_meta('_community_access')
                 user_asset.access = new_access
@@ -203,8 +207,8 @@ class EditAssetForm(forms.Form):
                 # Increasting the access level. Gaining exclusive
                 # access also means revoking access from any other
                 # (community-access) users!
-                
-                request.user.message_set.create(message="You have taken exclusive access to %s" % user_asset.asset)
+
+                messages.add_message(request, messages.INFO, "You have taken exclusive access to %s" % user_asset.asset)
                 cset.set_meta('_exclusive_access')
                 user_asset.access = new_access
                 user_asset.save()
@@ -243,16 +247,26 @@ def changes(request, asset_type=None, asset_id=None,
                      "accounts_userasset.user_id = %d" % request.user.id],
             )
 
-    paginator = ObjectPaginator(changes.order_by('-id'),
-                                num_per_page = num_per_page,
+    paginator = Paginator(changes.order_by('-id'),
+                                per_page = num_per_page,
                                 orphans = num_per_page / 2)
+
+    try:
+	contents = paginator.page(page_number)
+    except PageNotAnInteger:
+	# If page is not an integer, deliver first page
+	contents = paginator.page(1)
+    except EmptyPage:
+	# if page is out of range (e.g. 9999), deliver last page of results
+	contents = paginator.page(paginator.num_pages)
+
     return {
-        'remaining': paginator.hits - paginator.last_on_page(page_number),
+        'remaining': paginator.num_pages - int(page_number),
 
         'html': smart_unicode(loader.render_to_string(
             'accounts/asset_changes.html',
             RequestContext(request, {
-                'changesets': paginator.get_page(page_number),
+                'changesets': contents.object_list,
                 'show_asset_name': asset_id is None,
             }))),
         }
@@ -267,7 +281,7 @@ def send_conflict_message(request, user_asset, message):
     ctx = {'request': request,
            'user_asset': user_asset,
            'message': message}
-    
+
     subject, message = render_to_email("accounts/conflict_mail_managers.txt", ctx)
     mail_managers(subject, message)
 
@@ -305,12 +319,12 @@ def conflict(request, asset_type, asset_id):
     if request.POST:
         form.full_clean()
         if form.is_valid():
-            send_conflict_message(request, owner_ua, form.clean_data['message'])
-            request.user.message_set.create(message="Message sent.")
+            send_conflict_message(request, owner_ua, form.cleaned_data['message'])
+            messages.add_message(request, messages.INFO, "Message sent.")
 
             # Make it less convenient to send a bunch of rapid-fire messages
             disable_submit = True
-    
+
     ctx.update({
         'disable_submit': disable_submit,
         'form': form,
@@ -353,23 +367,23 @@ class StatsMetadataForm(forms.Form):
         )
 
     def clean_subtitle(self):
-        return self.clean_data.get('subtitle') or None
+        return self.cleaned_data.get('subtitle') or None
 
     def clean_url(self):
-        return self.clean_data.get('url') or None
+        return self.cleaned_data.get('url') or None
 
     def clean_description(self):
-        return self.clean_data.get('description') or None
+        return self.cleaned_data.get('description') or None
 
     def clean_photo_id(self):
-        return self.clean_data.get('photo_id') or None
+        return self.cleaned_data.get('photo_id') or None
 
     def clean_icon_id(self):
-        return self.clean_data.get('icon_id') or None
+        return self.cleaned_data.get('icon_id') or None
 
     def apply(self, cset):
         target = cset.asset.target
-        cset.set_field_dict(self.clean_data, prefix='target.')
+        cset.set_field_dict(self.cleaned_data, prefix='target.')
 
         if target.photo:
             target.photo.reference()
@@ -384,8 +398,12 @@ def stats_asset(request, asset_type, asset_id):
     asset = user_asset.asset
     asset.target.enforce_defaults()
 
+    #print user_asset
+    #print ctx
+
     form = formtools.MultiForm(request.POST)
     form.validate(EditAssetForm, user_asset)
+    #print form.EditAssetForm.access_levels
     form.validate(StatsMetadataForm, asset.target)
     ctx['form'] = form
 
@@ -416,7 +434,7 @@ def add_stats_asset(request, asset_type, prefix, template, name=None):
 
     if request.POST:
         if form.is_valid():
-            name = form.clean_data['name']
+            name = form.cleaned_data['name']
     else:
         # Don't show errors if the form hasn't been submitted once
         form.errors = None
@@ -468,7 +486,7 @@ class ProjectForm(forms.Form):
         )
 
     def apply(self, cset, request, repos):
-        use_repository = bool(self.clean_data.get('use_repository'))
+        use_repository = bool(self.cleaned_data.get('use_repository'))
         if cset.asset.repos and cset.asset.repos.is_active and not use_repository:
             # Deactivate repository
 
@@ -529,7 +547,7 @@ class RepositoryForm(forms.Form):
         # be done during apply(), so that it's included in
         # the changeset.
 
-        location = self.clean_data['location']
+        location = self.cleaned_data['location']
         # XXX - Bear hack: Unconditionally probe, so if we reactivated
         # the repository we don't pull all revisions since way back when.
         # Also makes sure the location is still valid.
@@ -539,13 +557,13 @@ class RepositoryForm(forms.Form):
         return location
 
     def clean_revision_url(self):
-        return self.clean_data.get('revision_url') or None
+        return self.cleaned_data.get('revision_url') or None
 
     def clean_path_regexes(self):
         # Remove extra whitespace and blank lines, then parse the resulting regexes.
         regexes = []
         line_no = 1
-        for line in self.clean_data.get('path_regexes', '').split('\n'):
+        for line in self.cleaned_data.get('path_regexes', '').split('\n'):
             line = line.strip()
             if line:
                 try:
@@ -558,7 +576,7 @@ class RepositoryForm(forms.Form):
             return '\n'.join(regexes)
 
     def apply(self, cset):
-        cset.set_field_dict(self.clean_data, prefix='repos.')
+        cset.set_field_dict(self.cleaned_data, prefix='repos.')
 
 
 @authplus.login_required
@@ -581,7 +599,7 @@ def project(request, asset_type, asset_id):
                   post_defaults = {'use_repository': False},
                   defaults = {'use_repository': asset.repos and asset.repos.is_active})
 
-    use_repository = bool(form.ProjectForm.clean_data.get('use_repository'))
+    use_repository = bool(form.ProjectForm.cleaned_data.get('use_repository'))
     if use_repository:
         repos = asset.repos
         if not repos:
@@ -590,7 +608,7 @@ def project(request, asset_type, asset_id):
             # We need to do this because the process of probing a repository must occur
             # before we know the form is valid, but it changes model state which needs
             # to be saved if the form turns out to be valid.
-    
+
             repos = Repository(
                 created_by = request.user,
                 project_name = asset.get_name(),
