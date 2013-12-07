@@ -1383,6 +1383,11 @@ class Bot(irc.IRCClient):
             self.msg(target, text)
             self._messageQueue.flush()
 
+    # For some reason, Twisted doesn't have this even though the documentation
+    # says it does. We'll add it back anyway.
+    def me(self, channel, message):
+        self.say(channel, "\001ACTION %s\001" % message)
+
     def action(self, user, channel, message):
         """Just for fun"""
         text = message.lower().strip()
@@ -1397,6 +1402,9 @@ class Bot(irc.IRCClient):
 
         elif text == 'kills %s' % me:
             self.me(channel, 'dies')
+
+        elif text == 'punches %s' % me:
+            self.me(channel, 'fights %s' % them)
 
         elif text == 'eats %s' % me:
             self.me(channel, 'tastes crunchy')
