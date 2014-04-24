@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-from esquilax import _bsax
 import random
+
+from cia.esquilax import _bsax
+
 
 max_open_files = 1000
 block_size = 16384
