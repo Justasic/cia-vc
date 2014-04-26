@@ -39,7 +39,7 @@ def rel_path(p):
 
 f = open(rel_path('../.git/HEAD'), 'r')
 ref = f.read()[5:].strip()
-g = open(rel_path('../.git/'+ref), 'r');
+g = open(rel_path('../.git/'+ref), 'r')
 commit = g.read().strip()
 branch = ref[11:]
 shortcommit = commit[:13]
