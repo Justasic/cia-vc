@@ -997,7 +997,13 @@ class Bot(irc.IRCClient):
            """
         for nick in self.botNet.nickAllocator.generate():
             if not nick in self.botNet.networks.get(self.network, []):
-                return nick
+                # XXX: Hotfix to fix some freenode faggot who registered CIA-1, this really should
+                # be part if that Network.Freenode class so we can ban more than one nickname.
+                if nick == "CIA-1" and isinstance(self.network, Network.Freenode):
+                    log.msg("Bot server tried to rename to %s on Freenode." % nick)
+                    continue
+                else:
+                    return nick
 
     def findNick(self):
         """Find a new unused nickname for this bot. As this requires
