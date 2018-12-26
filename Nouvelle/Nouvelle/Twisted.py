@@ -143,7 +143,7 @@ class Page(resource.Resource):
 
     def _afterPreRender(self, preRenderResult, context):
         if preRenderResult is not None:
-            if type(preRenderResult) in (str, unicode):
+            if type(preRenderResult) in (str, str):
                 context['request'].write(preRenderResult)
                 context['request'].finish()
             else:

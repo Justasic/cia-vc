@@ -17,7 +17,7 @@ def reference_query(stamps, seek_to):
 
 def test_fid(dataset, fd):
     query = [int(random.uniform(dataset[0] - 100, dataset[-1] + 200) + 0.5)
-             for i in xrange(1000)]
+             for i in range(1000)]
     query.sort()
 
     while 1:
@@ -25,16 +25,16 @@ def test_fid(dataset, fd):
         r2 = [reference_query(dataset, q) for q in query]
 
         if r1 == r2:
-            print "Success"
+            print("Success")
         elif len(r1) != len(r2):
-            print "Failure, len(r1)=%d, len(r2)=%d" % (len(r1), len(r2))
+            print("Failure, len(r1)=%d, len(r2)=%d" % (len(r1), len(r2)))
             break
         else:
             for i, (j, k) in enumerate(zip(r1, r2)):
                 if j != k:
-                    print "%s: %s != %s" % (query[i], j, k)
+                    print("%s: %s != %s" % (query[i], j, k))
                 else:
-                    print "%s: %s" % (query[i], j)
+                    print("%s: %s" % (query[i], j))
             break
 
         break
@@ -48,8 +48,8 @@ def dump_fid(fd):
         if next_i <= i:
             break
 
-        for j in xrange(i, next_i):
-            print next_sample
+        for j in range(i, next_i):
+            print(next_sample)
 
         sample = next_sample + 1
         i = next_i
@@ -72,7 +72,7 @@ def graph_test(fd, fromTime, toTime):
     x_scale = (fromTime, float(toTime - fromTime) / size[0])
     y_scale = 2000
     x_grid = dayGrid(x_scale[0])
-    y_grid = ( (10*i, _fidtool.GRID_SOLID) for i in xrange(1, y_scale // 10 +1) )
+    y_grid = ( (10*i, _fidtool.GRID_SOLID) for i in range(1, y_scale // 10 +1) )
 
     scales = (
         (x_scale, x_grid),
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     #dataset = map(int, open("timestamps.txt"))
     dataset = [x * 5 for x in range(6500)]
 
-    fd = os.open("foo", os.O_CREAT | os.O_RDWR, 0666)
+    fd = os.open("foo", os.O_CREAT | os.O_RDWR, 0o666)
 
 #    print "Building FID"
 #    build_fid(dataset, fd)
@@ -96,6 +96,6 @@ if __name__ == "__main__":
 #    print "Testing FID"
 #    test_fid(dataset, fd)
 
-    print "Graphing"
+    print("Graphing")
     graph_test(fd, dataset[0], dataset[-1])
     os.close(fd)

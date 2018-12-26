@@ -18,7 +18,7 @@ usage: regression.py first-rev last-rev output.csv
 
 import os
 import re
-import xmlrpclib
+import xmlrpc.client
 import shutil
 
 import sys
@@ -36,7 +36,7 @@ dbcursor = Database.pool.connect().cursor()
 def readStatements(filename):
     """Return a sequence of SQL statements from the given file"""
     lines = []
-    for line in open(filename).xreadlines():
+    for line in open(filename):
         line = line.strip()
         if not line.startswith("--"):
             lines.append(line)
@@ -129,7 +129,7 @@ class SourceTree:
         self.startServer()
         time.sleep(3)
 
-        server = xmlrpclib.ServerProxy("http://localhost:3910", allow_none=True)
+        server = xmlrpc.client.ServerProxy("http://localhost:3910", allow_none=True)
         self.loadRulesets(server)
 
         speed = RandomMessage.benchmark(server)
@@ -156,10 +156,10 @@ class Workspace:
         log = os.popen("svn log -r %d %s" % (revision, self.repos)).readlines()
         if len(log) > 1:
             for line in log:
-                print line
+                print(line)
             return True
         else:
-            print "Skipping revision %d" % revision
+            print("Skipping revision %d" % revision)
             return False
 
     def checkout(self, revision):
@@ -182,17 +182,17 @@ def main(firstRev, lastRev, outFileName):
     outfile.write("revision, speed, memory\n")
     outfile.flush()
 
-    for rev in xrange(firstRev, lastRev+1):
+    for rev in range(firstRev, lastRev+1):
         if not ws.isRevApplicable(rev):
             continue
-        print "Testing revision %d..." % rev
+        print("Testing revision %d..." % rev)
         try:
             tree = SourceTree(ws.checkout(rev))
             speed, memory = tree.benchmark()
             outfile.write("%r, %r, %r\n" % (rev, speed, memory))
             outfile.flush()
         except:
-            print sys.exc_info()
+            print(sys.exc_info())
         ws.clear()
         try:
             tree.stopServer()

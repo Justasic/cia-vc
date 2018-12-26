@@ -27,8 +27,8 @@ toggles sorting by that column and the direction of the sort.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from __future__ import generators
-from Serial import tag, xml
+
+from .Serial import tag, xml
 import re
 
 __all__ = ['BaseTable', 'Column', 'AttributeColumn', 'IndexedColumn',
@@ -153,7 +153,7 @@ class BaseTable:
            passing the Python builtin 'sum' as the operation.
            """
         key = (column, operation)
-        if not self._reduceColumnCache.has_key(key):
+        if key not in self._reduceColumnCache:
             self._reduceColumnCache[key] = operation(self.getColumnValues(column))
         return self._reduceColumnCache[key]
 
@@ -262,7 +262,7 @@ class ResortableTable(BaseTable):
     def getCookieHyperlinkArgs(self, context):
         """Return a new dictionary of arguments that are safe to include in our hyperlinks"""
         d = {}
-        for key, values in context['args'].iteritems():
+        for key, values in context['args'].items():
             if key.startswith(self.sortArgPrefix):
                 d[key] = values
         return d

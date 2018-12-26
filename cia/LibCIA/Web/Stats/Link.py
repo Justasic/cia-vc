@@ -21,7 +21,7 @@ Classes for forming hyperlinks between stats browser pages
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from urllib import quote
+from urllib.parse import quote
 import posixpath
 
 from Nouvelle import tag
@@ -30,6 +30,7 @@ from cia.LibCIA.Web import Template
 
 class TargetRelativeLink:
     """Abstract base class for a link to a stats target or something relative to it"""
+
     def __init__(self, target, relativePathSegments=()):
         self.target = target
         self.relativePathSegments = tuple(relativePathSegments)
@@ -40,7 +41,7 @@ class TargetRelativeLink:
         # hurt elsewhere.
         req = context['request']
         #port = req.host[2]
-	port = req.host.port
+        port = req.host.port
         hostname = req.getRequestHostname()
         if req.isSecure():
             default = 443
@@ -64,6 +65,7 @@ class StatsLink(TargetRelativeLink):
        Text for the link may be specified, but by default the
        target's title is used.
        """
+
     def __init__(self, target, tagFactory=tag('a'), text=None):
         TargetRelativeLink.__init__(self, target)
         self.tagFactory = tagFactory
@@ -78,8 +80,10 @@ class StatsLink(TargetRelativeLink):
 
 class MessageLink(TargetRelativeLink):
     """A link to a particular message delivered to a stats target"""
+
     def __init__(self, target, id, extraSegments=(), tagFactory=tag('a'), text=None):
-        TargetRelativeLink.__init__(self, target, ('.message', "%x" % id) + extraSegments)
+        TargetRelativeLink.__init__(
+            self, target, ('.message', "%x" % id) + extraSegments)
         self.tagFactory = tagFactory
         self.text = text
 
@@ -95,6 +99,7 @@ class MetadataLink(TargetRelativeLink):
        This class only works for keys that are strings. A key of None links
        to the metadata index.
        """
+
     def __init__(self, target, key=None, tagFactory=tag('a'), text=None):
         segments = ['.metadata']
         if key:
@@ -117,6 +122,7 @@ class MetadataLink(TargetRelativeLink):
 
 class RSSLink(TargetRelativeLink):
     """An anchor tag linking to the default RSS feed for a particular stats target"""
+
     def __init__(self, target, text="RSS 2.0 Feed", extraSegments=()):
         TargetRelativeLink.__init__(self, target, ('.rss',) + extraSegments)
         self.text = text
@@ -127,6 +133,7 @@ class RSSLink(TargetRelativeLink):
 
 class RSSCustomizer(RSSLink):
     """An anchor tag leading to a page that lets the user customize the generated RSS"""
+
     def __init__(self, target, text="Customized RSS"):
         RSSLink.__init__(self, target, text, ('customize',))
 
@@ -136,6 +143,7 @@ class RSSCustomizer(RSSLink):
 
 class XMLLink(TargetRelativeLink):
     """An anchor tag linking to the XML feed for a given stats target"""
+
     def __init__(self, target, tagFactory=tag('a'), text=None):
         TargetRelativeLink.__init__(self, target, ('.xml',))
         self.tagFactory = tagFactory

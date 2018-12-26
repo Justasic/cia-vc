@@ -27,7 +27,7 @@ provided.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-import xmlrpclib
+import xmlrpc.client
 import os
 
 import gtk
@@ -52,7 +52,7 @@ class GladeUI(object):
             self.xml = gtk.glade.XML(xml)
 
         # Automatically wire up all member functions starting with "on_" as signal handlers
-        for name in self.__class__.__dict__.iterkeys():
+        for name in self.__class__.__dict__.keys():
             if name.startswith("on_"):
                 self.xml.signal_connect(name, getattr(self, name))
 
@@ -71,13 +71,13 @@ class RulesetClient(object):
 
     def queryRulesets(self, uri=None):
         """Return a list of rulesets, optionally constrained to the given URI"""
-        if self.rulesetCache.has_key(uri):
+        if uri in self.rulesetCache:
             return self.rulesetCache[uri]
         else:
             if uri:
                 result = [self.server.ruleset.getRuleset(uri)]
             else:
-                result = self.server.ruleset.getRulesetMap().values()
+                result = list(self.server.ruleset.getRulesetMap().values())
             self.rulesetCache[uri] = result
             return result
 
@@ -303,11 +303,11 @@ def exceptionDialog(type, value, tb):
        XML in the rulesets being sent, or security errors.
        """
     # Format the message a little better if it's a generic XML-RPC Fault
-    if type is xmlrpclib.Fault:
+    if type is xmlrpc.client.Fault:
         message = "%s\n\n%s" % (value.faultCode, value.faultString)
     else:
         message = "%s\n\n%s" % (type.__name__, value)
-    print value
+    print(value)
 
     dialog = gtk.MessageDialog(
         parent = None,

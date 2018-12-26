@@ -34,7 +34,7 @@ from mercurial.i18n import *
 from mercurial.node import *
 from mercurial import version, patch
 
-import xmlrpclib
+import xmlrpc.client
 from xml.sax import saxutils
 
 HGCIA_VERSION = '0.1'
@@ -141,7 +141,7 @@ class hgcia(object):
         self.url = self.ui.config('web', 'baseurl')
 
     def sendrpc(self, msg):
-        srv = xmlrpclib.Server(self.ciaurl)
+        srv = xmlrpc.client.Server(self.ciaurl)
         srv.hub.deliver(msg)
 
 def hook(ui, repo, hooktype, node=None, url=None, **kwargs):
@@ -164,7 +164,7 @@ def hook(ui, repo, hooktype, node=None, url=None, **kwargs):
     if hooktype == 'changegroup':
         start = repo.changelog.rev(n)
         end = repo.changelog.count()
-        for rev in xrange(start, end):
+        for rev in range(start, end):
             n = repo.changelog.node(rev)
             ctx = repo.changectx(n)
             sendmsg(cia, ctx)

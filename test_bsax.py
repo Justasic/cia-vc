@@ -2,7 +2,7 @@
 
 import random
 
-from cia.esquilax import _bsax
+from .cia.esquilax import _bsax
 
 
 max_open_files = 1000
@@ -15,10 +15,10 @@ def get_filename_by_id(id):
 _bsax.filecache_init(max_open_files, get_filename_by_id)
 _bsax.blockcache_init(block_size, max_blocks)
 
-files = range(100)
-blocks = range(0, 1024*1024, block_size)
+files = list(range(100))
+blocks = list(range(0, 1024*1024, block_size))
 
-for iter in xrange(1000000):
+for iter in range(1000000):
     i = random.choice(files)
     o = random.choice(blocks)
 

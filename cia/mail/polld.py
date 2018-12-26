@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import thread, email, logging, signal, time, re
+import _thread, email, logging, signal, time, re
 
 from cia.lib import blockingqueue, simplelog, emailqueue
 from cia.apps.repos.models import Repository
@@ -32,7 +32,7 @@ running = True
 processing = set()
 penalties = {}
 # Lock to ensure consistency of that
-process_lock = thread.allocate_lock()
+process_lock = _thread.allocate_lock()
 
 def isPowerOfTwo(number):
     if number == 1:
@@ -83,7 +83,7 @@ def svn_loop(pollerqueue):
             except Repository.DoesNotExist:
                 repos = None
             if repos:
-                logging.info("%03d Polling %s..." % (thread.get_ident(), repos.location))
+                logging.info("%03d Polling %s..." % (_thread.get_ident(), repos.location))
                 watchdog = WATCHDOG_TIMEOUT
                 client.model = repos
                 client._pathRegexes = None
@@ -97,7 +97,7 @@ def svn_loop(pollerqueue):
         processing.discard(pinger)
         process_lock.release()
     except Exception:
-        logging.exception("ACK! Pollerthread %03d going down." % thread.get_ident())
+        logging.exception("ACK! Pollerthread %03d going down." % _thread.get_ident())
         raise
 
 
@@ -150,7 +150,7 @@ def process_cron(lasttime):
 
     # Normally, this loop will run 0 or 1 time[s].
     # But if we got stuck, we may need to catch up some.
-    for minute in xrange(lasttime // 60, now // 60):
+    for minute in range(lasttime // 60, now // 60):
         for repos in polled_reposes:
             # Stagger to avoid floods at full quarter hours
             if repos.poll_frequency < 1 or (minute + repos.id) % repos.poll_frequency == 0:
@@ -189,8 +189,8 @@ def main():
     signal.signal(signal.SIGTERM, shutdown)
     queuedmails.register()
 
-    for i in xrange(NUM_WORKERS):
-        thread.start_new_thread(svn_loop, (pollerqueue,))
+    for i in range(NUM_WORKERS):
+        _thread.start_new_thread(svn_loop, (pollerqueue,))
 
     try:
         main_loop()

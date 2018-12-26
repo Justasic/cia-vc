@@ -27,7 +27,7 @@ server with a particular Page at its root.
 
 import Nouvelle
 from Nouvelle import tag
-import BaseHTTPServer, urlparse
+import http.server, urllib.parse
 
 
 class Page:
@@ -78,7 +78,7 @@ class Page:
         if not name:
             # Ignore empty path segments
             return self
-        if hasattr(self, 'children') and self.children.has_key(name):
+        if hasattr(self, 'children') and name in self.children:
             return self.children[name]
         return Error404()
 
@@ -97,10 +97,10 @@ class Error404(Page):
                ]
 
 
-class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class RequestHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         # Parse the path we were given as a URL...
-        scheme, host, path, parameters, query, fragment = urlparse.urlparse(self.path)
+        scheme, host, path, parameters, query, fragment = urllib.parse.urlparse(self.path)
 
         # Find the page corresponding with our URL's path
         page = self.rootPage
@@ -122,6 +122,6 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 def main(rootPage, port=8080):
     handler = RequestHandler
     handler.rootPage = rootPage
-    BaseHTTPServer.HTTPServer(('', port), handler).serve_forever()
+    http.server.HTTPServer(('', port), handler).serve_forever()
 
 ### The End ###

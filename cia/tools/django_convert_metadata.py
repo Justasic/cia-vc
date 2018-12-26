@@ -7,7 +7,7 @@
 
 from django.db import models
 import Image
-from cStringIO import StringIO
+from io import StringIO
 from cia.apps.stats.models import StatsTarget
 from cia.apps.legacy.models import StatsMetadata
 from cia.apps.images.models import ImageInstance
@@ -15,7 +15,7 @@ from cia.apps.images.models import ImageInstance
 def convert_metadata():
     for metadata in StatsMetadata.objects.all():
         new_target = StatsTarget.objects.get_or_create(path = metadata.target.path)[0]
-        print metadata.target.path, metadata.name
+        print(metadata.target.path, metadata.name)
 
         # Text fields
         if metadata.name in ('title', 'subtitle', 'url', 'description',
@@ -27,7 +27,7 @@ def convert_metadata():
             try:
                 im = Image.open(StringIO(metadata.value))
             except IOError:
-                print "Corrupt %s for %r" % (metadata.name, metadata.target.path)
+                print("Corrupt %s for %r" % (metadata.name, metadata.target.path))
             else:
                 image = ImageInstance.objects.create_original(
                     im, created_by=None, is_temporary=False)

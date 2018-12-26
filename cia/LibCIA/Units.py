@@ -22,7 +22,7 @@ quantity and formatting values with a proper unit automatically.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from __future__ import division
+
 
 class UnitCollection:
     """An abstract group of units for some quntity"""

@@ -25,7 +25,7 @@
 #cia_project = BitlBee
 
 import sys
-import xmlrpclib
+import xmlrpc.client
 import bzrlib
 from xml.sax import saxutils
 from warnings import warn
@@ -80,4 +80,4 @@ def post_commit(branch, revision_id):
         saxutils.escape(author), 
         saxutils.escape(revision.message))
 
-    xmlrpclib.ServerProxy(server).hub.deliver(msg)
+    xmlrpc.client.ServerProxy(server).hub.deliver(msg)

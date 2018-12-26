@@ -42,7 +42,7 @@ def send_feedback_mail(form):
         settings.EMAIL_SUBJECT_PREFIX,
         re.sub(r'\s+', ' ', form.cleaned_data['comment'])[:30].strip())
 
-    message = unicode("Name: %(name)s\n"
+    message = str("Name: %(name)s\n"
                       "E-mail: %(email)s\n"
                       "Referrer: %(referrer)s\n"
                       "\n%(comment)s" % form.cleaned_data).encode("utf-8")
@@ -54,7 +54,7 @@ def feedback(request, referrer='/'):
 
     if request.POST:
         data = {}
-        data.update(request.POST.items())
+        data.update(list(request.POST.items()))
         form = FeedbackForm(data)
         if form.is_valid():
             send_feedback_mail(form)

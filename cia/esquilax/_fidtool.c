@@ -633,7 +633,7 @@ fid_list_cursor_advance(fid_list_cursor *self, fid_list_delta *delta)
 static int
 fid_header_write(unsigned char **p)
 {
-    strcpy(*p, FILE_MAGIC);
+    strcpy((char*)*p, FILE_MAGIC);
     *p += strlen(FILE_MAGIC) + 1;
 
     sample_write(FILE_VERSION, *p);
@@ -1628,15 +1628,28 @@ static PyMethodDef module_methods[] = {
     {0}
 };
 
-PyMODINIT_FUNC
-init_fidtool(void)
-{
-    PyObject *module = Py_InitModule("_fidtool", module_methods);
+static struct PyModuleDef moduledef = {
+	PyModuleDef_HEAD_INIT,
+	"_fidtool",					 /* m_name */
+	"Micah's FID format module", /* m_doc */
+	-1,							 /* m_size */
+	module_methods,				 /* m_methods */
+	NULL,						 /* m_reload */
+	NULL,						 /* m_traverse */
+	NULL,						 /* m_clear */
+	NULL,						 /* m_free */
+};
 
-    PyModule_AddObject(module, "GRID_NONE",   PyInt_FromLong(GRID_NONE));
-    PyModule_AddObject(module, "GRID_SOLID",  PyInt_FromLong(GRID_SOLID));
-    PyModule_AddObject(module, "GRID_DOTTED", PyInt_FromLong(GRID_DOTTED));
-    PyModule_AddObject(module, "GRID_DASHED", PyInt_FromLong(GRID_DASHED));
+PyMODINIT_FUNC
+PyInit__fidtool(void)
+{
+	PyObject *module = PyModule_Create(&moduledef);
+
+	PyModule_AddObject(module, "GRID_NONE", PyLong_FromLong(GRID_NONE));
+	PyModule_AddObject(module, "GRID_SOLID", PyLong_FromLong(GRID_SOLID));
+	PyModule_AddObject(module, "GRID_DOTTED", PyLong_FromLong(GRID_DOTTED));
+	PyModule_AddObject(module, "GRID_DASHED", PyLong_FromLong(GRID_DASHED));
+    return module;
 }
 
 /* The End */

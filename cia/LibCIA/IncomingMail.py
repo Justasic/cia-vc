@@ -24,9 +24,9 @@ and delivers them to the Message.Hub.
 
 import email
 
-from Message import Message
-from ColorText import ColorTextParser
-import RpcServer
+from .Message import Message
+from .ColorText import ColorTextParser
+from . import RpcServer
 
 
 
@@ -70,7 +70,7 @@ class IncomingMailParser:
 
         # The 'email' module does not support Unicode objects! It will
         # generate a garbage message if we pass it in.
-        if type(string) is unicode:
+        if type(string) is str:
             string = string.encode('utf8')
  
         return self.parse(email.message_from_string(string))
@@ -140,7 +140,7 @@ class IncomingMailParser:
            message's true source.
            """
         node = document.createElementNS(None, "mailHeaders")
-        for name, value in self.message.items():
+        for name, value in list(self.message.items()):
             if name in interestingHeaders:
                 XML.addElement(node, "header", content=str(value)).setAttributeNS(None, 'name', name)
         return node

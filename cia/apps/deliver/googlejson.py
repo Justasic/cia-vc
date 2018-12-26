@@ -1,8 +1,9 @@
 from django import http
-from django.utils import simplejson, html
+from django.utils import html
+import json as simplejson
 from django.conf import settings
 
-import xmlrpclib
+import xmlrpc.client
 
 SERVER_URL = settings.CIA_RPC_URL
 
@@ -60,7 +61,7 @@ def accept(request):
         return http.HttpResponseNotAllowed(["GET", "POST"])
 
     # Okay, we have a POST.
-    server = xmlrpclib.ServerProxy(SERVER_URL)
+    server = xmlrpc.client.ServerProxy(SERVER_URL)
     body = request.raw_post_data
     data = simplejson.loads(body)
     info = {}

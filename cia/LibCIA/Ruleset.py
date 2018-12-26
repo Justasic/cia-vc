@@ -46,10 +46,10 @@ import os
 from twisted.python import log
 from twisted.internet import defer, reactor
 
-import Message
-import Security
-import RpcServer
-import Formatters
+from . import Message
+from . import Security
+from . import RpcServer
+from . import Formatters
 import sys
 from cia.LibCIA import XML, Database
 
@@ -93,7 +93,7 @@ class RulesetInterface(RpcServer.Interface):
 
     def xmlrpc_getUriList(self):
         """Return a list of all URIs with non-empty rulesets"""
-        return self.storage.rulesetMap.keys()
+        return list(self.storage.rulesetMap.keys())
 
     def xmlrpc_getRuleset(self, uri):
         """Return the ruleset associated with the given URI, or False if there is no ruleset"""
@@ -105,7 +105,7 @@ class RulesetInterface(RpcServer.Interface):
     def xmlrpc_getRulesetMap(self):
         """Returns all rulesets in the form of a mapping from URI to ruleset text"""
         results = {}
-        for delivery in self.storage.rulesetMap.itervalues():
+        for delivery in self.storage.rulesetMap.values():
             results[delivery.ruleset.uri] = str(delivery.ruleset)
         return results
 
@@ -281,7 +281,7 @@ class Ruleset(XML.XMLFunction):
         # URIs are always encoded if necessary, since just about everywhere we'd need to
         # use a URI we can't support Unicode yet. Specific examples are IRC servers/channels
         # and as dict keys in an XML-RPC response.
-        if type(self.uri) is unicode:
+        if type(self.uri) is str:
             self.uri = self.uri.encode()
 
         # Create a function to evaluate this element as a <rule> would be evaluated
@@ -466,7 +466,7 @@ class RulesetDelivery(object):
             log.msg(("Exception occurred in RulesetDelivery for %r\n" +
                     "--- Original message\n%s\n--- Exception\n%s") %
                     (self.ruleset.uri,
-                     unicode(message).encode('ascii', 'replace'),
+                     str(message).encode('ascii', 'replace'),
                      "".join(traceback.format_exception(*sys.exc_info()))))
 
 
@@ -555,7 +555,7 @@ class RulesetStorage:
     def _emptyStorage(self):
         # Remove any existing rulesets from the Message.Hub
         if hasattr(self, 'rulesetMap'):
-            for value in self.rulesetMap.itervalues():
+            for value in self.rulesetMap.values():
                 self.hub.delClient(value)
 
         # self.rulesetMap maps URIs to RulesetDelivery instances
@@ -598,7 +598,7 @@ class RulesetStorage:
             handler.assigned(ruleset.uri, ruleset)
 
             # If there was an old ruleset, remove its hub client
-            if self.rulesetMap.has_key(ruleset.uri):
+            if ruleset.uri in self.rulesetMap:
                 self.hub.delClient(self.rulesetMap[ruleset.uri])
 
             # Stick on an appropriate URI handler and add the
@@ -609,7 +609,7 @@ class RulesetStorage:
             log.msg("Set ruleset for %r" % ruleset.uri)
         else:
             # Remove the ruleset completely if there was one
-            if self.rulesetMap.has_key(ruleset.uri):
+            if ruleset.uri in self.rulesetMap:
                 self.hub.delClient(self.rulesetMap[ruleset.uri])
                 del self.rulesetMap[ruleset.uri]
 
@@ -618,7 +618,7 @@ class RulesetStorage:
 
     def flatten(self):
         """Return a flat list of all Ruleset objects so we can store 'em"""
-        for delivery in self.rulesetMap.itervalues():
+        for delivery in self.rulesetMap.values():
             yield delivery.ruleset
 
     def dbIter(self):

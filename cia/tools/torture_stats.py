@@ -27,7 +27,7 @@ class TortureStats(Client.App):
 
     def main(self):
         # Load rulesets
-        print "Loading rulesets..."
+        print("Loading rulesets...")
         for ruleset in self.rulesets:
             self.server.ruleset.store(self.key, ruleset)
 

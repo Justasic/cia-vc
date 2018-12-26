@@ -127,14 +127,14 @@ import sys, string
 if sys.version_info < requiredPythonVersion:
     raise Exception("%s requires at least Python %s, found %s instead." % (
         name,
-        string.join(map(str, requiredPythonVersion), "."),
-        string.join(map(str, sys.version_info), ".")))
+        string.join(list(map(str, requiredPythonVersion)), "."),
+        string.join(list(map(str, sys.version_info)), ".")))
 del sys
 del string
 
 # Convenience imports
-import Serial, Table
-from Serial import *
-from Table import *
+from . import Serial, Table
+from .Serial import *
+from .Table import *
 
 ### The End ###

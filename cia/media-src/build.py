@@ -6,7 +6,7 @@
 
 import os
 
-from lib import *
+from .lib import *
 
 
 os.chdir('media-src')

@@ -25,10 +25,10 @@ The modules are aggregated together here and indexed by the factory.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-import ColorText
-import Builder
-import Other
-import Patch
+from . import ColorText
+from . import Builder
+from . import Other
+from . import Patch
 from cia.LibCIA import Message
 from cia.LibCIA.Formatters import Commit
 

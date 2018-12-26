@@ -4,8 +4,8 @@ from django.template import loader
 from django.template.context import Context
 from django.contrib.sites.models import Site
 import django.forms as forms
-import re, xmlrpclib, datetime
-import pysvn, httplib, urlparse, urllib
+import re, xmlrpc.client, datetime
+import pysvn, http.client, urllib.parse, urllib.request, urllib.parse, urllib.error
 
 # This should be the same number as the limit on stats pages, for cosmetic reasons
 REVISION_FETCH_LIMIT = 20
@@ -55,7 +55,7 @@ class SvnClient:
 
         try:
             info = self._info(location)
-        except pysvn.ClientError, e:
+        except pysvn.ClientError as e:
             raise forms.ValidationError(str(e))
 
         if info['kind'] != pysvn.node_kind.dir:
@@ -155,13 +155,13 @@ class SvnClient:
            """
         # Note the str(): sockets don't like Unicode hostnames.
         url = str(self.model.root_url + '/!svn/vcc/default')
-        scheme, netloc, path, _, _, _ =  urlparse.urlparse(url)
+        scheme, netloc, path, _, _, _ =  urllib.parse.urlparse(url)
         if scheme != 'http':
             return
 
         host, port = (netloc + ':80').split(':')[:2]
 
-        http = httplib.HTTPConnection(host, int(port))
+        http = http.client.HTTPConnection(host, int(port))
         http.putrequest('PROPFIND', path)
         http.putheader('User-Agent', self._pollerUserAgent)
         http.putheader('Content-Length', str(len(self._pollerData)))
@@ -209,7 +209,7 @@ class SvnClient:
                 ("author", change['author']),
                 ):
                 revision_url = revision_url.replace("{%s}" % key,
-                                                    urllib.quote(str(value), safe=''))
+                                                    urllib.parse.quote(str(value), safe=''))
 
         xml = loader.render_to_string('repos/svn.xml', Context({
             'timestamp': int(change['date']),
@@ -222,7 +222,7 @@ class SvnClient:
             }))
 
         # XXX - Bear hack: unicode kills us, at least at the moment - note: for some reason this already is a unicode string
-        xmlrpclib.ServerProxy(settings.CIA_RPC_URL).hub.deliver_sync(xml.encode('ascii', 'replace'))
+        xmlrpc.client.ServerProxy(settings.CIA_RPC_URL).hub.deliver_sync(xml.encode('ascii', 'replace'))
 
     _pathRegexes = None
 
@@ -246,7 +246,7 @@ class SvnClient:
         if len(changed_paths) > 1000:
             return [File( {'path': "Too many paths", 'action': 'M'})]
 
-        files = map(File, changed_paths)
+        files = list(map(File, changed_paths))
 
         # Try each of our several regexes. To be applied, the same
         # regex must mach every file under consideration and they must

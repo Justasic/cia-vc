@@ -29,16 +29,16 @@ import re
 from twisted.internet import defer
 from twisted.web import error
 
-from LibCIA.Web import Template, Info, Server
+from cia.LibCIA.Web import Template, Info, Server
 from Nouvelle import tag, place
 import Nouvelle
 import time
 import sys
-import Metadata
-import Catalog
-import Feed
-import Link
-import MessageViewer
+from . import Metadata
+from . import Catalog
+from . import Feed
+from . import Link
+from . import MessageViewer
 from cia.LibCIA import XML
 
 
@@ -65,6 +65,7 @@ class Page(Template.Page):
        capabilities database and StatsStorage. Children will
        be automatically created with child targets.
        """
+
     def __init__(self, component, target=None):
         if target is None:
             target = cia.LibCIA.Stats.Target.StatsTarget()
@@ -88,7 +89,7 @@ class Page(Template.Page):
             '.message':  MessageViewer.RootPage,
             '.rss':      Feed.RSSFrontend,
             '.xml':      Feed.XMLFeed,
-            }
+        }
 
         if not name:
             # Ignore empty path sections
@@ -119,24 +120,24 @@ class Page(Template.Page):
             Counters(self.target),
             Catalog.CatalogSection(self.target),
             RecentMessages(self.target),
-            ]
+        ]
 
     def render_leftColumn(self, context):
         return [
             Metadata.Info(self.target),
             LinksSection(self.target),
-            #Graph.RelatedSection(self.target),
+            # Graph.RelatedSection(self.target),
             Info.Clock(),
-            ]
+        ]
 
     def render_extraHeaders(self, context):
         # Add a <link> tag pointing at our RSS feed. Some RSS
         # aggregators can use this to automatically detect feeds.
         return tag('link',
-                   rel   = 'alternate',
-                   type  = 'application/rss+xml',
-                   title = 'RSS',
-                   href  = Link.RSSLink(self.target).getURL(context),
+                   rel='alternate',
+                   type='application/rss+xml',
+                   title='RSS',
+                   href=Link.RSSLink(self.target).getURL(context),
                    )
 
 
@@ -145,38 +146,41 @@ class Counters(Template.Section):
     title = "event counters"
 
     rows = [
-               [
-                   'The last message was received ',
-                   Template.value[ place('value', 'forever', 'lastEventTime', 'relativeDate') ],
-                   ' ago at ',
-                   Template.value[ place('value', 'forever', 'lastEventTime', 'date') ],
-               ],
-               [
-                   Template.value[ place('value', 'today', 'eventCount') ],
-                   ' messages so far today, ',
-                   Template.value[ place('value', 'yesterday', 'eventCount') ],
-                   ' messages yesterday',
-               ],
-               [
-                   Template.value[ place('value', 'thisWeek', 'eventCount') ],
-                   ' messages so far this week, ',
-                   Template.value[ place('value', 'lastWeek', 'eventCount') ],
-                   ' messages last week',
-               ],
-               [
-                   Template.value[ place('value', 'thisMonth', 'eventCount') ],
-                   ' messages so far this month, ',
-                   Template.value[ place('value', 'lastMonth', 'eventCount') ],
-                   ' messages last month',
-               ],
-               [
-                   Template.value[ place('value', 'forever', 'eventCount') ],
-                   ' messages since the first one, ',
-                   Template.value[ place('value', 'forever', 'firstEventTime', 'relativeDate') ],
-                   ' ago',
-                   place('averagePeriod', 'forever'),
-               ],
-        ]
+        [
+            'The last message was received ',
+            Template.value[place('value', 'forever',
+                                 'lastEventTime', 'relativeDate')],
+            ' ago at ',
+            Template.value[place(
+                'value', 'forever', 'lastEventTime', 'date')],
+        ],
+        [
+            Template.value[place('value', 'today', 'eventCount')],
+            ' messages so far today, ',
+            Template.value[place('value', 'yesterday', 'eventCount')],
+            ' messages yesterday',
+        ],
+        [
+            Template.value[place('value', 'thisWeek', 'eventCount')],
+            ' messages so far this week, ',
+            Template.value[place('value', 'lastWeek', 'eventCount')],
+            ' messages last week',
+        ],
+        [
+            Template.value[place('value', 'thisMonth', 'eventCount')],
+            ' messages so far this month, ',
+            Template.value[place('value', 'lastMonth', 'eventCount')],
+            ' messages last month',
+        ],
+        [
+            Template.value[place('value', 'forever', 'eventCount')],
+            ' messages since the first one, ',
+            Template.value[place('value', 'forever',
+                                 'firstEventTime', 'relativeDate')],
+            ' ago',
+            place('averagePeriod', 'forever'),
+        ],
+    ]
 
     def __init__(self, target):
         self.counters = target.counters
@@ -238,9 +242,10 @@ class Counters(Template.Section):
             return
         result.callback([
             ', for an average of ',
-            Template.value[ TimeUtil.formatDuration( (time.time() - first) / events ) ],
+            Template.value[TimeUtil.formatDuration(
+                (time.time() - first) / events)],
             ' between messages',
-            ])
+        ])
 
 
 class MessageDateColumn(Nouvelle.Column):
@@ -248,7 +253,7 @@ class MessageDateColumn(Nouvelle.Column):
     heading = 'date'
 
     def getValue(self, message):
-	try:
+        try:
             return XML.digValue(message.xml, int, "message", "timestamp")
         except ValueError:
             return None
@@ -258,7 +263,7 @@ class MessageDateColumn(Nouvelle.Column):
         if value:
             return TimeUtil.formatRelativeDate(value)
         else:
-            return Template.error[ "Invalid Date" ]
+            return Template.error["Invalid Date"]
 
 
 class MessageProjectColumn(Nouvelle.Column):
@@ -293,14 +298,14 @@ class MessageList(Template.Section):
         MessageProjectColumn(),
         MessageContentColumn(),
         Nouvelle.AttributeColumn('link', 'hyperlink'),
-        ]
+    ]
 
     def renderMessages(self, context, messages):
         return [
             Template.Table(messages, self.columns,
-                           defaultSortReversed = True,
-                           id = 'message'),
-            ]
+                           defaultSortReversed=True,
+                           id='message'),
+        ]
 
 
 class RecentMessages(MessageList):
@@ -340,13 +345,13 @@ class LinksSection(Template.Section):
         "RSSLink",
         "RSSCustomizer",
         "XMLLink",
-        ]
+    ]
 
     defaultLinkNames = [
         "RSSLink",
         "RSSCustomizer",
         "XMLLink",
-        ]
+    ]
 
     def __init__(self, target):
         self.target = target
@@ -357,7 +362,7 @@ class LinksSection(Template.Section):
         result = defer.Deferred()
         self.target.metadata.getValue("links-filter", default="").addCallback(
             self._render_rows, context, result
-            ).addErrback(result.errback)
+        ).addErrback(result.errback)
         return result
 
     def _render_rows(self, linksFilter, context, result):
@@ -381,6 +386,7 @@ class LinksSection(Template.Section):
                             filtered.append(name)
                     linkNames = filtered
 
-        result.callback([getattr(Link, linkName)(self.target) for linkName in linkNames])
+        result.callback([getattr(Link, linkName)(self.target)
+                         for linkName in linkNames])
 
 ### The End ###

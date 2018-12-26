@@ -39,7 +39,7 @@ class RemoteConsole(code.InteractiveConsole):
             # keeps an otherwise perfectly good debug session
             # from being ended if you press 'enter' while restarting
             # the server.
-            print "Communications Error: %s" % sys.exc_info()[1]
+            print("Communications Error: %s" % sys.exc_info()[1])
             return False
 
         if result is False:
@@ -67,7 +67,7 @@ class DebugTool(Client.App):
             self.server.debug.rebuild(self.key, self.config['rebuild'])
 
         if self.config['type-profile']:
-            print self.server.debug.gc.typeProfile(self.key)
+            print(self.server.debug.gc.typeProfile(self.key))
 
         if self.config['eval'] or self.config['console']:
             if not self.config['preserve-namespace']:
@@ -76,9 +76,9 @@ class DebugTool(Client.App):
             if self.config['eval']:
                 result = self.server.debug.eval(self.key, self.config['eval'])
                 if result == False:
-                    print "Incomplete command"
+                    print("Incomplete command")
                 else:
-                    print result
+                    print(result)
 
             if self.config['console']:
                 RemoteConsole(self).interact()

@@ -1,3 +1,4 @@
+from cia.LibCIA.DatabaseQuote import quote
 """ LibCIA.Database
 
 Utilities for accessing CIA's persistent data stored in an SQL database
@@ -41,28 +42,33 @@ NOQUOTE = 2
 # Twisted's quote utility was removed and I was unable to find any suitable solution so
 # make this nasty hack to fix it for now, hopefully it does not expose us to a nasty sql
 # injection attack..
-from cia.LibCIA.DatabaseQuote import quote
 
 # Keep ourselves connected to the mysql server
 
 # Disable the silly BLOB-to-array() conversion
 # in the latest versions of python-mysqldb
+
+
 def removeBlobConversions():
     from MySQLdb.converters import conversions
     from MySQLdb.constants import FIELD_TYPE
     del conversions[FIELD_TYPE.BLOB]
+
+
 try:
     removeBlobConversions()
 except:
     pass
 
+
 class ConnectionPool(adbapi.ConnectionPool):
     """Our own ConnectionPool subclass, sets the connection
        encoding for MySQL 5.x automatically.
        """
+
     def connect(self):
         conn = adbapi.ConnectionPool.connect(self)
-	conn.ping(True)
+        conn.ping(True)
         cur = conn.cursor()
         cur.execute("SET NAMES UTF8")
         cur.close()
@@ -109,7 +115,7 @@ def createPool(overrides={}, filename="~/.cia_db", serverCursor=False):
         'cp_noisy':  False,
         'cp_min': 1,
         'cp_max': 2,
-        }
+    }
 
     # With server-side cursors we can iterate over the result set without
     # copying it all from mysqld to twistd. Unfortunately this can't
@@ -123,7 +129,7 @@ def createPool(overrides={}, filename="~/.cia_db", serverCursor=False):
         filename = os.path.expanduser(filename)
         try:
             info.update(readDictFile(filename))
-            os.chmod(filename, 0600)
+            os.chmod(filename, 0o600)
         except IOError:
             raise Exception("Please create a file %r containing a list of database parameters.\n"
                             "For example:\n"
@@ -134,7 +140,7 @@ def createPool(overrides={}, filename="~/.cia_db", serverCursor=False):
 
     # Allow the caller to override settings, and remove Nones
     info.update(overrides)
-    for key in info.keys():
+    for key in list(info.keys()):
         if info[key] is None:
             del info[key]
 
@@ -142,6 +148,7 @@ def createPool(overrides={}, filename="~/.cia_db", serverCursor=False):
 
 
 pool = None
+
 
 def init(*args, **kwargs):
     global pool

@@ -29,8 +29,8 @@ have been implemented here.
 from twisted.python import log
 from twisted.internet import reactor, defer, protocol, error
 
-from LibCIA import Database
-from cStringIO import StringIO
+from cia.LibCIA import Database
+from io import StringIO
 import time
 import math
 from cia.LibCIA import Cache
@@ -169,7 +169,7 @@ class RelationGrapher:
         """Convert a dictionary to a dot attribute string"""
         if d:
             return "[%s]" % ",".join(['%s=%s' % (key, self.quote(value))
-                                      for key, value in d.iteritems()])
+                                      for key, value in d.items()])
         else:
             return ""
 
@@ -183,7 +183,7 @@ class RelationGrapher:
 
         f.write("graph G {\n")
         f.write(''.join(['\t%s=%s;\n' % (key, self.quote(value))
-                         for key, value in graphAttrs.iteritems()]))
+                         for key, value in graphAttrs.items()]))
 
         # Make a unique list of all nodes in this graph
         nodes = {}
@@ -197,7 +197,7 @@ class RelationGrapher:
         for node in nodes:
             segments = node.split('/')
             # Make sure all ancestors of this node exist in the parents map
-            for i in xrange(len(segments)):
+            for i in range(len(segments)):
                 parent = '/'.join(segments[:i])
                 if parent:
                     parents.setdefault(parent, [])
@@ -206,7 +206,7 @@ class RelationGrapher:
                 parents[parent].append(node)
 
         # Find a selector for each node, and write out their attributes
-        for node in nodes.keys():
+        for node in list(nodes.keys()):
             attributes = {}
             for selector in self.selectors:
                 if node in selector:
@@ -237,7 +237,7 @@ class RelationGrapher:
             # prevent author/bob from being linked to both project/kde/libwidgets
             # and project/kde. The link between author/bob and project/kde would
             # just clutter up the graph.
-            if (parents.has_key(a) or parents.has_key(b)) and nodes[a] != nodes[b]:
+            if (a in parents or b in parents) and nodes[a] != nodes[b]:
                 continue
 
             # Scale the strength and freshness logarithmically to be values between 0 and 1

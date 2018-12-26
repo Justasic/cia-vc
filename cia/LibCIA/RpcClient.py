@@ -90,7 +90,7 @@ class XmlrpcURIHandler(Ruleset.RegexURIHandler):
            """
         argList = []
         for token in self.argLexer.finditer(args):
-            for tokenType, tokenValue in token.groupdict().items():
+            for tokenType, tokenValue in list(token.groupdict().items()):
                 if tokenValue is not None:
                     argList.append(getattr(self, 'argtoken_'+tokenType)(tokenValue, vars))
         return argList

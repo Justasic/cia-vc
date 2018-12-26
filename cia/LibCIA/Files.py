@@ -87,7 +87,7 @@ def getTempFile():
        condition that would result in that situation.
        """
     root = getDir(tempDir)
-    for i in xrange(100):
+    for i in range(100):
         path = os.path.join(root, '%d-%d' % (
             os.getpid(), random.randint(100000, 999999)))
         if not os.path.isfile(path):

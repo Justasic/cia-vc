@@ -45,7 +45,7 @@ class XMLObject(object):
     _xpcache = None
     
     def __init__(self, doc=None, uri=None):
-        if type(doc) in (str, unicode):
+        if type(doc) in (str, str):
             self.loadFromString(doc, uri)
         elif hasattr(doc, 'read'):
             self.loadFromStream(doc, uri)
@@ -263,7 +263,7 @@ def addElement(node, name, content=None, attributes={}):
     newElement = doc.createElementNS(None, name)
     if content:
         newElement.appendChild(doc.createTextNode(content))
-    for attrName, attrValue in attributes.iteritems():
+    for attrName, attrValue in attributes.items():
         newElement.setAttributeNS(None, attrName, attrValue)
     node.appendChild(newElement)
     return newElement
@@ -273,7 +273,7 @@ parseStream = minidom.parse
 
 def parseString(string):
     # Grarr.. minidom can't directly parse Unicode objects
-    if type(string) is unicode:
+    if type(string) is str:
         string = string.encode('utf-8')
 
     return minidom.parseString(string)
@@ -296,7 +296,7 @@ def getChildElements(doc):
 
 def firstChildElement(doc):
     try:
-        return getChildElements(doc).next()
+        return next(getChildElements(doc))
     except StopIteration:
         return None
 
@@ -340,7 +340,7 @@ class XPathFull(XPathBase):
 
         try:
             return xml.xpath.parser.new().parse(path)
-        except xml.xpath.yappsrt.SyntaxError, e:
+        except xml.xpath.yappsrt.SyntaxError as e:
             raise XMLValidityError('XPath syntax error in "%s" at char %d: %s' % (
                 path, e.pos, e.msg))
 

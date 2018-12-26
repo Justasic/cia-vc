@@ -23,8 +23,8 @@ Viewers and editors for the metadata associated with each stats target
 
 from twisted.internet import defer
 
-from LibCIA.Web import Template
-from LibCIA import Database
+from cia.LibCIA.Web import Template
+from cia.LibCIA import Database
 from Nouvelle import tag
 
 

@@ -53,7 +53,7 @@ class Repository(models.Model):
 
     # Who owns this repository?
     project_name = models.CharField(max_length=128, db_index=True, blank=False)
-    created_by = models.ForeignKey(User, null=True)
+    created_by = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
 
     # Other project configuration
     default_module_name = models.CharField(max_length=64, null=True)

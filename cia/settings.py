@@ -12,7 +12,8 @@ import os
 def rel_path(p):
     return os.path.join(os.path.abspath(os.path.split(__file__)[0]), p)
 
-DEBUG = os.path.isfile(rel_path("DEBUG"))
+#DEBUG = os.path.isfile(rel_path("DEBUG"))
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 #
@@ -29,7 +30,7 @@ CIA_REGISTRATION_IS_CLOSED = False
 PROFANITIES_LIST = ('asshat', 'asshead', 'asshole', 'cunt', 'fuck', 'gook', 'nigger', 'shit', '://')
 
 # comment spammers
-BANNED_IPS = ('195.225.178.23', '203.144.144.164', '83.69.224.164', '69.217.73.52', '201.134.177.1', '80.227.1.101', '94.102.60.49')
+BANNED_IPS = ()
 
 #
 # Optional integration with Google Analytics.
@@ -38,20 +39,20 @@ BANNED_IPS = ('195.225.178.23', '203.144.144.164', '83.69.224.164', '69.217.73.5
 # XXX: This value must be defined separately for the old site, in official.web.tac
 #
 #GOOGLE_ANALYTICS_ACCOUNT = "UA-247340-1"
-GOOGLE_ANALYTICS_ACCOUNT = "UA-46071704-1"
+#GOOGLE_ANALYTICS_ACCOUNT = "UA-46071704-1"
+GOOGLE_ANALYTICS_ACCOUNT = ""
 
 ADMINS = (
 #    ('Micah Dowty', 'micah@navi.cx'),
 #    ('Karsten Behrmann', 'bear-cia@gmx.net'),
 #    ('Lewis Cawte', 'lewiscawte@googlemail.com'),
 #    ('William Pitcock', 'nenolod@atheme.org'),
-     ('Justin Crawford', 'Justasic@gmail.com'),
+     ('Justin Crawford', 'Justin@stacksmash.net'),
 )
 
-DEFAULT_FROM_EMAIL = 'webmaster@cia.vc'
+DEFAULT_FROM_EMAIL = 'webmaster@stacksmash.net'
 # E-mail address that error messages come from.
-SERVER_EMAIL = 'django@cia.vc'
-
+SERVER_EMAIL = 'django@stacksmash.net'
 
 MANAGERS = ADMINS
 
@@ -105,7 +106,7 @@ CIA_BOT_SOCKET = rel_path('bots.socket')
 #
 # Preferred domain for incoming mail: CIA requests, repository pingers.
 #
-CIA_INCOMING_MAIL_DOMAIN = "cia.vc"
+CIA_INCOMING_MAIL_DOMAIN = "stacksmash.net"
 
 # Local time zone for this installation. All choices can be found here:
 # http://www.postgresql.org/docs/current/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -173,10 +174,11 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
 #    'django.contrib.admin',
-    'django.contrib.comments',
+#    'django.contrib.comments',
     'cia.apps.blog',
     'cia.apps.accounts',
     'cia.apps.stats',
     'cia.apps.images',
     'cia.apps.repos',
+    'cia.apps.legacy',
 )

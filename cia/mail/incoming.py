@@ -9,10 +9,10 @@
 # and lets the server take care of logging the message and processing its contents.
 #
 
-import xmlrpclib, sys
+import xmlrpc.client, sys
 
 message = sys.stdin.read()
-s = xmlrpclib.ServerProxy("http://localhost:3910")
+s = xmlrpc.client.ServerProxy("http://localhost:3910")
 s.mail.deliver(message)
 
 ### The End ###

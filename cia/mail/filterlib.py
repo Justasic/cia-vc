@@ -24,9 +24,9 @@ receive incoming mail on stdin and send output via XML-RPC.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-import sys, email, xmlrpclib
+import sys, email, xmlrpc.client
 from twisted.words.xish import domish
-from StringIO import StringIO
+from io import StringIO
 
 
 class Filter:
@@ -95,9 +95,9 @@ class Filter:
         if not self.deliverable:
             return
         if self.debug:
-            print self.xml.toXml()
+            print(self.xml.toXml())
         else:
-            xmlrpclib.ServerProxy(self.server).hub.deliver_sync(self.xml.toXml())
+            xmlrpc.client.ServerProxy(self.server).hub.deliver_sync(self.xml.toXml())
 
 
 class CommitFilter(Filter):

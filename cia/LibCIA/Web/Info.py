@@ -21,16 +21,16 @@ Just a cute little page with informational doodads on it.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from __future__ import division
+
 import os
 
 from twisted.internet import defer
 
-import Template
-import Server
-from LibCIA import TimeUtil, Database, Units, Cache
+from . import Template
+from . import Server
+from cia.LibCIA import TimeUtil, Database, Units, Cache
 from Nouvelle import place, tag
-import LibCIA
+import cia.LibCIA as LibCIA
 import Nouvelle
 import time
 import sys

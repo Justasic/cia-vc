@@ -11,7 +11,7 @@
 # Emails are stored in /home/cia/cia/data/queue/commit, we are notified of new mail
 # by a SIGUSR1 to speed the process up.
 
-import xmlrpclib, time, logging, signal, os
+import xmlrpc.client, time, logging, signal, os
 from cia.lib import emailqueue, simplelog
 
 def deliver_loop():
@@ -38,5 +38,5 @@ if __name__ == '__main__':
     simplelog.init("incoming-q")
     queue = emailqueue.EmailQueue("commit")
     queue.register()
-    s = xmlrpclib.ServerProxy("http://localhost:3910")
+    s = xmlrpc.client.ServerProxy("http://localhost:3910")
     deliver_loop()

@@ -25,13 +25,13 @@ class RulesetMigrator(Client.App):
     def main(self):
         ruleset = self.server.ruleset
 
-	print "Getting ruleset list..."
+	print("Getting ruleset list...")
 	uris = ruleset.getUriList()
 
 	for uri in uris:
             if uri.find(self.config['from']) >= 0:
                 newUri = uri.replace(self.config['from'], self.config['to'])
-                print '"%s" -> "%s"' % (uri, newUri)
+                print('"%s" -> "%s"' % (uri, newUri))
 
                 # This is hacky...
                 r = ruleset.getRuleset(uri)

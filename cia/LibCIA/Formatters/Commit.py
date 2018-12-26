@@ -28,9 +28,9 @@ import posixpath
 
 from twisted.python.util import OrderedDict
 
-from LibCIA import Message
+from cia.LibCIA import Message
 from Nouvelle import tag
-import Util
+from . import Util
 from cia.LibCIA import XML
 from cia.LibCIA.IRC import Formatting
 from cia.LibCIA.Web import RegexTransform, Template
@@ -209,7 +209,7 @@ class CommitFormatter(Message.ModularFormatter):
         for file in files:
             ending = file[len(prefix):].strip()
             if ending == '':
-                    ending = '.'
+                ending = '.'
             endings.append(ending)
         return prefix, endings
 
@@ -353,15 +353,15 @@ class CommitToXHTML(CommitFormatter):
            """
         if node.nodeType == node.ELEMENT_NODE and node.nodeName.startswith("n:"):
             attrs = {}
-            for attr in node.attributes.values():
+            for attr in list(node.attributes.values()):
                 attrs[str(attr.name)] = attr.value
-            return [tag(node.nodeName[2:], **attrs)[ self.walkComponents(node.childNodes, args) ]]
+            return [tag(node.nodeName[2:], **attrs)[self.walkComponents(node.childNodes, args)]]
         return CommitFormatter.evalComponent(self, node, args)
 
     def component_url(self, element, args):
         element = XML.dig(args.message.xml, "message", "body", "commit", "url")
         if element:
-            return [tag('a', href=XML.shallowText(element))[ 'link' ]]
+            return [tag('a', href=XML.shallowText(element))['link']]
         else:
             return [Message.MarkAsHidden()]
 
@@ -411,13 +411,13 @@ class CommitToXHTML(CommitFormatter):
                         content.append(tag('br'))
                     content.append(line)
                 content = [
-                    tag('p')[ content ],
-                    tag('ul')[[ tag('li')[item] for item in listItems ]],
-                    ]
+                    tag('p')[content],
+                    tag('ul')[[tag('li')[item] for item in listItems]],
+                ]
 
             elif isPreFormatted:
                 # This is probably a preformatted message, stick it in a <pre>
-                content.append(tag('pre')[ "\n".join(lines) ])
+                content.append(tag('pre')["\n".join(lines)])
 
             else:
                 # Plain old text, just stick <br>s between the lines
@@ -456,24 +456,24 @@ class CommitToXHTMLLong(CommitToXHTML):
                               title='File Renamed', alt='Renamed'),
         'modify': _actionIcon(src='/images/file_modified.png',
                               title='File Modified', alt='Modified'),
-        }
+    }
 
     def component_headers(self, element, args):
         """Format all relevant commit metadata in an email-style header box"""
 
-        message   = args.message
-        commit    = XML.dig(message.xml, "message", "body", "commit")
-        source    = XML.dig(message.xml, "message", "source")
-        author    = XML.dig(commit, "author")
-        version   = XML.dig(commit, "version")
-        revision  = XML.dig(commit, "revision")
+        message = args.message
+        commit = XML.dig(message.xml, "message", "body", "commit")
+        source = XML.dig(message.xml, "message", "source")
+        author = XML.dig(commit, "author")
+        version = XML.dig(commit, "version")
+        revision = XML.dig(commit, "revision")
         diffLines = XML.dig(commit, "diffLines")
-        url       = XML.dig(commit, "url")
-        log       = XML.dig(commit, "log")
-        project   = XML.dig(source, "project")
-        module    = XML.dig(source, "module")
-        branch    = XML.dig(source, "branch")
-        headers   = OrderedDict()
+        url = XML.dig(commit, "url")
+        log = XML.dig(commit, "log")
+        project = XML.dig(source, "project")
+        module = XML.dig(source, "module")
+        branch = XML.dig(source, "branch")
+        headers = OrderedDict()
 
         if author:
             headers['Author'] = XML.shallowText(author)
@@ -490,7 +490,8 @@ class CommitToXHTMLLong(CommitToXHTML):
         if diffLines:
             headers['Changed Lines'] = XML.shallowText(diffLines)
         if url:
-            headers['URL'] = tag('a', href=XML.shallowText(url))[ Util.extractSummary(url) ]
+            headers['URL'] = tag('a', href=XML.shallowText(url))[
+                Util.extractSummary(url)]
 
         return [Template.MessageHeaders(headers)]
 
@@ -531,9 +532,10 @@ class CommitToXHTMLLong(CommitToXHTML):
            using format_file() to render each fileTag.
            """
         result = {}
-        for name, t in fileTree.iteritems():
+        for name, t in fileTree.items():
             fileTag, children = t
-            result[self.format_file(name, fileTag)] = self.format_file_tree(children)
+            result[self.format_file(name, fileTag)
+                   ] = self.format_file_tree(children)
         return result
 
     def format_file(self, name, fileTag=None):
@@ -544,7 +546,7 @@ class CommitToXHTMLLong(CommitToXHTML):
             # If we have a 'uri' attribute, make this file a hyperlink
             uri = fileTag.getAttribute('uri')
             if uri:
-                name = tag('a', href=uri)[ name ]
+                name = tag('a', href=uri)[name]
 
             # If we have an 'action' attribute, represent it with an icon
             actionIcon = self.actionIcons.get(fileTag.getAttribute('action'))

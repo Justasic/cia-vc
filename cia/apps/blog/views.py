@@ -91,7 +91,7 @@ def detail(request, year=None, month=None, slug=None):
     if ctx['can_post'] and post.posted_by.id == request.user.id:
 
         if request.POST:
-            model = dict(request.POST.items())
+            model = dict(list(request.POST.items()))
             model.setdefault('listed', False)
             post_form = EditPostForm(model)
 
@@ -121,7 +121,7 @@ def detail(request, year=None, month=None, slug=None):
 
     if request.user.is_authenticated():
         if request.user.first_name and request.user.last_name:
-            user_full_name = u"%s %s" % (request.user.first_name, request.user.last_name)
+            user_full_name = "%s %s" % (request.user.first_name, request.user.last_name)
         else:
             user_full_name = request.user.username
     else:
@@ -192,7 +192,7 @@ def post_comment(request):
 
     p = request.POST
     object_id = p['post_id']
-    if p.has_key("comment") and p["comment"]:
+    if "comment" in p and p["comment"]:
         author = "Anonymous"
         if p["person_name"]:
             author = p["person_name"]

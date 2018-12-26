@@ -27,7 +27,7 @@ import types
 
 from twisted.python import rebuild, log
 
-from cStringIO import StringIO
+from io import StringIO
 import gc
 import sys
 from cia.LibCIA import RpcServer
@@ -109,7 +109,7 @@ class RemoteInterpreter(code.InteractiveInterpreter):
         # By default, give them a new namespace filled with
         # all the bare functions from this module.
         ns = {}
-        for name, value in globals().iteritems():
+        for name, value in globals().items():
             if type(value) == types.FunctionType:
                 ns[name] = value
 
@@ -180,7 +180,7 @@ def rebuildPackage(package):
     except AttributeError:
         return
     if package.__file__.find("__init__") >= 0:
-        for item in package.__dict__.itervalues():
+        for item in package.__dict__.values():
             # Is it a module?
             if type(item) == type(package):
                 rebuildPackage(item)
@@ -229,23 +229,23 @@ def debugLeaks(reset=False, quiet=False, interestedTypes=None):
         _leakTracker[id(object)] = typename
 
         if not quiet:
-            print repr(object)
+            print(repr(object))
 
-    print "\n-- %d new instances, %d total instances, %d total objects" % (
-        newCount, instCount, len(objlist))
+    print("\n-- %d new instances, %d total instances, %d total objects" % (
+        newCount, instCount, len(objlist)))
 
 
 class GcInterface(RpcServer.Interface):
     """Memory debugging and profiling via python's garbage collector interface"""
     def protected_garbageInfo(self):
         """Return a string representation of the items in gc.garbage"""
-        return map(repr, gc.garbage)
+        return list(map(repr, gc.garbage))
 
     def protected_objectsInfo(self):
         """Return a string representation of the items in gc.get_objects().
            This can take a while and be very big!
            """
-        return map(repr, gc.get_objects())
+        return list(map(repr, gc.get_objects()))
 
     def protected_typeInstances(self, t):
         """Return all objects of any one type, using the same type names as typeProfile"""
@@ -274,7 +274,7 @@ class GcInterface(RpcServer.Interface):
                 inst.append(repr(object))
 
         # Sort by frequency
-        keys = typeFreq.keys()
+        keys = list(typeFreq.keys())
         keys.sort(lambda a,b: cmp(typeFreq[a],typeFreq[b]))
 
         # And return a nice table

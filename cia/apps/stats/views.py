@@ -58,7 +58,7 @@ def fidtool_graph(request):
 
     x_grid = dayGrid(x_scale[0])
     y_grid = ( (y_gridsize*i, _fidtool.GRID_SOLID)
-               for i in xrange(1, y_scale // y_gridsize + 1) )
+               for i in range(1, y_scale // y_gridsize + 1) )
 
     scales = (
         (x_scale, x_grid),

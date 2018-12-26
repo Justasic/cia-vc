@@ -25,9 +25,7 @@ usual XML-RPC support with our own security and exception handling code.
 from twisted.web import xmlrpc, server
 from twisted.internet import defer
 from twisted.python import log
-
-from cia.LibCIA import Security
-
+import xmlrpc.client as xmlrpclib
 
 class Interface(xmlrpc.XMLRPC):
     """A web resource representing a set of XML-RPC functions, optionally
@@ -77,7 +75,7 @@ class Interface(xmlrpc.XMLRPC):
             # Note that this currently doesn't work on protected functions.
             kwargs = {}
             try:
-                if 'request' in function.func_code.co_varnames:
+                if 'request' in function.__code__.co_varnames:
                     kwargs['request'] = request
             except AttributeError:
                 pass
@@ -119,7 +117,7 @@ class Interface(xmlrpc.XMLRPC):
         for subHandler in path[:-1]:
             interface = interface.getSubHandler(subHandler)
             if interface is None:
-                raise xmlrpc.NoSuchFunction, (self.NOT_FOUND, "no such function %s" % fqname)
+                raise xmlrpc.NoSuchFunction(self.NOT_FOUND, "no such function %s" % fqname)
 
         # Do we have a normal non-protected function?
         f = getattr(interface, "xmlrpc_%s" % path[-1], None)
@@ -131,7 +129,7 @@ class Interface(xmlrpc.XMLRPC):
         if f and callable(f):
             return self.protect(interface, path, f)
         # For some reason, NoSuchFunction has the same constructor as Fault
-        raise xmlrpc.NoSuchFunction, (self.NOT_FOUND, "no such function %s" % fqname)
+        raise xmlrpc.NoSuchFunction(self.NOT_FOUND, "no such function %s" % fqname)
 
     def protect(self, interface, path, f):
         """Given a protected RPC function, return a wrapper that
@@ -139,6 +137,7 @@ class Interface(xmlrpc.XMLRPC):
            """
         def rpcWrapper(*args):
 
+            import Security
             result = defer.Deferred()
 
             # First argument is the key

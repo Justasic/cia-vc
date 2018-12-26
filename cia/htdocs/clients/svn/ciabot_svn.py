@@ -133,7 +133,7 @@ class config:
 
 ############# Normally the rest of this won't need modification
 
-import sys, os, re, urllib, getopt
+import sys, os, re, urllib.request, urllib.parse, urllib.error, getopt
 
 class File:
     """A file in a Subversion repository. According to our current
@@ -155,7 +155,7 @@ class File:
     def getURI(self, repo):
         """Get the URI of this file, given the repository's URI. This
         encodes the full path and joins it to the given URI."""
-        quotedPath = urllib.quote(self.fullPath)
+        quotedPath = urllib.parse.quote(self.fullPath)
         if quotedPath[0] == '/':
             quotedPath = quotedPath[1:]
         if repo[-1] != '/':
@@ -173,7 +173,7 @@ class File:
             attrs['action'] = self.action
 
         attrString = ''.join([' %s="%s"' % (key, escapeToXml(value,1))
-                              for key, value in attrs.items()])
+                              for key, value in list(attrs.items())])
         return "<file%s>%s</file>" % (attrString, escapeToXml(self.path))
 
 
@@ -190,13 +190,13 @@ class SvnClient:
 
     def deliver(self, message):
         if config.debug:
-            print message
+            print(message)
         else:
             server = self.config.server
             if server.startswith('http:') or server.startswith('https:'):
                 # Deliver over XML-RPC
-                import xmlrpclib
-                xmlrpclib.ServerProxy(server).hub.deliver(message)
+                import xmlrpc.client
+                xmlrpc.client.ServerProxy(server).hub.deliver(message)
             else:
                 # Deliver over email
                 import smtplib
@@ -226,7 +226,7 @@ class SvnClient:
                     # Recent Pythons don't need this, but Python 2.1
                     # at least can't convert other types directly
                     # to Unicode. We have to take an intermediate step.
-                    if type(v) not in (type(''), type(u'')):
+                    if type(v) not in (type(''), type('')):
                         v = str(v)
                     
                     s += "<%s>%s</%s>" % (name, escapeToXml(v), name)
@@ -267,7 +267,7 @@ class SvnClient:
         revision, returning all output"""
         # We have to set LC_ALL to force svnlook to give us UTF-8 output,
         # then we explicitly slurp that into a unicode object.
-        return unicode(os.popen(
+        return str(os.popen(
             'LC_ALL="en_US.UTF-8" svnlook %s -r "%s" "%s"' %
             (command, self.revision, self.repository)).read(),
             'utf-8', 'replace')
@@ -337,7 +337,7 @@ def matchAgainstFiles(regex, files):
 
 
 def escapeToXml(text, isAttrib=0):
-    text = unicode(text)
+    text = str(text)
     text = text.replace("&", "&amp;")
     text = text.replace("<", "&lt;")
     text = text.replace(">", "&gt;")

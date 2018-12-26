@@ -15,10 +15,10 @@
 # --Micah Dowty <micah@navi.cx>
 #
 
-import urllib2, xmlrpclib
+import urllib.request, urllib.error, urllib.parse, xmlrpc.client
 import sys
 from xml.dom import minidom
-from SimpleXMLRPCServer import SimpleXMLRPCServer
+from xmlrpc.server import SimpleXMLRPCServer
 
 
 class config:
@@ -41,13 +41,13 @@ class Feed:
 
     def grab(self):
         """Download the feed and parse it as XML, saving the DOM tree"""
-        self.dom = minidom.parse(urllib2.urlopen(self.url))
+        self.dom = minidom.parse(urllib.request.urlopen(self.url))
         self.rss = self.dom.getElementsByTagName('rss')[0]
         self.channel = self.rss.getElementsByTagName('channel')[0]
 
     def items(self):
         """Return a list of FeedItem instances"""
-        return map(FeedItem, self.channel.getElementsByTagName('item'))
+        return list(map(FeedItem, self.channel.getElementsByTagName('item')))
 
     def subscribe(self, procedureName, clientPort, responderPath):
         """Subscribe to this feed. When the feed is modified, the given
@@ -56,7 +56,7 @@ class Feed:
         cloud = self.channel.getElementsByTagName('cloud')[0]
 
         # Assemble the bits from the <cloud> tag back into a URL we can get to the server at
-        s = xmlrpclib.ServerProxy("http://%s:%s%s" % (cloud.getAttribute('domain'),
+        s = xmlrpc.client.ServerProxy("http://%s:%s%s" % (cloud.getAttribute('domain'),
                                                       cloud.getAttribute('port'),
                                                       cloud.getAttribute('path')))
         regProcedure = getattr(s, cloud.getAttribute('registerProcedure'))
@@ -121,18 +121,18 @@ class Subscriber(SimpleXMLRPCServer):
 def main(c):
     """Main program, print new items to stdout as they appear, using the supplied configuration"""
     feed = Feed(c.url)
-    print "Retrieving feed..."
+    print("Retrieving feed...")
     feed.grab()
 
     def feedChanged():
-        print
+        print()
         feed.grab()
-        print feed.items()[0]
+        print(list(feed.items())[0])
 
     subscriber = Subscriber(c.port)
-    print "Subscribing..."
+    print("Subscribing...")
     subscriber.subscribe(feed, feedChanged)
-    print "Waiting for notifications..."
+    print("Waiting for notifications...")
     subscriber.serve_forever()
 
 

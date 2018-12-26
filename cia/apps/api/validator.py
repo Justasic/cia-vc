@@ -9,7 +9,7 @@ def validation_result(view_func):
                 'is_valid': True,
                 'messages': [],
                 }
-        except forms.ValidationError, e:
+        except forms.ValidationError as e:
             return {
                 'is_valid': False,
                 'messages': e.messages,

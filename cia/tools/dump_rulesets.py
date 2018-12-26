@@ -9,11 +9,11 @@ from cia.tools import Client
 
 class RulesetDumper(Client.App):
     def main(self):
-	print "<rulesets>"
-        for ruleset in self.server.ruleset.getRulesetMap().values():
-            print ruleset
+	print("<rulesets>")
+        for ruleset in list(self.server.ruleset.getRulesetMap().values()):
+            print(ruleset)
 #            print "\n%s" % ruleset.split("?>", 1)[1].strip()
-        print "\n</rulesets>"
+        print("\n</rulesets>")
 
 if __name__ == '__main__':
     RulesetDumper().main()

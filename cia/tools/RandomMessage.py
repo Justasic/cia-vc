@@ -164,14 +164,14 @@ def benchmark(server, numMessages=5000, verbose=True):
        Returns the average speed in messages per second.
        """
     if verbose:
-        print "Generating messages..."
-    messages = [generate(rev=i) for i in xrange(numMessages)]
+        print("Generating messages...")
+    messages = [generate(rev=i) for i in range(numMessages)]
     startTime = time.time()
     for i, message in enumerate(messages):
         server.hub.deliver(message)
         speed = (i+1) / (time.time() - startTime)
         if verbose and not i % 50:
-            print "Message %d/%d...\taverage %.02f messages/second" % (i, len(messages), speed)
+            print("Message %d/%d...\taverage %.02f messages/second" % (i, len(messages), speed))
     return speed
 
 ### The End ###

@@ -45,9 +45,9 @@ from twisted.internet import defer
 from twisted.python import failure, log
 
 import time
-import cPickle
-from cStringIO import StringIO
-import RpcServer
+import pickle
+from io import StringIO
+from . import RpcServer
 
 
 
@@ -212,7 +212,7 @@ def createRandomKey(bytes = 24,
        """
     s = ''
     f = open("/dev/urandom")
-    for i in xrange(bytes):
+    for i in range(bytes):
         s += allowedChars[ ord(f.read(1)) % len(allowedChars) ]
     f.close()
     return s
@@ -245,9 +245,9 @@ def logProtectedCall(result, path, args, user, allowed=True):
         uid,
         Database.quote(".".join(path), 'text'),
         Database.quote(main_param, 'text'),
-        Database.quoteBlob(cPickle.dumps(args)),
+        Database.quoteBlob(pickle.dumps(args)),
         allowed,
-        Database.quoteBlob(cPickle.dumps(result))))
+        Database.quoteBlob(pickle.dumps(result))))
     return result
 
 
@@ -355,7 +355,7 @@ class User:
         cursor.execute("SELECT * FROM users WHERE uid = %d" % uid)
         row = cursor.fetchone()
         d = {}
-        for i in xrange(len(row)):
+        for i in range(len(row)):
             d[cursor.description[i][0]] = row[i]
         return d
 
@@ -373,7 +373,7 @@ class User:
         self._grant(cursor, *grantCapabilities)
         key = self._getInfo(cursor)['secret_key']
         f = open(file, "w")
-        os.chmod(file, 0600)
+        os.chmod(file, 0o600)
         f.write(key)
         f.close()
 
@@ -410,7 +410,7 @@ class User:
         uid = self._getUid(cursor)
         for capability in capabilities:
             rep = repr(capability)
-            print rep
+            print(rep)
             cursor.execute("INSERT IGNORE INTO capabilities (uid, cap_md5, cap_repr)"
                            " VALUES(%d, %s, %s)" % (
                 uid,

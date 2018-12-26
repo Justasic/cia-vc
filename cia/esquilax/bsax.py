@@ -100,13 +100,13 @@ class SAXEncoder(xml.sax.handler.ContentHandler):
         slen = len(s)
 
         if s:
-            self.encode_string(unichr(1) + s)
+            self.encode_string(chr(1) + s)
 
         if slen != dlen:
             self.encode_whitespace(dlen - slen)
 
     def encode_element(self, name, params):
-        self.encode_string(unichr(params + 2) + name)
+        self.encode_string(chr(params + 2) + name)
 
     def encode_string(self, data):
         if data in self.memo:
@@ -114,20 +114,20 @@ class SAXEncoder(xml.sax.handler.ContentHandler):
             return
         self.memoize(data)
 
-        self.output.append(unichr((len(data) << 2) | 1))
+        self.output.append(chr((len(data) << 2) | 1))
         self.output.append(data)
 
     def encode_end(self, count):
-        self.output.append(unichr(count << 2))
+        self.output.append(chr(count << 2))
 
     def encode_memoized(self, index):
-        self.output.append(unichr((index << 2) | 2))
+        self.output.append(chr((index << 2) | 2))
 
     def encode_whitespace(self, count):
-        self.output.append(unichr((count << 2) | 3))
+        self.output.append(chr((count << 2) | 3))
 
     def getvalue(self):
-        return u''.join(self.output).encode('utf-8')
+        return ''.join(self.output).encode('utf-8')
 
 
 def SAXDecoder(encoded, dictionary):
@@ -144,7 +144,7 @@ def SAXDecoder(encoded, dictionary):
     stack = [dom.Document()]
     attrs = None
     top = stack[-1]
-    m = unicode(encoded, 'utf8')
+    m = str(encoded, 'utf8')
     mlen = len(m)
     i = 0
 
@@ -278,14 +278,14 @@ HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
 # You may define new versions, but never change the existing dicts!
 LATEST_VERSION = 1
 DICTIONARIES = {
-    1: (u'\x01name', u'\x03header', u'\x02file', u'\x01Received',
-        u'\x02source', u'\x02project', u'\x02name', u'\x02generator',
-        u'\x02body', u'\x02timestamp', u'\x02message', u'\x02commit',
-        u'\x02author', u'\x02log', u'\x02files', u'\x02version',
-        u'\x03file', u'action', u'From', u'Date', u'\x02mailHeaders',
-        u'Message-Id', u'\x02module', u'modify', u'\x02revision',
-        u'\x02url', u'\x02diffLines', u'\x01uri', u'\x02branch',
-        u'\x04file', u'\x01add'),
+    1: ('\x01name', '\x03header', '\x02file', '\x01Received',
+        '\x02source', '\x02project', '\x02name', '\x02generator',
+        '\x02body', '\x02timestamp', '\x02message', '\x02commit',
+        '\x02author', '\x02log', '\x02files', '\x02version',
+        '\x03file', 'action', 'From', 'Date', '\x02mailHeaders',
+        'Message-Id', '\x02module', 'modify', '\x02revision',
+        '\x02url', '\x02diffLines', '\x01uri', '\x02branch',
+        '\x04file', '\x01add'),
     }
 
 def bsax_dump(str, f):
@@ -416,7 +416,7 @@ def benchmark():
         if c > 100000:
             break
     end = time.time()
-    print "%.2f msg/sec" % (c / (end - start))
+    print("%.2f msg/sec" % (c / (end - start)))
 
 
 class MessageArchiver:
@@ -447,6 +447,6 @@ class MessageArchiver:
            just so we can re-serialize it with SAX. This is a stopgap measure
            until the message filtering architecture is redesigned.
            """
-        self.push(unicode(msg).encode('utf-8'))
+        self.push(str(msg).encode('utf-8'))
 
 ### The End ###

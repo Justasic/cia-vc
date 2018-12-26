@@ -25,7 +25,7 @@ can be restarted without effecting the bots.
 #
 
 import random
-import Queue
+import queue
 
 from twisted.protocols import basic
 from twisted.words.protocols import irc
@@ -346,7 +346,7 @@ class RandomAcronymNickAllocator(NickAllocator):
 
     def generate(self):
         while True:
-            yield "".join([random.choice(self.alphabet) for i in xrange(self.length)])
+            yield "".join([random.choice(self.alphabet) for i in range(self.length)])
 
 
 
@@ -394,7 +394,7 @@ class BotNetwork:
         self.sync_id = 0
         self.unknownMessageLog = MessageLog()
         self.connectCheckTimer = None
-        self.connectCheckQueue = Queue.Queue()
+        self.connectCheckQueue = queue.Queue()
 
         # A map from Network to list of Bots
         self.networks = {}
@@ -528,13 +528,13 @@ class BotNetwork:
                     del self.inactiveBots[reqBot]
 
         # Now look for unused bots and/or channels
-        for network in self.networks.itervalues():
+        for network in self.networks.values():
             for bot in network:
                 if bot in usedBots:
                     usedChannels = usedBots[bot]
 
                     # We need this bot.. but are all the channels necessary?
-                    for channel in bot.channels.iterkeys():
+                    for channel in bot.channels.keys():
                         if channel not in usedChannels:
                             bot.part(channel)
 
@@ -550,7 +550,7 @@ class BotNetwork:
                 else:
                     # We don't need this bot. Tell it to part all of its channels,
                     # and if it isn't already, schedule it for deletion.
-                    for channel in bot.channels.iterkeys():
+                    for channel in bot.channels.keys():
                         bot.part(channel)
                     if bot not in self.inactiveBots:
                         self.inactiveBots[bot] = reactor.callLater(
@@ -599,7 +599,7 @@ class BotNetwork:
             network = self.connectCheckQueue.get_nowait()
             self.createBot(network)
             self.connectCheckTimer = reactor.callLater(self.globalConnectInterval, self.checkConnectQueue)
-        except Queue.Empty:
+        except queue.Empty:
             self.connectCheckTimer = None
 
     def createBot(self, network):
@@ -683,7 +683,7 @@ class BotNetwork:
             unfulfilled = 0,
             )
 
-        for network in self.networks.iterkeys():
+        for network in self.networks.keys():
             totals['networks'] += 1
             for bot in self.networks[network]:
                 totals['bots'] += 1
@@ -701,7 +701,7 @@ class BotNetwork:
         """ Disconnect all bots on all networks (e.g, core shutdown) """
         # This seems like a nasty hack.. - Justasic
         botstogo = []
-        for n in self.networks.itervalues():
+        for n in self.networks.values():
             # First, iterate the networks and their bots
             # Then add them to a list
             for bot in n:
@@ -748,7 +748,7 @@ class MessageQueue:
        after this.
        """
     def __init__(self, maxSize):
-        self._fifo = Queue.Queue(maxSize)
+        self._fifo = queue.Queue(maxSize)
         self._numDropped = 0
         self._next = None
 
@@ -762,14 +762,14 @@ class MessageQueue:
         else:
             try:
                 self._fifo.put(message, False)
-            except Queue.Full:
+            except queue.Full:
                 self._numDropped = 1
 
     def get(self):
         """Return the next message, discarding it from the queue."""
         try:
             return self._fifo.get(False)
-        except Queue.Empty:
+        except queue.Empty:
             if self._numDropped:
                 n = self._numDropped
                 self._numDropped = 0
@@ -785,7 +785,7 @@ class FairQueue:
     def __init__(self, queueSize):
         self._queueSize = queueSize
         self._targetDict = {}
-        self._pendingQueue = Queue.Queue()
+        self._pendingQueue = queue.Queue()
         self._next = None
 
     def put(self, target, message):
@@ -809,7 +809,7 @@ class FairQueue:
                 # Get the next queue target in round-robin order
                 try:
                     target = self._pendingQueue.get(False)
-                except Queue.Empty:
+                except queue.Empty:
                     break
 
                 queue = self._targetDict[target]
@@ -898,7 +898,7 @@ class Bot(irc.IRCClient):
 
         # clear stale timers
         if hasattr(self, 'requestedChannels'):
-            for timer in self.requestedChannels.itervalues():
+            for timer in self.requestedChannels.values():
                 if timer.active():
                     timer.cancel()
 
@@ -1026,7 +1026,7 @@ class Bot(irc.IRCClient):
            our result callback. Otherwise, the cycle continues.
            """
         if isUsed:
-            nextNick = generator.next()
+            nextNick = next(generator)
             self.isNickUsed(nextNick).addCallback(self._findNick, nextNick, generator, result)
         else:
             result.callback(testedNick)
@@ -1336,7 +1336,7 @@ class Bot(irc.IRCClient):
     def irc_QUIT(self, prefix, params):
         # Another user quit, remove them from any of our channel lists
         nick = prefix.split('!')[0]
-        for channel in self.channels.itervalues():
+        for channel in self.channels.values():
             try:
                 channel.nicks.remove(nick)
             except ValueError:
@@ -1353,7 +1353,7 @@ class Bot(irc.IRCClient):
     def userRenamed(self, oldname, newname):
         # Blah, this doesn't give us a channel name. Search for this user
         # in each of our channels, renaming them.
-        for channel in self.channels.itervalues():
+        for channel in self.channels.values():
             try:
                 channel.nicks.remove(oldname)
                 channel.nicks.append(newname)

@@ -115,7 +115,7 @@ class ImageTranslator(nodes.SparseNodeVisitor):
 class Post(models.Model):
     slug = models.SlugField('slug', unique_for_date='pub_date', db_index=True)
     pub_date = models.DateTimeField(db_index=True)
-    posted_by = models.ForeignKey(User)
+    posted_by = models.ForeignKey(User, on_delete=models.CASCADE)
     listed = models.BooleanField('Listed in public indexes?', default=False)
     title = models.CharField(max_length=100)
     content = models.TextField()
@@ -196,11 +196,11 @@ class Comment(models.Model):
     submit_date = models.DateTimeField(auto_now_add=True)
     person_name = models.CharField(max_length=60)
     comment = models.TextField()
-    post = models.ForeignKey(Post)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
     is_public = models.BooleanField()
 
     def __unicode__(self):
-        return unicode("%s: %s" % (self.post, self.comment[:60]))
+        return str("%s: %s" % (self.post, self.comment[:60]))
 
     def get_text(self):
         return self.comment

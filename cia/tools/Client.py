@@ -27,7 +27,7 @@ and xmlrpclib. If you need anything different, this module isn't for you.
 #
 
 from twisted.python import usage
-import xmlrpclib, os
+import xmlrpc.client, os
 
 
 # Let the user override the default server
@@ -58,7 +58,7 @@ class App(object):
         self.config = self.optionsClass()
         self.config.parseOptions()
 
-        self.server = xmlrpclib.ServerProxy(self.config['server'], allow_none=True)
+        self.server = xmlrpc.client.ServerProxy(self.config['server'], allow_none=True)
         if self.config['key']:
             self.key = open(os.path.expanduser(self.config['key'])).read().strip()
         else:

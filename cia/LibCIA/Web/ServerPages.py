@@ -25,8 +25,8 @@ page and a directory listing page.
 from twisted.web import http
 
 from Nouvelle import tag, place, Twisted
-from LibCIA import TimeUtil
-import Template
+from cia.LibCIA import TimeUtil
+from . import Template
 import time
 import Nouvelle
 from cia.LibCIA import Units

@@ -232,13 +232,13 @@ class SAXEncoder(xml.sax.handler.ContentHandler):
         slen = len(s)
 
         if s:
-            self.encode_string(unichr(1) + s)
+            self.encode_string(chr(1) + s)
 
         if slen != dlen:
             self.encode_whitespace(dlen - slen)
 
     def encode_element(self, name, params):
-        self.encode_string(unichr(params + 2) + name)
+        self.encode_string(chr(params + 2) + name)
 
     def encode_string(self, data):
         if data in self.memo:
@@ -246,20 +246,20 @@ class SAXEncoder(xml.sax.handler.ContentHandler):
             return
         self.memoize(data)
 
-        self.output.append(unichr((len(data) << 2) | 1))
+        self.output.append(chr((len(data) << 2) | 1))
         self.output.append(data)
 
     def encode_end(self, count):
-        self.output.append(unichr(count << 2))
+        self.output.append(chr(count << 2))
 
     def encode_memoized(self, index):
-        self.output.append(unichr((index << 2) | 2))
+        self.output.append(chr((index << 2) | 2))
 
     def encode_whitespace(self, count):
-        self.output.append(unichr((count << 2) | 3))
+        self.output.append(chr((count << 2) | 3))
 
     def getvalue(self):
-        return u''.join(self.output).encode('utf-8')
+        return ''.join(self.output).encode('utf-8')
 
 def SAXDecoder(encoded, dictionary):
     """Decode the stream produced by SAXEncoder, returning a minidom tree.
@@ -272,7 +272,7 @@ def SAXDecoder(encoded, dictionary):
     stack = [dom.Document()]
     attrs = None
     top = stack[-1]
-    m = unicode(encoded, 'utf8')
+    m = str(encoded, 'utf8')
     mlen = len(m)
     i = 0
 
@@ -469,7 +469,7 @@ class MessageBuffer:
            False and change nothing.
            """
         if not self.file:
-            self.file = os.fdopen(os.open(self.filePath, os.O_RDWR | os.O_CREAT, 0666), 'w+')
+            self.file = os.fdopen(os.open(self.filePath, os.O_RDWR | os.O_CREAT, 0o666), 'w+')
         header = self.file.read(self.headerSize)
 
         if header:
@@ -483,7 +483,7 @@ class MessageBuffer:
                 raise ValueError("File header is incorrect")
 
             # Unpack the original dictionary
-            self.dictionary = unicode(self.file.read(self.dictionarySize), 'utf8').split('\x00')
+            self.dictionary = str(self.file.read(self.dictionarySize), 'utf8').split('\x00')
             self._initRingBuffers()
 
         elif msg is None:
@@ -493,7 +493,7 @@ class MessageBuffer:
             self.dictionary = self._createDictionary(msg)
             
             # Measure the encoded dictionary and set up critical sizes
-            encodedDict = u'\x00'.join(self.dictionary).encode('utf8')
+            encodedDict = '\x00'.join(self.dictionary).encode('utf8')
             self.dictionarySize = len(encodedDict)
             self._initRingBuffers()
 
@@ -526,14 +526,14 @@ class MessageBuffer:
         # dictionary.
         #
         encoder = SAXEncoder((
-            u'\x01name', u'\x03header', u'\x02file', u'\x01Received',
-            u'\x02source', u'\x02project', u'\x02name', u'\x02generator',
-            u'\x02body', u'\x02timestamp', u'\x02message', u'\x02commit',
-            u'\x02author', u'\x02log', u'\x02files', u'\x02version',
-            u'\x03file', u'action', u'From', u'Date', u'\x02mailHeaders',
-            u'Message-Id', u'\x02module', u'modify', u'\x02revision',
-            u'\x02url', u'\x02diffLines', u'\x01uri', u'\x02branch',
-            u'\x04file', u'\x01add',
+            '\x01name', '\x03header', '\x02file', '\x01Received',
+            '\x02source', '\x02project', '\x02name', '\x02generator',
+            '\x02body', '\x02timestamp', '\x02message', '\x02commit',
+            '\x02author', '\x02log', '\x02files', '\x02version',
+            '\x03file', 'action', 'From', 'Date', '\x02mailHeaders',
+            'Message-Id', '\x02module', 'modify', '\x02revision',
+            '\x02url', '\x02diffLines', '\x01uri', '\x02branch',
+            '\x04file', '\x01add',
             ))
 
         # Feed in the first message, to populate the memo with strings
@@ -620,7 +620,7 @@ class MessageBuffer:
         tail = self.tail
         head = max(0, tail - min(limit * 4, self.indexSize))
         index = self.indexRing.read(tail - head, head)
-        for i in xrange(0, len(index), 4):
+        for i in range(0, len(index), 4):
             msgId = struct.unpack(">I", index[i:i+4])[0]
             msg = self.getMessageById(msgId)
             if msg is not None:
@@ -670,14 +670,14 @@ class MessageArchive:
 
     # You may define new versions, but never change the existing dicts!
     dictionaries = {
-        1: (u'\x01name', u'\x03header', u'\x02file', u'\x01Received',
-            u'\x02source', u'\x02project', u'\x02name', u'\x02generator',
-            u'\x02body', u'\x02timestamp', u'\x02message', u'\x02commit',
-            u'\x02author', u'\x02log', u'\x02files', u'\x02version',
-            u'\x03file', u'action', u'From', u'Date', u'\x02mailHeaders',
-            u'Message-Id', u'\x02module', u'modify', u'\x02revision',
-            u'\x02url', u'\x02diffLines', u'\x01uri', u'\x02branch',
-            u'\x04file', u'\x01add'),
+        1: ('\x01name', '\x03header', '\x02file', '\x01Received',
+            '\x02source', '\x02project', '\x02name', '\x02generator',
+            '\x02body', '\x02timestamp', '\x02message', '\x02commit',
+            '\x02author', '\x02log', '\x02files', '\x02version',
+            '\x03file', 'action', 'From', 'Date', '\x02mailHeaders',
+            'Message-Id', '\x02module', 'modify', '\x02revision',
+            '\x02url', '\x02diffLines', '\x01uri', '\x02branch',
+            '\x04file', '\x01add'),
         }
 
     def __init__(self, path):
@@ -731,7 +731,7 @@ class MessageArchive:
            just so we can re-serialize it with SAX. This is a stopgap measure
            until the message filtering architecture is redesigned.
            """
-        self.push(unicode(msg).encode('utf-8'))
+        self.push(str(msg).encode('utf-8'))
 
     def readNextFromFile(self, f):
         """Read a single message from a file-like object, advancing the file

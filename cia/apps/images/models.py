@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.db.models import signals
 from django.core.signals import got_request_exception
-import os, re, commands, random, subprocess
+import os, re, subprocess, random, subprocess
 #from popen2 import Popen4
 
 # These must be listed from largest to smallest
@@ -43,7 +43,7 @@ class ImageMagick:
     def get_image_size(self, file_path):
         """Probe the size of an on-disk image, returning a (width, height) tuple.
            """
-        child = subprocess.Popen("%s -ping %s" % (self.IDENTIFY, commands.mkarg(file_path)))
+        child = subprocess.Popen("%s -ping %s" % (self.IDENTIFY, subprocess.mkarg(file_path)))
         output = child.fromchild.read()
         status = child.wait()
         match = re.search(r" (\d+)x(\d+) ", output)
@@ -101,8 +101,8 @@ class ImageMagick:
 
             child = Popen4("%s %s %s" % (
                 self.CONVERT,
-                commands.mkarg(src_path),
-                commands.mkarg(dest_path),
+                subprocess.mkarg(src_path),
+                subprocess.mkarg(dest_path),
                 ))
 
             output = child.fromchild.read()
@@ -121,8 +121,8 @@ class ImageMagick:
         child = Popen4("%s -geometry %dx%d %s %s" % (
             self.CONVERT,
             size, size,
-            commands.mkarg(src_path),
-            commands.mkarg(dest_path),
+            subprocess.mkarg(src_path),
+            subprocess.mkarg(dest_path),
             ))
 
         output = child.fromchild.read()
@@ -139,7 +139,7 @@ class ImageSource(models.Model):
        """
     is_temporary = models.BooleanField(default=True)
     reviewed_by_admin = models.BooleanField(default=False)
-    created_by = models.ForeignKey(User, null=True)
+    created_by = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     date_added = models.DateTimeField(auto_now_add=True)
 
     def create_path(self, suffix="", extension=".png"):
@@ -253,7 +253,8 @@ class ImageInstance(models.Model):
        """
     objects = ImageInstanceManager()
 
-    source = models.ForeignKey(ImageSource, related_name='instances')
+    source = models.ForeignKey(
+        ImageSource, related_name='instances', on_delete=models.CASCADE)
 
     is_original = models.BooleanField(default=False)
     thumbnail_size = models.PositiveIntegerField(null=True, blank=True)

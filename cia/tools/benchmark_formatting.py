@@ -29,7 +29,7 @@ Fixes bug #170266 [http://bugzilla.gnome.org/show_bug.cgi?id=170266] (Doug Quale
 <timestamp>1110923531</timestamp></message>
 """
 
-r = range(200)
+r = list(range(200))
 start = time.time()
 for i in r:
     m = Message.Message(messageText)
@@ -37,6 +37,6 @@ for i in r:
 end = time.time()
 
 
-print "%.04f seconds/message" % ((end - start) / len(r))
+print("%.04f seconds/message" % ((end - start) / len(r)))
 
 ### The End ###

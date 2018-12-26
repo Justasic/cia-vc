@@ -54,7 +54,7 @@ def getNamedCachePerformance(name):
 def getCachePerformanceList():
     """Return an iterator for all registered CachePerformance instances"""
     global _cachePerformanceStorage
-    return _cachePerformanceStorage.itervalues()
+    return iter(_cachePerformanceStorage.values())
 
 
 class AbstractFileCache:

@@ -8,6 +8,6 @@
 from cia.apps.images.models import ImageInstance, ImageSource
 
 for source in ImageSource.objects.all():
-    print source
+    print(source)
     ImageInstance.objects.filter(source=source, is_original=False).delete()
     ImageInstance.objects.create_standard_thumbnails(source, source.get_original())

@@ -29,9 +29,9 @@ or choose not to use it in your .tac file.
 
 from twisted.internet import defer
 
-import Template
-from LibCIA import Database
-from LibCIA.Web.Stats import Columns
+from . import Template
+from cia.LibCIA import Database
+from cia.LibCIA.Web.Stats import Columns
 import Nouvelle
 
 
@@ -139,7 +139,7 @@ class OverviewPage(Template.Page):
        """
 
     titleElements = [
-        tag('img', _class='banner', src='/media/img/banner-70-nb.png', width=329, height=52,
+        Nouvelle.tag('img', _class='banner', src='/media/img/banner-70-nb.png', width=329, height=52,
             alt='CIA.vc: The open source version control informant.'),
     ]
 
@@ -147,7 +147,7 @@ class OverviewPage(Template.Page):
 
     heading = Template.pageBody[
         "This is a brief overview of the information collected recently. ",
-        tag("a", href="/doc")[ "Learn more about CIA" ],
+        Nouvelle.tag("a", href="/doc")[ "Learn more about CIA" ],
         ]
 
     def __init__(self, sidebarPath='doc/.default.sidebar'):
@@ -160,7 +160,7 @@ class OverviewPage(Template.Page):
            Other lines are ignored.
            """
         sections = []
-        for line in open(path).xreadlines():
+        for line in open(path):
             line = line.strip()
             if not line:
                 continue
@@ -172,7 +172,7 @@ class OverviewPage(Template.Page):
             pieces = line.split("::", 1)
             if len(pieces) > 1:
                 title, url = pieces
-                sections[-1].rows.append( tag('a', href=url.strip())[title.strip()] )
+                sections[-1].rows.append( Nouvelle.tag('a', href=url.strip())[title.strip()] )
 
         return sections
 

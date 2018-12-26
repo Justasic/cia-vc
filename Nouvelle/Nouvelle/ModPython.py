@@ -106,7 +106,7 @@ class Page:
 
         req.headers_out['Location'] = url
         req.status = status
-        raise apache.SERVER_RETURN, status
+        raise apache.SERVER_RETURN(status)
 
     def preRender(self, context):
         """Called prior to rendering each request, subclasses can use this to annotate

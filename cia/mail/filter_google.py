@@ -91,7 +91,7 @@ class GoogleFilter(CommitFilter):
                 self.pullLog()
                 return
             else:
-                print "Debug: Unhandled line '%s'" % line
+                print("Debug: Unhandled line '%s'" % line)
 
 if __name__ == '__main__':
     GoogleFilter().main()

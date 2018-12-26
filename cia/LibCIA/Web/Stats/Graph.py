@@ -26,12 +26,12 @@ visually graphing the relationships between stats targets.
 from twisted.internet import defer
 from twisted.web import resource, server
 
-from LibCIA.Web import Template
+from cia.LibCIA.Web import Template
 from Nouvelle import tag
 import Nouvelle
 import cia.LibCIA.Stats.Graph
-import Link
-import Columns
+from . import Link
+from . import Columns
 
 
 class RelatedTable(Nouvelle.BaseTable):
@@ -152,7 +152,7 @@ class RelatedSection(Template.Section):
                     sections[row[0]] = [row[1:]]
 
         # Sort sections descending by freshness
-        for items in sections.itervalues():
+        for items in sections.values():
             items.sort()
             items.reverse()
         return sections
@@ -160,7 +160,7 @@ class RelatedSection(Template.Section):
     def _render_rows(self, queryResults, context, result):
         # Sort sections by decreasing size. We want the most interesting ones at
         # the top, and those are usually the biggest.
-        sections = queryResults.keys()
+        sections = list(queryResults.keys())
         sections.sort(lambda a,b: cmp(len(queryResults[b]), len(queryResults[a])))
         result.callback([self.render_section(section, queryResults[section]) for section in sections])
 

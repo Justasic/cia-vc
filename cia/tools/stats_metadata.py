@@ -7,7 +7,7 @@ stats browser. For example:
 ./stats_metadata -k stats.key project/pigomatic title 'Pig-O-Matic (tm)'
 """
 
-import xmlrpclib
+import xmlrpc.client
 
 from cia.tools import Client
 
@@ -42,7 +42,7 @@ class MetadataTool(Client.App):
 
         value = self.config['dataValue']
         if self.config['from-file'] and value:
-            value = xmlrpclib.Binary(open(value, 'rb').read())
+            value = xmlrpc.client.Binary(open(value, 'rb').read())
 
         if self.config['remove']:
             metadata.remove(self.key, self.config['path'], self.config['dataKey'])

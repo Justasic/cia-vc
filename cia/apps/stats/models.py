@@ -1,7 +1,7 @@
 from django.db import models
-from urllib import quote
+from urllib.parse import quote
 from cia.apps.images.models import ImageSource, ImageInstance
-from django.utils.encoding import smart_unicode, StrAndUnicode
+from django.utils.encoding import smart_text
 
 class StatsTargetManager(models.Manager):
     def withIcons(self, size):
@@ -29,7 +29,7 @@ class StatsTargetManager(models.Manager):
                 },
             )
 
-class StatsTarget(StrAndUnicode, models.Model):
+class StatsTarget(models.Model):
     """Refers to stats stored by the stats subsystem. This is a
        location in the database where information about a project,
        author, etc. are stored.
@@ -41,15 +41,15 @@ class StatsTarget(StrAndUnicode, models.Model):
        """
     objects = StatsTargetManager()
 
-    path = models.CharField(max_length=255, db_index=True)
+    path = models.CharField(max_length=254, db_index=True)
 
     # User-editable Stats metadata
     title = models.CharField(max_length=128, null=True, blank=True)
     subtitle = models.CharField(max_length=128, null=True, blank=True)
-    url = models.CharField(max_length=255, null=True, blank=True)
+    url = models.CharField(max_length=254, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
-    photo = models.ForeignKey(ImageSource, null=True, related_name='targets_by_photo')
-    icon = models.ForeignKey(ImageSource, null=True, related_name='targets_by_icon')
+    photo = models.ForeignKey(ImageSource, null=True, related_name='targets_by_photo', on_delete=models.CASCADE)
+    icon = models.ForeignKey(ImageSource, null=True, related_name='targets_by_icon', on_delete=models.CASCADE)
 
     # Internal Stats Metadata
     links_filter = models.TextField(null=True, blank=True)
@@ -88,7 +88,7 @@ class StatsTarget(StrAndUnicode, models.Model):
 
     def get_absolute_url(self):
         path = self.path
-        if isinstance(path, unicode):
+        if isinstance(path, str):
             path = path.encode('utf8')
         return "/stats/" + quote(path)
 
@@ -106,7 +106,7 @@ class StatsTarget(StrAndUnicode, models.Model):
             self.save()
 
     def __unicode__(self):
-        return smart_unicode(self.title or self.get_default_title())
+        return smart_text(self.title or self.get_default_title())
 
     class Admin:
         pass

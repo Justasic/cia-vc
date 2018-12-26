@@ -41,10 +41,10 @@ class SecurityTool(Client.App):
     def main(self):
         if self.config['create']:
             uid, key = self.server.security.createUser(self.key, self.config['create'], self.config['email'])
-            print "uid: %d, key: %s" % (uid, key)
+            print("uid: %d, key: %s" % (uid, key))
 
         elif self.config['grant']:
-            print self.server.security.grant(self.key, self.config['capability'], self.config['grant'])
+            print(self.server.security.grant(self.key, self.config['capability'], self.config['grant']))
 
 if __name__ == '__main__':
     SecurityTool().main()

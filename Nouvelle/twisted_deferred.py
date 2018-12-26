@@ -24,7 +24,7 @@ class Hello(Twisted.Page):
 
     def render_greeting(self, context):
         d = defer.Deferred()
-        print "Starting to render the greeting..."
+        print("Starting to render the greeting...")
         reactor.callLater(5, self.greetingCallback, d)
         return d
 
@@ -32,7 +32,7 @@ class Hello(Twisted.Page):
         # This is called 5 seconds after the page was requested.
         # We call the deferred's callback with our finished greeting-
         # this completes the web page and it can be sent to the client
-        print "Finishing"
+        print("Finishing")
         d.callback("Hello World")
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import sys
-import commands
-import xmlrpclib
+import subprocess
+import xmlrpc.client
 import string
 
 ################
@@ -27,18 +27,18 @@ project = "littlegreen"
 
 archname = sys.argv[1]
 
-category = commands.getoutput("tla parse-package-name -c "+archname)
-branch = commands.getoutput("tla parse-package-name -b "+archname)
-revision = commands.getoutput("tla parse-package-name -l "+archname)
+category = subprocess.getoutput("tla parse-package-name -c "+archname)
+branch = subprocess.getoutput("tla parse-package-name -b "+archname)
+revision = subprocess.getoutput("tla parse-package-name -l "+archname)
 if revision[0:len("patch-")] == "patch-": revision = revision[len("patch-"):]
 
-myid = commands.getoutput("tla my-id -u")
+myid = subprocess.getoutput("tla my-id -u")
 
 def send(msg):
     if debug:
-        print msg
+        print(msg)
         return
-    xmlrpclib.ServerProxy(server).hub.deliver(msg)
+    xmlrpc.client.ServerProxy(server).hub.deliver(msg)
 
 def escapeToXml(text, isAttrib=0):
     text = text.replace("&", "&amp;")
@@ -50,7 +50,7 @@ def escapeToXml(text, isAttrib=0):
     return text
 
 # grab the log message from tla
-patchlog = commands.getoutput("tla cat-archive-log "+archname+" | formail -X Summary: | sed 's/Summary: //'")
+patchlog = subprocess.getoutput("tla cat-archive-log "+archname+" | formail -X Summary: | sed 's/Summary: //'")
 
 msg = """
 <message>

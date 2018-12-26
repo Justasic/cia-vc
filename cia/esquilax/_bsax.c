@@ -141,7 +141,7 @@ opened_file_new(file_id_t id)
         return NULL;
     }
        
-    filename = PyString_AsString(filename_str);
+    filename = PyUnicode_AsUTF8String(filename_str);
     if (!filename_str) {
         return NULL;
     }
@@ -437,7 +437,7 @@ py_blockcache_lookup(PyObject *self, PyObject *args)
     if (!block)
         return NULL;
 
-    return PyString_FromStringAndSize((void*) block->buffer, block->size);
+    return PyUnicode_FromStringAndSize((void*) block->buffer, block->size);
 }
 
 
@@ -452,8 +452,21 @@ static PyMethodDef module_methods[] = {
     {0}
 };
 
+static struct PyModuleDef moduledef = {
+	PyModuleDef_HEAD_INIT,
+	"_bsax",					 /* m_name */
+	"Micah's Binary SAX format", /* m_doc */
+	-1,							 /* m_size */
+	module_methods,				 /* m_methods */
+	NULL,						 /* m_reload */
+	NULL,						 /* m_traverse */
+	NULL,						 /* m_clear */
+	NULL,						 /* m_free */
+};
+
 PyMODINIT_FUNC
-init_bsax(void)
+PyInit__bsax(void)
 {
-    Py_InitModule("_bsax", module_methods);
+	PyObject *module = PyModule_Create(&moduledef);
+    return module;
 }

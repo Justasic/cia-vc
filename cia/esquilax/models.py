@@ -8,9 +8,9 @@ class Message(models.Model):
     file_id = models.PositiveIntegerField()
     offset = models.PositiveIntegerField()
 
-    project_index = models.ForeignKey(Atom, related_name='project_messages')
-    module_index = models.ForeignKey(Atom, related_name='module_messages')
-    author_index = models.ForeignKey(Atom, related_name='author_messages')
+    project_index = models.ForeignKey(Atom, related_name='project_messages', on_delete=models.CASCADE)
+    module_index = models.ForeignKey(Atom, related_name='module_messages', on_delete=models.CASCADE)
+    author_index = models.ForeignKey(Atom, related_name='author_messages', on_delete=models.CASCADE)
 
 esquilax_indexes = {
     'project_index': '/message/source/project',

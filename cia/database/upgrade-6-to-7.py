@@ -71,7 +71,7 @@ while True:
         # We don't have enough file descriptors (and maybe RAM) to keep all
         # targets open. Drop the least popular entries from our cache to add this one.
         while len(targetCache) > targetCacheMax:
-            mru = [(hits, path) for path, hits in targetHits.iteritems() if path in targetCache]
+            mru = [(hits, path) for path, hits in targetHits.items() if path in targetCache]
             mru.sort()
             del targetCache[mru[0][1]]
 
@@ -82,13 +82,13 @@ while True:
     try:
         target.messages.push(xml)
     except XML.ParseException:
-        print "Parse error: message %d for %r" % (db_id, target_path)
+        print("Parse error: message %d for %r" % (db_id, target_path))
 
     rowsProcessed += 1
     if (rowsProcessed % 1000) == 0:
-        print "%d messages converted" % rowsProcessed
+        print("%d messages converted" % rowsProcessed)
 
-print "Done with conversion!"
+print("Done with conversion!")
 
 #print "Deleting v6 message database..."
 #cursor.execute("DROP TABLE stats_messages")

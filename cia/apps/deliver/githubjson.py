@@ -1,10 +1,11 @@
 __author__ = 'justasic'
 
 from django import http
-from django.utils import simplejson, html
+from django.utils import html
+import json as simplejson
 from django.conf import settings
 
-import xmlrpclib
+import xmlrpc.client
 
 SERVER_URL = settings.CIA_RPC_URL
 

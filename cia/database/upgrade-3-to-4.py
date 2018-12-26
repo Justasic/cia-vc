@@ -114,7 +114,7 @@ CREATE TABLE audit_trail
 
 # Populate the user table, saving the resulting UIDs
 key_uids = {}
-for key in key_owner.iterkeys():
+for key in key_owner.keys():
     cursor.execute("INSERT INTO users (secret_key, full_name, email, creation_time) "
                    "VALUES (%s, %s, %s, %d)" % (
         Database.quote(key, 'varchar'),
@@ -125,7 +125,7 @@ for key in key_owner.iterkeys():
     key_uids[key] = cursor.fetchone()[0]
 
 # Populate the capabilities table
-for key in key_owner.iterkeys():
+for key in key_owner.keys():
     for capability in key_capabilities[key]:
         cursor.execute("INSERT INTO capabilities (uid, cap_md5, cap_repr) VALUES(%s, %s, %s)" % (
             key_uids[key],

@@ -28,12 +28,12 @@ import posixpath
 from twisted.internet import defer
 from twisted.python import log
 
-from LibCIA import Ruleset, Database, TimeUtil
+from cia.LibCIA import Ruleset, Database, TimeUtil
 import time
 import sys
-import cPickle
-from LibCIA.Stats.Metadata import Metadata
-from LibCIA.Stats.Messages import MessageBuffer
+import pickle
+from cia.LibCIA.Stats.Metadata import Metadata
+from cia.LibCIA.Stats.Messages import MessageBuffer
 from cia.LibCIA import Files
 
 
@@ -46,6 +46,7 @@ class StatsTarget(object):
        This object doesn't store any of the actual data, it's just a way to
        access the persistent data stored in our global SQL database.
        """
+
     def __init__(self, path=''):
         self.setPath(path)
         self._messages = None
@@ -90,7 +91,8 @@ class StatsTarget(object):
 
         # Our database uses VARCHAR(128), make sure this fits
         if len(self.path) > 128:
-            raise Ruleset.InvalidURIException("Stats paths are currently limited to 128 characters")
+            raise Ruleset.InvalidURIException(
+                "Stats paths are currently limited to 128 characters")
 
         # Our name is the last path segment, or None if we're the root
         if self.pathSegments:
@@ -103,17 +105,17 @@ class StatsTarget(object):
            guarantee that it exists yet.
            """
         # XXX - Bear hack: store as stats/author/f/foobar for filesystem sanity
-        segmentsLower = map(string.lower, self.pathSegments)
-	if len(segmentsLower) > 0:
-        	if len(segmentsLower) > 0 and segmentsLower[0] == 'author' or segmentsLower[0] == 'project':
-            		target = segmentsLower[1]
-            		segmentsLower.insert(1, target[0])
+        segmentsLower = list(map(string.lower, self.pathSegments))
+        if len(segmentsLower) > 0:
+            if len(segmentsLower) > 0 and segmentsLower[0] == 'author' or segmentsLower[0] == 'project':
+                target = segmentsLower[1]
+                segmentsLower.insert(1, target[0])
         return Files.tryGetDir(Files.dbDir, 'stats', *segmentsLower)
 
     def deliver(self, message=None):
         """An event has occurred which should be logged by this stats target"""
         if message:
-            self.messages.push(unicode(message).encode('utf-8'))
+            self.messages.push(str(message).encode('utf-8'))
 
             # XXX:
             # We want to close the file now, even if this StatsTarget instance lingers
@@ -121,7 +123,7 @@ class StatsTarget(object):
             # around for a seemingly infinite amount of time- probably a side effect of
             # all the circular references between here and Messages/Counters :(
             self.messages.close()
-            
+
         self.counters.increment()
 
         # XXX: Disable subscriptions for speed. Nobody uses them anyway.
@@ -149,7 +151,8 @@ class StatsTarget(object):
            The result will always be a Deferred.
            """
         result = defer.Deferred()
-        self.metadata.getValue('title').addCallback(self._getTitle, result).addErrback(result.errback)
+        self.metadata.getValue('title').addCallback(
+            self._getTitle, result).addErrback(result.errback)
         return result
 
     def _getTitle(self, metadataTitle, result):
@@ -168,7 +171,7 @@ class StatsTarget(object):
         result = defer.Deferred()
         self.counters.getCounter('forever').addCallback(
             self._getMTime, result
-            ).addErrback(result.errback)
+        ).addErrback(result.errback)
         return result
 
     def _getMTime(self, counter, result):
@@ -238,7 +241,7 @@ class StatsTarget(object):
     def _catalog(self, cursor):
         """Database interaction representing the internals of catalog()"""
         cursor.execute("SELECT target_path FROM stats_catalog WHERE parent_path = %s" %
-                            Database.quote(self.path, 'varchar'))
+                       Database.quote(self.path, 'varchar'))
         results = []
         while True:
             row = cursor.fetchone()
@@ -252,6 +255,7 @@ class SubscriptionDelivery:
     """The object responsible for actually notifiying entities that
        have subscribed to a stats target.
        """
+
     def __init__(self, target):
         self.target = target
 
@@ -269,9 +273,10 @@ class SubscriptionDelivery:
            'rows' should be a sequence of (id, trigger) tuples.
            """
         if rows:
-            log.msg("Notifying %d subscribers for %r" % (len(rows), self.target))
+            log.msg("Notifying %d subscribers for %r" %
+                    (len(rows), self.target))
         for id, trigger in rows:
-            f, args, kwargs = cPickle.loads(trigger)
+            f, args, kwargs = pickle.loads(trigger)
             defer.maybeDeferred(f, *args, **kwargs).addCallback(
                 self.triggerSuccess, id).addErrback(
                 self.triggerFailure, id)
@@ -288,7 +293,8 @@ class SubscriptionDelivery:
 
     def _triggerFailure(self, cursor, failure, id, maxFailures=3):
         # Increment the consecutive failure count
-        log.msg("Failed to notify subscriber %d for %r: %r" % (id, self.target, failure))
+        log.msg("Failed to notify subscriber %d for %r: %r" %
+                (id, self.target, failure))
         cursor.execute("UPDATE stats_subscriptions SET failures = failures + 1 WHERE id = %s" %
                        Database.quote(id, 'bigint'))
 
@@ -305,6 +311,7 @@ class Counters:
     """A set of counters which are used together to track how many
        events occur and how frequently in each of several time intervals.
        """
+
     def __init__(self, target):
         self.target = target
         self.cache = None
@@ -404,7 +411,7 @@ class Counters:
                 'firstEventTime': row[1],
                 'lastEventTime':  row[2],
                 'eventCount':     row[3],
-                }
+            }
         self.cache = results
 
     def _getCounter(self, cursor, name):
@@ -428,6 +435,7 @@ class Maintenance:
     """This class performs periodic maintenance of the stats database, including
        counter rollover and removing old messages.
        """
+
     def __init__(self):
         self.targetQueue = []
 
@@ -453,7 +461,7 @@ class Maintenance:
                        "AND first_time < %s" %
                        (Database.quote(previous, 'varchar'),
                         Database.quote(current, 'varchar'),
-                        Database.quote(long(TimeUtil.Interval(previous).getFirstTimestamp()), 'bigint')))
+                        Database.quote(int(TimeUtil.Interval(previous).getFirstTimestamp()), 'bigint')))
 
         # Roll over remaining counters that are too old for current
         # but still within the range of previous. Note that there is a
@@ -466,7 +474,7 @@ class Maintenance:
                        "AND first_time < %s" %
                        (Database.quote(previous, 'varchar'),
                         Database.quote(current, 'varchar'),
-                        Database.quote(long(TimeUtil.Interval(current).getFirstTimestamp()), 'bigint')))
+                        Database.quote(int(TimeUtil.Interval(current).getFirstTimestamp()), 'bigint')))
 
     def checkRollovers(self, cursor):
         """Check all applicable counters for rollovers. This should

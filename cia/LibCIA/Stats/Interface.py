@@ -22,15 +22,15 @@ and the maintenance system. All the usual entry points for the stats system.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-import urlparse
+import urllib.parse
 
 from twisted.python import log
 from twisted.internet import defer
 from twisted.web import xmlrpc
 
-from LibCIA import RpcServer, Database
-from Target import StatsTarget
-import cPickle
+from cia.LibCIA import RpcServer, Database
+from .Target import StatsTarget
+import pickle
 import time
 from cia.LibCIA import XML
 
@@ -114,7 +114,7 @@ class MetadataInterface(RpcServer.Interface):
     def _dict(self, original, result):
         """Backend for dict() that ensures the results are serializable"""
         d = {}
-        for name, t in original.iteritems():
+        for name, t in original.items():
             d[name] = self.wrapTuple(t)
         result.callback(d)
 
@@ -171,7 +171,7 @@ class SubscriptionInterface(RpcServer.Interface):
         """Given a trigger function and the arguments to pass it,
            returns a pickled representation of the trigger.
            """
-        return cPickle.dumps((triggerFunc, triggerArgs, triggerKwargs))
+        return pickle.dumps((triggerFunc, triggerArgs, triggerKwargs))
 
     def _subscribe(self, cursor, target, client, trigger, scope=None, ttl=25*60*60):
         """A database interaction for adding subscriptions.
@@ -243,7 +243,7 @@ class SubscriptionInterface(RpcServer.Interface):
         # more effort than it's worth to accurately determine if the given
         # host refers to this CIA server, with all the proxying and DNS
         # multiplicity that could be going on.
-        path = urlparse.urlparse(url)[2]
+        path = urllib.parse.urlparse(url)[2]
 
         # FIXME: really cheesy hack!
         if not path.startswith("/stats/"):

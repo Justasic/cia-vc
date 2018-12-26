@@ -61,7 +61,7 @@ class FileMessageStorage(MessageStorage):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print __doc__
+        print(__doc__)
         sys.exit(1)
 
     archive = sys.argv[1]
@@ -70,6 +70,6 @@ if __name__ == "__main__":
     for bufferName, buffer in iterBuffers(archive):
         for uid, message in buffer.getLatest():
             storage.store(message.toxml().encode("utf-8"))
-        print "total:%d duplicate:%d -- %s" % (
-            storage.numTotal, storage.numDuplicate, bufferName)
+        print("total:%d duplicate:%d -- %s" % (
+            storage.numTotal, storage.numDuplicate, bufferName))
 

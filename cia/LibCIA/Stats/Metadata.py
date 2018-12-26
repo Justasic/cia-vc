@@ -25,9 +25,9 @@ used to cache thumbnails generated with PIL.
 
 from twisted.internet import defer
 
-from LibCIA import Database
-from cStringIO import StringIO
-import Image
+from cia.LibCIA import Database
+from io import StringIO
+from PIL import Image
 from cia.LibCIA import Cache
 
 
@@ -142,7 +142,7 @@ class Metadata:
         if self._cache is None:
             self._update_cache(cursor)
         d = {}
-        for k, v in self._cache.items():
+        for k, v in list(self._cache.items()):
            d[k] = (v, 'text/plain')
         return d
 
@@ -150,7 +150,7 @@ class Metadata:
         """Database interaction implementing keys()"""
         if self._cache is None:
             self._update_cache(cursor)
-        return self._cache.keys()
+        return list(self._cache.keys())
 
 
 class MetadataThumbnailCache(Cache.AbstractFileCache):

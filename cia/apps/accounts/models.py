@@ -1,4 +1,4 @@
-import xmlrpclib
+import xmlrpc.client
 import re
 import difflib
 
@@ -7,9 +7,9 @@ from django.conf import settings
 from django.utils.html import escape
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 import django.forms as forms
-from django.utils.encoding import smart_unicode, StrAndUnicode
+from django.utils.encoding import smart_text
 from django.contrib import messages
 
 from cia.LibCIA import XML, Ruleset
@@ -78,11 +78,11 @@ class UserAssetManager(models.Manager):
 class UserAsset(models.Model):
     objects = UserAssetManager()
 
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    asset = generic.GenericForeignKey()
+    asset = GenericForeignKey()
 
     access = models.PositiveSmallIntegerField(choices = access_choices,
                                               default = ACCESS.COMMUNITY)
@@ -106,7 +106,7 @@ class UserAsset(models.Model):
 class NetworkManager(models.Manager):
     def importNetworks(self):
         """Import all network definitions from LibCIA into the database."""
-        for name, obj in Network.__dict__.iteritems():
+        for name, obj in Network.__dict__.items():
             if (type(obj) is type(Network.BaseNetwork)
                 and issubclass(obj, Network.BaseNetwork)
                 and obj.alias):
@@ -125,7 +125,7 @@ class Network(models.Model):
 
     is_popular = models.BooleanField(default=False)
     reviewed_by_admin = models.BooleanField(default=False)
-    created_by = models.ForeignKey(User, null=True)
+    created_by = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     date_added = models.DateTimeField(auto_now_add=True)
 
     def id_string(self):
@@ -154,10 +154,10 @@ class Network(models.Model):
 
 def smart_unicode_cmp(a, b):
     """Compare two values, converting both to Unicode via
-       smart_unicode() if either value is a string."""
-    if type(a) in (str, unicode) or type(b) in (str, unicode):
-        a = smart_unicode(a)
-        b = smart_unicode(b)
+       smart_text() if either value is a string."""
+    if type(a) in (str, str) or type(b) in (str, str):
+        a = smart_text(a)
+        b = smart_text(b)
     return cmp(a, b)
 
 class AssetChangesetManager(models.Manager):
@@ -190,12 +190,12 @@ class AssetChangeset(models.Model):
     objects = AssetChangesetManager()
 
     time = models.DateTimeField(auto_now_add=True, db_index=True)
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     remote_addr = models.CharField(max_length=32, null=True)
 
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(db_index=True)
-    asset = generic.GenericForeignKey()
+    asset = GenericForeignKey()
 
     def __unicode__(self):
         return "Change %d for %s by %s" % (self.id or 0, self.asset, self.user)
@@ -243,7 +243,7 @@ class AssetChangeset(models.Model):
         setattr(model, name, value)
 
     def set_field_dict(self, d, prefix=''):
-        for field, value in d.items():
+        for field, value in list(d.items()):
             self.set_field(prefix + field, value)
 
     def set_meta(self, name):
@@ -290,7 +290,8 @@ class AssetChangeItem(models.Model):
        names, beginning with an underscore, represent events such as change
        in access level.
        """
-    changeset = models.ForeignKey(AssetChangeset, related_name='items')
+    changeset = models.ForeignKey(
+        AssetChangeset, related_name='items', on_delete=models.CASCADE)
     field = models.CharField(max_length=32, db_index=True)
 
     # Storing both the new value and old value is redundant, but it should
@@ -378,8 +379,8 @@ class AssetChangeItem(models.Model):
         """Compute a diff between old and new values, and return a sequence
            of dictionaries with 'text' and 'style' keys.
            """
-        a = smart_unicode(self.old_value or '').split("\n")
-        b = smart_unicode(self.new_value or '').split("\n")
+        a = smart_text(self.old_value or '').split("\n")
+        b = smart_text(self.new_value or '').split("\n")
 
         chunks = []
         for group in difflib.SequenceMatcher(None,a,b).get_grouped_opcodes(context):
@@ -437,12 +438,12 @@ class AssetManager(models.Manager):
                 return False
         return True
 
-class Project(StrAndUnicode, models.Model):
+class Project(models.Model):
     objects = AssetManager()
-    assets = generic.GenericRelation(UserAsset)
-    target = models.ForeignKey(StatsTarget)
+    assets = GenericRelation(UserAsset)
+    target = models.ForeignKey(StatsTarget, on_delete=models.CASCADE)
 
-    repos = models.ForeignKey(Repository, null=True)
+    repos = models.ForeignKey(Repository, null=True, on_delete=models.CASCADE)
 
     secret_key = models.CharField(max_length=64, null=True)
     allow_anonymous_messages = models.BooleanField(default=True, choices=yes_no_choices)
@@ -455,18 +456,18 @@ class Project(StrAndUnicode, models.Model):
         return len(self.target.path.split('/')) == 2
 
     def __unicode__(self):
-        return unicode(self.target)
+        return str(self.target)
 
     class Admin:
         pass
 
-class Author(StrAndUnicode, models.Model):
+class Author(models.Model):
     objects = AssetManager()
-    assets = generic.GenericRelation(UserAsset)
-    target = models.ForeignKey(StatsTarget)
+    assets = GenericRelation(UserAsset)
+    target = models.ForeignKey(StatsTarget, on_delete=models.CASCADE)
 
     def __unicode__(self):
-        return unicode(self.target)
+        return str(self.target)
 
     class Admin:
         pass
@@ -503,7 +504,7 @@ def validate_ruleset(content, allow_empty=False):
     #   - Formatter errors
     try:
         r = Ruleset.Ruleset(wrapped)
-    except Exception, e:
+    except Exception as e:
         raise forms.ValidationError("%s: %s" % (e.__class__.__name__, e))
 
     # Empty rulesets will validate, but they're used as a special-case
@@ -544,9 +545,9 @@ def clean_up_text(text,
 
 class Bot(models.Model):
     objects = AssetManager()
-    assets = generic.GenericRelation(UserAsset)
+    assets = GenericRelation(UserAsset)
 
-    network = models.ForeignKey(Network)
+    network = models.ForeignKey(Network, on_delete=models.CASCADE)
     location = models.CharField(max_length=64, db_index=True)
 
     filter_mode = models.PositiveSmallIntegerField(
@@ -644,14 +645,14 @@ class Bot(models.Model):
            returned as a complete XML document with <ruleset/> element
            and optional processing instructions.
            """
-        server = xmlrpclib.ServerProxy(settings.CIA_RPC_URL)
+        server = xmlrpc.client.ServerProxy(settings.CIA_RPC_URL)
         return server.ruleset.getRuleset(self.getURI())
 
     def _storeRuleset(self, content):
         """Send a ruleset to the server, if necessary.  If 'content'
            evaluates to False, any existing ruleset will be deleted.
            """
-        server = xmlrpclib.ServerProxy(settings.CIA_RPC_URL)
+        server = xmlrpc.client.ServerProxy(settings.CIA_RPC_URL)
         uri = self.getURI()
 
         if not content:

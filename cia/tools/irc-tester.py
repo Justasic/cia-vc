@@ -98,23 +98,23 @@ irc.desync.com
 irc.smart-serv.net
 irc.coldfront.net
 """.split():
-    print server
+    print(server)
     start = time.time()
     try:
         network = getServerNetwork(server, 6667)
-    except socket.error, e:
-        print "\tError: %s" % e
+    except socket.error as e:
+        print("\tError: %s" % e)
     else:
-        print "\tNetwork: %r" % network
+        print("\tNetwork: %r" % network)
 
         if network:
             sql.append("UPDATE accounts_network SET description = '%s' WHERE uri = 'irc://%s/';"
                        % (network, server))
 
     end = time.time()
-    print "\t(%.02f seconds)" % (end - start)
+    print("\t(%.02f seconds)" % (end - start))
 
 
-print
+print()
 for s in sql:
-    print s
+    print(s)

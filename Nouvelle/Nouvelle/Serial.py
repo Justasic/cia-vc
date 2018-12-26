@@ -109,7 +109,7 @@ class tag:
            string if no attributes were given.
            """
         s = ''
-        for key, value in attributes.iteritems():
+        for key, value in attributes.items():
             if key[0] == '_':
                 key = key[1:]
             if value is not None:

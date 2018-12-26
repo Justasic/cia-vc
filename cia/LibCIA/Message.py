@@ -30,7 +30,7 @@ import re
 from twisted.internet import reactor
 
 import time
-import RpcServer
+from . import RpcServer
 
 
 
@@ -68,7 +68,7 @@ class DiskBackedQueue(object):
         filename = QUEUE_PREFIX + self.queueKey + "-" + str(self.queueIndex)
         self.queueIndex += 1
         # Caution: unconditionally encoding will raise UnicodeDecodeError...
-        if isinstance(message, unicode):
+        if isinstance(message, str):
             message = message.encode('UTF-8')
 
         fh = open(filename, "w")
@@ -203,7 +203,7 @@ class Hub(object):
         """Update a cached items() list for our clients dict, to speed up deliver().
            Must be called whenever clients changes.
            """
-        self.clientItems = self.clients.items()
+        self.clientItems = list(self.clients.items())
 
     def deliver(self, message):
         """Given a Message instance, determine who's interested
@@ -211,7 +211,7 @@ class Hub(object):
            """
         result = None
         for callable, filter in self.clientItems:
-            if filter and not filter(message):
+            if filter and not list(filter(message)):
                 continue
             itemResult = callable(message)
             if itemResult is not None:
@@ -392,7 +392,7 @@ class Filter(XML.XMLFunction):
             # for the existence of an XPath match.
             nodes = xp.queryObject(msg)
             if nodes:
-                matchStrings = map(textExtractor, nodes)
+                matchStrings = list(map(textExtractor, nodes))
 
                 # Any of the XPath matches can make our match true
                 for matchString in matchStrings:
@@ -686,7 +686,7 @@ class ModularFormatter(Formatter):
            whitespace. Subclasses should override this if they're formatting Nouvelle
            trees or other non-string data types.
            """
-        return re.sub(r'[ \t]+', ' ', ''.join(map(unicode, results))).strip()
+        return re.sub(r'[ \t]+', ' ', ''.join(map(str, results))).strip()
 
 
 filterCache = {}
@@ -733,7 +733,7 @@ class FormatterFactory:
                 self.mediumMap.setdefault(obj.medium, []).append(obj)
 
         elif type(obj) == dict:
-            for subobj in obj.itervalues():
+            for subobj in obj.values():
                 # We only look at Formtter instances inside dicts, to
                 # avoid recursively drilling down into modules.
                 if type(subobj) == type(Formatter) and issubclass(subobj, Formatter):
@@ -781,7 +781,7 @@ class FormatterFactory:
            If 'message' is None and a medium is requested rather than a particular
            formatter, this will return None after validating the medium.
            """
-        attrNames = [attr.name for attr in xml.attributes.values()]
+        attrNames = [attr.name for attr in list(xml.attributes.values())]
 
         # Load a single formatter, by name
         if attrNames == ['name']:

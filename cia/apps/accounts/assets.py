@@ -12,7 +12,7 @@ from django.template.context import RequestContext
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 import django.forms as forms
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_text
 from django.template import loader
 import re
 
@@ -47,6 +47,7 @@ def get_default_asset_id(request, asset_type):
 
     return 'add'
 
+
 def get_user_asset_types(request, current=None):
     """Return a list which summarizes a user's assets, for navigation."""
     return [{
@@ -55,14 +56,16 @@ def get_user_asset_types(request, current=None):
         'verbose_name_plural': model._meta.verbose_name_plural,
         'count': model.objects.all_for_user(request.user).count,
         'default_id': get_default_asset_id(request, model._meta.asset_type),
-        }
+    }
         for model in models.AssetManager.models]
+
 
 def get_asset_by_type(asset_type):
     for model in models.AssetManager.models:
         if model._meta.asset_type == asset_type:
             return model
     raise Http404
+
 
 def get_asset_add_context(request, asset_type):
     """Returns extra context items used when adding any asset. This
@@ -83,7 +86,8 @@ def get_asset_add_context(request, asset_type):
         'user_assets': model.objects.all_for_user(request.user),
         'ACCESS': models.ACCESS,
         'add': True,
-        }
+    }
+
 
 def get_asset_edit_context(request, asset_type, asset_id):
     """Returns a context for editing any asset. This raises a 404
@@ -110,7 +114,7 @@ def get_asset_edit_context(request, asset_type, asset_id):
         'asset_id': asset_id,
         'user_asset': user_asset,
         'other_community_user_assets': user_asset.asset.assets.exclude(user=request.user),
-        }
+    }
 
 
 ###########################
@@ -133,7 +137,7 @@ def profile(request):
         'asset_types': get_user_asset_types(request),
         'password_form': password_form,
         'profile_form': profile_form,
-        }))
+    }))
 
 
 @authplus.login_required
@@ -146,7 +150,7 @@ def generic_page(request, template):
        """
     return render_to_response(template, RequestContext(request, {
         'asset_types': get_user_asset_types(request),
-        }))
+    }))
 
 
 ###########################
@@ -155,13 +159,14 @@ def generic_page(request, template):
 
 class EditAssetForm(forms.Form):
     access = forms.ChoiceField(
-        choices = models.access_choices,
-        widget = forms.RadioSelect,
-        )
+        choices=models.access_choices,
+        widget=forms.RadioSelect,
+    )
 
     def __init__(self, data=None):
         forms.Form.__init__(self, data)
-        self.access_levels = formtools.RadioChoices(self['access'], models.ACCESS)
+        self.access_levels = formtools.RadioChoices(
+            self['access'], models.ACCESS)
 
     def clean_access(self):
         return int(self.cleaned_data['access'])
@@ -176,7 +181,8 @@ class EditAssetForm(forms.Form):
            """
         user_asset.delete()
 
-        messages.add_message(request, messages.INFO, "Removed access to %s" % user_asset.asset)
+        messages.add_message(request, messages.INFO,
+                             "Removed access to %s" % user_asset.asset)
 
         return HttpResponseRedirect("/account/%s/add/" %
                                     user_asset.asset._meta.asset_type)
@@ -196,7 +202,8 @@ class EditAssetForm(forms.Form):
             elif new_access == models.ACCESS.COMMUNITY:
                 # Decreasing the access level
 
-                messages.add_message(request, messages.INFO, "You now have community-level access to %s" % user_asset.asset)
+                messages.add_message(
+                    request, messages.INFO, "You now have community-level access to %s" % user_asset.asset)
 
                 assert user_asset.access > new_access
                 cset.set_meta('_community_access')
@@ -208,7 +215,8 @@ class EditAssetForm(forms.Form):
                 # access also means revoking access from any other
                 # (community-access) users!
 
-                messages.add_message(request, messages.INFO, "You have taken exclusive access to %s" % user_asset.asset)
+                messages.add_message(
+                    request, messages.INFO, "You have taken exclusive access to %s" % user_asset.asset)
                 cset.set_meta('_exclusive_access')
                 user_asset.access = new_access
                 user_asset.save()
@@ -235,41 +243,42 @@ def changes(request, asset_type=None, asset_id=None,
 
     if asset_id is not None:
         changes = changes.filter(
-            content_type = ContentType.objects.get_for_model(get_asset_by_type(asset_type)),
-            object_id = int(asset_id),
-            )
+            content_type=ContentType.objects.get_for_model(
+                get_asset_by_type(asset_type)),
+            object_id=int(asset_id),
+        )
 
     if current_user:
         changes = changes.extra(
-            tables = ["accounts_userasset"],
-            where = ["accounts_userasset.content_type_id = accounts_assetchangeset.content_type_id",
-                     "accounts_userasset.object_id = accounts_assetchangeset.object_id",
-                     "accounts_userasset.user_id = %d" % request.user.id],
-            )
+            tables=["accounts_userasset"],
+            where=["accounts_userasset.content_type_id = accounts_assetchangeset.content_type_id",
+                   "accounts_userasset.object_id = accounts_assetchangeset.object_id",
+                   "accounts_userasset.user_id = %d" % request.user.id],
+        )
 
     paginator = Paginator(changes.order_by('-id'),
-                                per_page = num_per_page,
-                                orphans = num_per_page / 2)
+                          per_page=num_per_page,
+                          orphans=num_per_page / 2)
 
     try:
-	contents = paginator.page(page_number)
+        contents = paginator.page(page_number)
     except PageNotAnInteger:
-	# If page is not an integer, deliver first page
-	contents = paginator.page(1)
+        # If page is not an integer, deliver first page
+        contents = paginator.page(1)
     except EmptyPage:
-	# if page is out of range (e.g. 9999), deliver last page of results
-	contents = paginator.page(paginator.num_pages)
+        # if page is out of range (e.g. 9999), deliver last page of results
+        contents = paginator.page(paginator.num_pages)
 
     return {
         'remaining': paginator.num_pages - int(page_number),
 
-        'html': smart_unicode(loader.render_to_string(
+        'html': smart_text(loader.render_to_string(
             'accounts/asset_changes.html',
             RequestContext(request, {
                 'changesets': contents.object_list,
                 'show_asset_name': asset_id is None,
             }))),
-        }
+    }
 
 
 def send_conflict_message(request, user_asset, message):
@@ -282,15 +291,18 @@ def send_conflict_message(request, user_asset, message):
            'user_asset': user_asset,
            'message': message}
 
-    subject, message = render_to_email("accounts/conflict_mail_managers.txt", ctx)
+    subject, message = render_to_email(
+        "accounts/conflict_mail_managers.txt", ctx)
     mail_managers(subject, message)
 
     subject, message = render_to_email("accounts/conflict_mail_user.txt", ctx)
     send_mail(subject, message, get_email_for_user(request.user),
               [get_email_for_user(user_asset.user)])
 
+
 class ConflictForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea)
+
 
 @authplus.login_required
 def conflict(request, asset_type, asset_id):
@@ -310,7 +322,7 @@ def conflict(request, asset_type, asset_id):
     # Find the exclusive owner of this asset. If there is none, this
     # page is not valid: return a 404.
     try:
-        owner_ua = asset.assets.get(access__gte = models.ACCESS.EXCLUSIVE)
+        owner_ua = asset.assets.get(access__gte=models.ACCESS.EXCLUSIVE)
     except models.UserAsset.DoesNotExist:
         raise Http404
     assert owner_ua.asset == asset
@@ -319,7 +331,8 @@ def conflict(request, asset_type, asset_id):
     if request.POST:
         form.full_clean()
         if form.is_valid():
-            send_conflict_message(request, owner_ua, form.cleaned_data['message'])
+            send_conflict_message(
+                request, owner_ua, form.cleaned_data['message'])
             messages.add_message(request, messages.INFO, "Message sent.")
 
             # Make it less convenient to send a bunch of rapid-fire messages
@@ -330,7 +343,7 @@ def conflict(request, asset_type, asset_id):
         'form': form,
         'asset': asset,
         'owner_ua': owner_ua,
-        })
+    })
     return render_to_response(('accounts/%s_conflict.html' % model._meta.object_name.lower(),
                                'accounts/asset_conflict.html'), RequestContext(request, ctx))
 
@@ -341,30 +354,30 @@ def conflict(request, asset_type, asset_id):
 
 class StatsMetadataForm(forms.Form):
     title = forms.CharField(
-        widget = forms.TextInput(attrs = {'class': 'text'}),
-        )
+        widget=forms.TextInput(attrs={'class': 'text'}),
+    )
     subtitle = forms.CharField(
-        required = False,
-        widget = forms.TextInput(attrs = {'class': 'text'}),
-        )
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'text'}),
+    )
     url = forms.URLField(
-        required = False,
-        widget = forms.TextInput(attrs = {'class': 'text'}),
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'text'}),
         # Disabled for now, since it seems to imply required=True.
         # verify_exists = True,
-        )
+    )
     description = forms.CharField(
-        required = False,
-        widget = forms.Textarea,
-        )
+        required=False,
+        widget=forms.Textarea,
+    )
     photo_id = forms.IntegerField(
-        required = False,
-        widget = ImageWidget,
-        )
+        required=False,
+        widget=ImageWidget,
+    )
     icon_id = forms.IntegerField(
-        required = False,
-        widget = ImageWidget,
-        )
+        required=False,
+        widget=ImageWidget,
+    )
 
     def clean_subtitle(self):
         return self.cleaned_data.get('subtitle') or None
@@ -390,6 +403,7 @@ class StatsMetadataForm(forms.Form):
         if target.icon:
             target.icon.reference()
 
+
 @authplus.login_required
 def stats_asset(request, asset_type, asset_id):
     """Generic form for editing stats-based assets."""
@@ -398,12 +412,12 @@ def stats_asset(request, asset_type, asset_id):
     asset = user_asset.asset
     asset.target.enforce_defaults()
 
-    #print user_asset
-    #print ctx
+    # print user_asset
+    # print ctx
 
     form = formtools.MultiForm(request.POST)
     form.validate(EditAssetForm, user_asset)
-    #print form.EditAssetForm.access_levels
+    # print form.EditAssetForm.access_levels
     form.validate(StatsMetadataForm, asset.target)
     ctx['form'] = form
 
@@ -421,8 +435,9 @@ def stats_asset(request, asset_type, asset_id):
 
 class AddStatsAssetForm(forms.Form):
     name = forms.CharField(
-        widget = forms.TextInput(attrs = {'class': 'text'}),
-        )
+        widget=forms.TextInput(attrs={'class': 'text'}),
+    )
+
 
 @authplus.login_required
 def add_stats_asset(request, asset_type, prefix, template, name=None):
@@ -449,17 +464,18 @@ def add_stats_asset(request, asset_type, prefix, template, name=None):
     #
     if name:
         # Get/create the stats target
-        target = StatsTarget.objects.get_or_create(path = prefix + name)[0]
+        target = StatsTarget.objects.get_or_create(path=prefix + name)[0]
         target.enforce_defaults()
 
         # Now get/create the matching asset
-        asset, created_asset = model.objects.get_or_create(target = target)
+        asset, created_asset = model.objects.get_or_create(target=target)
         cset = models.AssetChangeset.objects.begin(request, asset)
         if created_asset:
             cset.set_meta('_created')
 
         # Finally, create a new UserAsset.
-        user_asset = models.UserAsset.objects.get_or_create_if_allowed(request.user, asset, cset)
+        user_asset = models.UserAsset.objects.get_or_create_if_allowed(
+            request.user, asset, cset)
 
         cset.finish()
 
@@ -471,7 +487,7 @@ def add_stats_asset(request, asset_type, prefix, template, name=None):
 
     ctx.update({
         'form': form,
-        })
+    })
     return render_to_response(template, RequestContext(request, ctx))
 
 
@@ -481,9 +497,9 @@ def add_stats_asset(request, asset_type, prefix, template, name=None):
 
 class ProjectForm(forms.Form):
     use_repository = forms.BooleanField(
-        required = False,
-        widget = forms.CheckboxInput(attrs = {'class': 'checkbox'}),
-        )
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'checkbox'}),
+    )
 
     def apply(self, cset, request, repos):
         use_repository = bool(self.cleaned_data.get('use_repository'))
@@ -514,32 +530,33 @@ class ProjectForm(forms.Form):
             #
             # XXX - Bear hack: see clean_location below
 
-            #if repos.location:
+            # if repos.location:
             #    repos.get_client().probe()
+
 
 class RepositoryForm(forms.Form):
     location = forms.CharField(
-        widget = forms.TextInput(attrs = {'class': 'text-wide'}),
-        )
+        widget=forms.TextInput(attrs={'class': 'text-wide'}),
+    )
     enable_polling = forms.BooleanField(
-        required = False,
-        widget = forms.CheckboxInput(attrs = {'class': 'checkbox'}),
-        )
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'checkbox'}),
+    )
     forward_pinger_mail = forms.BooleanField(
-        required = False,
-        widget = forms.CheckboxInput(attrs = {'class': 'checkbox'}),
-        )
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'checkbox'}),
+    )
     poll_frequency = forms.IntegerField(
-        widget = forms.TextInput(attrs = {'class': 'text'}),
-        )
+        widget=forms.TextInput(attrs={'class': 'text'}),
+    )
     revision_url = forms.CharField(
-        required = False,
-        widget = forms.TextInput(attrs = {'class': 'text-wide'}),
-        )
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'text-wide'}),
+    )
     path_regexes = forms.CharField(
-        required = False,
-        widget = forms.Textarea,
-        )
+        required=False,
+        widget=forms.Textarea,
+    )
 
     def clean_location(self):
         # On success, this will set up internal state in the
@@ -551,8 +568,8 @@ class RepositoryForm(forms.Form):
         # XXX - Bear hack: Unconditionally probe, so if we reactivated
         # the repository we don't pull all revisions since way back when.
         # Also makes sure the location is still valid.
-        #if location != self.data.model.location:
-        if location: # shouldn't be neccessary, required = True
+        # if location != self.data.model.location:
+        if location:  # shouldn't be neccessary, required = True
             self.data.model.get_client().probe(location)
         return location
 
@@ -568,8 +585,9 @@ class RepositoryForm(forms.Form):
             if line:
                 try:
                     re.compile(line, re.VERBOSE)
-                except re.error, e:
-                    raise forms.ValidationError("Syntax error on line %d: %s" % (line_no, e))
+                except re.error as e:
+                    raise forms.ValidationError(
+                        "Syntax error on line %d: %s" % (line_no, e))
                 regexes.append(line)
             line_no += 1
         if regexes:
@@ -596,8 +614,8 @@ def project(request, asset_type, asset_id):
     form.validate(EditAssetForm, user_asset)
     form.validate(StatsMetadataForm, asset.target)
     form.validate(ProjectForm,
-                  post_defaults = {'use_repository': False},
-                  defaults = {'use_repository': asset.repos and asset.repos.is_active})
+                  post_defaults={'use_repository': False},
+                  defaults={'use_repository': asset.repos and asset.repos.is_active})
 
     use_repository = bool(form.ProjectForm.cleaned_data.get('use_repository'))
     if use_repository:
@@ -610,15 +628,15 @@ def project(request, asset_type, asset_id):
             # to be saved if the form turns out to be valid.
 
             repos = Repository(
-                created_by = request.user,
-                project_name = asset.get_name(),
-                pinger_name = Repository.objects.get_new_pinger_name(),
-                is_active = False,
-                )
+                created_by=request.user,
+                project_name=asset.get_name(),
+                pinger_name=Repository.objects.get_new_pinger_name(),
+                is_active=False,
+            )
 
         form.validate(RepositoryForm, repos,
-                      post_defaults = {'enable_polling': False,
-                                       'forward_pinger_mail': False})
+                      post_defaults={'enable_polling': False,
+                                     'forward_pinger_mail': False})
     else:
         # It's okay to use a blank one here, we're guaranteed not to save it.
         repos = asset.repos or Repository()
@@ -637,4 +655,3 @@ def project(request, asset_type, asset_id):
             return form.EditAssetForm.delete(request, user_asset)
 
     return render_to_response('accounts/project_edit.html', RequestContext(request, ctx))
-

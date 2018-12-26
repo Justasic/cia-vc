@@ -59,8 +59,8 @@ class RegexTransformBase(object):
             if cls is RegexTransformBase:
                 break
 
-            for uncompiled, handler in cls.regexes.iteritems():
-                if type(uncompiled) in types.StringTypes:
+            for uncompiled, handler in cls.regexes.items():
+                if type(uncompiled) in (str,):
                     compiled = re.compile(uncompiled)
                 else:
                     compiled = uncompiled
@@ -74,7 +74,7 @@ class RegexTransformBase(object):
         if type(tree) is tuple or type(tree) is list:
             return [self.apply(item, memo) for item in tree]
 
-        elif type(tree) in types.StringTypes:
+        elif type(tree) in (str,):
             # Yay, we found a string. Can we match any regexes?
 
             # Remember in the memo each regex that we process
@@ -82,7 +82,7 @@ class RegexTransformBase(object):
             # with this regex again later.
             memo = dict(memo)
 
-            for regex, handler in self.__class__._compiled.iteritems():
+            for regex, handler in self.__class__._compiled.items():
                 if regex in memo:
                     continue
                 memo[regex] = 1
@@ -113,7 +113,7 @@ class RegexTransformBase(object):
                     # self.regexes won't be bound methods normally.
                     transformed = handler(self, match)
                     results.append(transformed)
-                    if type(transformed) not in types.StringTypes:
+                    if type(transformed) not in (str,):
                         allStrings = False
                     lastMatch = match
 

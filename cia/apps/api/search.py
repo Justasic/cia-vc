@@ -4,13 +4,12 @@ from django.utils.html import escape
 from cia.apps.api.util import json_result
 from cia.apps.stats.models import StatsTarget
 from cia.apps.legacy.models import StatsCatalog
-import string
 
-def removeDuplicates(list, key='url', filter=string.lower):
+def removeDuplicates(list, key='url', filter=str.lower):
     l = []
     memo = set()
     for item in list:
-        k = filter(item[key])
+        k = list(filter(item[key]))
         if k not in memo:
             l.append(item)
             memo.add(k)
@@ -26,7 +25,7 @@ def statsTargetResult(target):
 
     return {
         'url': target.get_absolute_url(),
-        'title': unicode(target),
+        'title': str(target),
         'section': section,
         }
 

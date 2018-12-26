@@ -24,9 +24,9 @@ This is the legacy format that old non-XML commits are converted to.
 
 import re
 
-from LibCIA import Message
+from cia.LibCIA import Message
 import Nouvelle
-import Util
+from . import Util
 from cia.LibCIA import XML
 from cia.LibCIA.Web import Template
 

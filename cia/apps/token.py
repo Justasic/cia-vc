@@ -9,6 +9,7 @@ class TokenClass(SessionBase):
        clients in order to identify some securely stored
        server-side state.
        """
+
     def __init__(self, key, expire_hours=2):
         self.key = key
         self._session_key = None
@@ -23,7 +24,8 @@ class TokenClass(SessionBase):
         d = {self.key: True}
         d.update(data)
 
-        Session.objects.save(token, d, datetime.datetime.now() + self.expiration)
+        Session.objects.save(
+            token, d, datetime.datetime.now() + self.expiration)
         return token
 
     def get(self, token):
@@ -48,7 +50,7 @@ class TokenClass(SessionBase):
         Session.objects.save(token, None, datetime.datetime.now())
 
     def exists(self, session_key):
-	if self._session_key is None:
-		return False
-	else:
-		return True
+        if self._session_key is None:
+            return False
+        else:
+            return True

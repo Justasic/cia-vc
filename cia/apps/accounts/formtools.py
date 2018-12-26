@@ -15,7 +15,7 @@ class MultiForm:
         inst = form(ModelData(model, self.POST, post_defaults=post_defaults, defaults=defaults))
         setattr(self, form.__name__, inst)
 
-        for name, field in inst.fields.items():
+        for name, field in list(inst.fields.items()):
             self._bound[name] = inst[name]
 
         return inst
@@ -34,9 +34,9 @@ class MultiForm:
         inst.full_clean()
         self.is_valid = lambda _=(self.is_valid() and inst.is_valid()): _
         self.errors.update(inst.errors)
-        self.data.update(inst.data.items())
+        self.data.update(list(inst.data.items()))
         if hasattr(inst, 'cleaned_data'):
-            self.cleaned_data.update(inst.cleaned_data.items())
+            self.cleaned_data.update(list(inst.cleaned_data.items()))
 
     def is_valid(self):
         return bool(self.cleaned_data)
@@ -58,7 +58,7 @@ class RadioChoices:
     def __getitem__(self, enumName):
         enumValue = getattr(self.enum, str(enumName))
         input = self.renderer[enumValue]
-        return u'<label class="radio">%s %s</label>' % (input.tag(), input.choice_label)
+        return '<label class="radio">%s %s</label>' % (input.tag(), input.choice_label)
 
 class ModelData(dict):
     """Wrapper for using an existing model as initial data for a form,
@@ -78,4 +78,4 @@ class ModelData(dict):
         if POST:
             if post_defaults:
                 self.update(post_defaults)
-            self.update(POST.items())
+            self.update(list(POST.items()))

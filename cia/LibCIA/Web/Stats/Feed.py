@@ -27,12 +27,12 @@ from twisted.internet import defer
 from twisted.web import resource, server, http
 from twisted.python import log
 
-from LibCIA import Message, Formatters, TimeUtil, Database
+from cia.LibCIA import Message, Formatters, TimeUtil, Database
 import Nouvelle
 import Nouvelle.Twisted
 from Nouvelle import tag, place, xml, quote
-from LibCIA.Web import Template
-import Link
+from cia.LibCIA.Web import Template
+from . import Link
 import sys
 from cia.LibCIA import XML
 
@@ -64,7 +64,7 @@ class BaseFeed(Nouvelle.Twisted.Page):
            """
         self.target.getMTime().addCallback(
             self._render, request
-            ).addErrback(request.processingFailed)
+        ).addErrback(request.processingFailed)
         return server.NOT_DONE_YET
 
     def _render(self, mtime, request):
@@ -77,13 +77,14 @@ class BaseFeed(Nouvelle.Twisted.Page):
 
     def render_items(self, context):
         """Renders the most recent commits as items in the feed"""
-	latest = list(self.target.messages.getLatest(self.limit))
-	latest.reverse()
+        latest = list(self.target.messages.getLatest(self.limit))
+        latest.reverse()
         return self.formatItems(latest, context)
 
 
 class FormattedFeed(BaseFeed):
     """Abstract base classes that apply formatters to each message they include"""
+
     def __init__(self, statsPage, limit=None, medium='xhtml'):
         self.medium = medium
         BaseFeed.__init__(self, statsPage, limit)
@@ -115,6 +116,7 @@ class FormattedFeed(BaseFeed):
 
 class RSSFeed(FormattedFeed):
     """An abstract base class for code shared between versions of the RSS format"""
+
     def render_photo(self, context):
         # First figure out if we have a photo. Actually render it in the Deferred if we do.
         photo_query = """
@@ -132,10 +134,10 @@ class RSSFeed(FormattedFeed):
     def _render_photo(self, query_results, context, result):
         if query_results and query_results[0][0]:
             result.callback(tag('image')[
-                tag('url')[ '/images/db/' + query_results[0][0] ],
-                tag('title')[ place('title') ],
-                tag('link')[ place('link') ],
-                ])
+                tag('url')['/images/db/' + query_results[0][0]],
+                tag('title')[place('title')],
+                tag('link')[place('link')],
+            ])
         else:
             result.callback([])
 
@@ -153,11 +155,13 @@ class RSS2Feed(RSSFeed):
     """A web resource representing an RSS 2.0 feed for a particular stats target,
        constructed according to the spec at http://blogs.law.harvard.edu/tech/rss
        """
+
     def formatItems(self, messages, context):
         items = []
         for id, content in messages:
             try:
-                items.append(tag('item')[self.messageToItemContent(context, Message.Message(content), id)])
+                items.append(tag('item')[self.messageToItemContent(
+                    context, Message.Message(content), id)])
             except:
                 log.msg("Exception occurred in %s.formatItems\n%s" % (
                     self.__class__.__name__,
@@ -168,15 +172,17 @@ class RSS2Feed(RSSFeed):
         """Render an XML message as the content of an RSS <item>"""
         url = Link.MessageLink(self.target, id).getURL(context)
         tags = [
-            tag('pubDate')[ TimeUtil.formatDateRFC822(XML.digValue(m.xml, int, "message", "timestamp")) ],
+            tag('pubDate')[TimeUtil.formatDateRFC822(
+                XML.digValue(m.xml, int, "message", "timestamp"))],
             tag('guid')[url],
             tag('link')[url],
-            tag('description')[ quote(self.formatMessage(m)) ],
-            ]
+            tag('description')[quote(self.formatMessage(m))],
+        ]
 
         # Generate a title if we can, but if we can't don't worry too much
         try:
-            tags.append(tag('title')[ Formatters.getFactory().findMedium('title', m).formatMessage(m) ])
+            tags.append(tag('title')[Formatters.getFactory(
+            ).findMedium('title', m).formatMessage(m)])
         except Message.NoFormatterError:
             pass
 
@@ -188,20 +194,20 @@ class RSS2Feed(RSSFeed):
            notification of changes to this resource.
            """
         return tag('cloud',
-                   domain            = context['request'].getRequestHostname(),
-                   port              = context['request'].host.port,
-                   path              = '/RPC2',
-                   protocol          = 'xml-rpc',
-                   registerProcedure = 'stats.subscribe.rss2',
+                   domain=context['request'].getRequestHostname(),
+                   port=context['request'].host.port,
+                   path='/RPC2',
+                   protocol='xml-rpc',
+                   registerProcedure='stats.subscribe.rss2',
                    )
 
     document = [
         xml('<?xml version="1.0"?>\n'),
         tag('rss', version='2.0')[
             tag('channel')[
-                tag('title')[ place('title') ],
-                tag('link')[ place('link') ],
-                tag('description')[ place('description') ],
+                tag('title')[place('title')],
+                tag('link')[place('link')],
+                tag('description')[place('description')],
                 place('photo'),
                 place('cloud'),
                 place('items'),
@@ -216,6 +222,7 @@ class RSS1Feed(RSSFeed):
 
        This uses mostly core RSS 1.0, with the dublin core module for datestamps.
        """
+
     def messageToItemContent(self, context, m, id):
         return []
 
@@ -225,7 +232,7 @@ class RSS1Feed(RSSFeed):
            both <item> elements and the <items> table of contents.
            """
         # Add our channel description to the content of our <rdf>
-        content = [ self.render_channel(context, messages) ]
+        content = [self.render_channel(context, messages)]
 
         # Add <item>s for each message
         for id, messageContent in messages:
@@ -233,7 +240,7 @@ class RSS1Feed(RSSFeed):
                 content.append(self.render_item(context, id, messageContent))
             except:
                 log.msg("Exception occurred in %s.formatItems\n%s" % (
-                    self.__class__.__name__, 
+                    self.__class__.__name__,
                     "".join(traceback.format_exception(*sys.exc_info()))))
         return content
 
@@ -248,29 +255,31 @@ class RSS1Feed(RSSFeed):
         targetUrl = Link.StatsLink(self.target).getURL(context)
         return tag('channel', **{
                    'rdf:about': targetUrl,
-               })[
-                   tag('title')[ place('title') ],
-                   tag('link')[ targetUrl ],
-                   tag('description')[ place('description') ],
-                   place('photo'),
+                   })[
+            tag('title')[place('title')],
+            tag('link')[targetUrl],
+            tag('description')[place('description')],
+            place('photo'),
 
-                   tag('items')[
-                       tag('rdf:Seq')[ toc ],
-                   ],
-               ]
+            tag('items')[
+                tag('rdf:Seq')[toc],
+            ],
+        ]
 
     def render_item(self, context, id, content):
         url = Link.MessageLink(self.target, id).getURL(context)
         m = Message.Message(content)
         tags = [
-            tag('link')[ url ],
-            tag('dc:date')[ TimeUtil.formatDateISO8601(XML.digValue(m.xml, int, "message", "timestamp")) ],
-            tag('description')[ quote(self.formatMessage(m)) ],
-            ]
+            tag('link')[url],
+            tag('dc:date')[TimeUtil.formatDateISO8601(
+                XML.digValue(m.xml, int, "message", "timestamp"))],
+            tag('description')[quote(self.formatMessage(m))],
+        ]
 
         # Generate a title if we can, but if we can't don't worry too much
         try:
-            tags.append(tag('title')[ Formatters.getFactory().findMedium('title', m).formatMessage(m) ])
+            tags.append(tag('title')[Formatters.getFactory(
+            ).findMedium('title', m).formatMessage(m)])
         except Message.NoFormatterError:
             pass
 
@@ -290,13 +299,14 @@ class RSS1Feed(RSSFeed):
 
 class XMLFeed(BaseFeed):
     """A web resource representing a feed of unformatted XML commits for a stats target."""
+
     def formatItems(self, messages, context):
         return [self.formatItem(content) for id, content in messages]
 
     def formatItem(self, content):
-	# Convert the root node, not the document- we don't want to
-	# be outputting another XML declaration inside our larger document.
-	return xml(XML.toString(content.childNodes[0]).encode('utf8'))
+        # Convert the root node, not the document- we don't want to
+        # be outputting another XML declaration inside our larger document.
+        return xml(XML.toString(content.childNodes[0]).encode('utf8'))
 
     def render_metadata(self, context):
         # Look up all the metadata first
@@ -307,7 +317,7 @@ class XMLFeed(BaseFeed):
 
     def _render_metadata(self, metadict, context, result):
         result.callback([self.renderMetadataItem(name, t[0], t[1], context)
-                         for name, t in metadict.iteritems()])
+                         for name, t in metadict.items()])
 
     def renderMetadataItem(self, name, value, mimeType, context):
         """Render a single metadata item. If the content is short and in
@@ -315,8 +325,8 @@ class XMLFeed(BaseFeed):
            XXX: These links don't really make sense any more, since the metadata
                 format changed.
            """
-        valueTag = tag('value', _type=mimeType)[ str(value) ]
-        return tag('item', _name=name)[ valueTag ]
+        valueTag = tag('value', _type=mimeType)[str(value)]
+        return tag('item', _name=name)[valueTag]
 
     def render_counters(self, context):
         # Look up all the counters first
@@ -327,13 +337,13 @@ class XMLFeed(BaseFeed):
 
     def _render_counters(self, counterdict, context, result):
         tags = []
-        for name, valueDict in counterdict.iteritems():
+        for name, valueDict in counterdict.items():
             eventCount = valueDict.get('eventCount', 0)
             try:
                 del valueDict['eventCount']
             except KeyError:
                 pass
-            tags.append(tag('counter', _name = name, **valueDict)[ eventCount ])
+            tags.append(tag('counter', _name=name, **valueDict)[eventCount])
         result.callback(tags)
 
     def render_statsLink(self, context):
@@ -342,10 +352,10 @@ class XMLFeed(BaseFeed):
     document = [
         xml('<?xml version="1.0"?>\n'),
         tag('statsTarget')[
-            tag('link')[ place('statsLink') ],
-            tag('counters')[ place('counters') ],
-            tag('metadata')[ place('metadata') ],
-            tag('recentMessages') [ place('items') ],
+            tag('link')[place('statsLink')],
+            tag('counters')[place('counters')],
+            tag('metadata')[place('metadata')],
+            tag('recentMessages')[place('items')],
         ],
     ]
 
@@ -354,6 +364,7 @@ class CustomizeRSS(Template.Page):
     """A web page that lets the user generate a customized RSS feed for a particular
        stats target. This can change the format, message style, number of messages, and such.
        """
+
     def __init__(self, statsPage):
         Template.Page.__init__(self)
         self.statsPage = statsPage
@@ -369,7 +380,7 @@ class CustomizeRSS(Template.Page):
 
     def render_form(self, context):
         return tag('form',
-                   action = Link.RSSLink(self.statsPage.target).getURL(context),
+                   action=Link.RSSLink(self.statsPage.target).getURL(context),
                    )[place('formContent')]
 
     mainTitle = "Customized RSS"
@@ -384,11 +395,11 @@ class CustomizeRSS(Template.Page):
     ]
 
     mainColumn = [
-        Template.pageBody[ place('form') ],
+        Template.pageBody[place('form')],
     ]
 
     formContent = [
-        tag('h1')[ "RSS Format" ],
+        tag('h1')["RSS Format"],
         tag('p')[
             "There are two current RSS format specifications. Both are named RSS, but "
             "they are actually very different formats with different goals. RSS 2.0 is not "
@@ -396,8 +407,9 @@ class CustomizeRSS(Template.Page):
             "just two separate specifications. CIA gives you the choice of either."
         ],
         tag('div', _class='formChoice')[
-            tag('input', _type='radio', value='2', _name='ver', checked='checked'),
-            tag('strong')[ " RSS 2.0 " ],
+            tag('input', _type='radio', value='2',
+                _name='ver', checked='checked'),
+            tag('strong')[" RSS 2.0 "],
             tag('p')[
                 "The default format. RSS 2.0 is simple, and has a publish/subscribe "
                 "system that can make it possible to receive updates immediately without "
@@ -416,7 +428,7 @@ class CustomizeRSS(Template.Page):
         ],
         tag('div', _class='formChoice')[
             tag('input', _type='radio', value='1', _name='ver'),
-            tag('strong')[ " RSS 1.0 " ],
+            tag('strong')[" RSS 1.0 "],
             tag('p')[
                 "RSS 1.0 is more of an attempt to rethink RSS and design it with extensibility "
                 "in mind. It makes use of XML namespaces to provide a core set of functionality "
@@ -436,15 +448,16 @@ class CustomizeRSS(Template.Page):
             ],
         ],
 
-        tag('h1')[ "Messages" ],
+        tag('h1')["Messages"],
         tag('p')[
             "This section controls which medium CIA tries to format messages in before embedding "
             "them in the RSS feed. The default of XHTML is optimal, but alternatives are provided "
             "if you need them."
         ],
         tag('div', _class='formChoice')[
-            tag('input', _type='radio', value='xhtml', _name='medium', checked='checked'),
-            tag('strong')[ " XHTML " ],
+            tag('input', _type='radio', value='xhtml',
+                _name='medium', checked='checked'),
+            tag('strong')[" XHTML "],
             tag('p')[
                 "Format messages as XHTML with embedded CSS styles. This should "
                 "work and look good in most RSS aggregators. "
@@ -452,7 +465,7 @@ class CustomizeRSS(Template.Page):
         ],
         tag('div', _class='formChoice')[
             tag('input', _type='radio', value='plaintext', _name='medium'),
-            tag('strong')[ " Plain Text " ],
+            tag('strong')[" Plain Text "],
             tag('p')[
                 "Format messages in plain text, properly quoted for inclusion in RSS. "
                 "This is the preferred choice if your RSS aggregator runs on a text-only "
@@ -461,7 +474,7 @@ class CustomizeRSS(Template.Page):
         ],
         tag('div', _class='formChoice')[
             tag('input', _type='radio', value='unquoted', _name='medium'),
-            tag('strong')[ " Unquoted Text " ],
+            tag('strong')[" Unquoted Text "],
             tag('p')[
                 "Format messages as plain text, but instead of quoting them twice (once "
                 "on account of the RSS feed being in XML, once because the content is "
@@ -477,11 +490,12 @@ class CustomizeRSS(Template.Page):
             "Please be reasonable. " % BaseFeed.defaultLimit
         ],
         tag('div', _class='formChoice')[
-            tag('p')[ "Retrieve at most: " ],
-            tag('p')[ tag('input', _type='text', _name='limit', size=10), " messages" ],
+            tag('p')["Retrieve at most: "],
+            tag('p')[tag('input', _type='text',
+                         _name='limit', size=10), " messages"],
         ],
 
-        tag('h1')[ "Your RSS Feed" ],
+        tag('h1')["Your RSS Feed"],
         tag('p')[
             "This button will now redirect you to an RSS feed with the settings above, "
             "ripe for opening in your favorite RSS aggregator or copying and pasting somewhere useful."
@@ -497,6 +511,7 @@ class RSSFrontend(resource.Resource):
        on parameters passed to us. Children are supported- for now this includes the
        'customize' page that helps you build RSS URLs with non-default options.
        """
+
     def __init__(self, statsPage):
         resource.Resource.__init__(self)
         self.statsPage = statsPage
@@ -510,7 +525,7 @@ class RSSFrontend(resource.Resource):
             factory = {
                 '1': RSS1Feed,
                 '2': RSS2Feed,
-                }[version[-1]]
+            }[version[-1]]
         else:
             # Use RSS 2 by default
             factory = RSS2Feed

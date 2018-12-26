@@ -42,7 +42,7 @@ class BotServer(basic.LineOnlyReceiver):
             command = parts[0]
             handler = self.handlers[command]
             handler(*parts[1:])
-        except StandardError, e:
+        except Exception as e:
             self.deferred.errback(e)
 
     def disconnect(self):

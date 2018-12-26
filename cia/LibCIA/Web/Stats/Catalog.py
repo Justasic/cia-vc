@@ -25,8 +25,8 @@ get an overview of all stats targets directly under the current one.
 from twisted.internet import defer
 
 from cia.LibCIA.Web import Template
-from LibCIA import Database
-import Columns
+from cia.LibCIA import Database
+from . import Columns
 
 
 class CatalogSection(Template.Section):
@@ -67,7 +67,7 @@ class CatalogSection(Template.Section):
         Columns.IndexedPercentColumn('% total', 5),
         Columns.TargetLastEventColumn('last event', 6),
         Columns.IndexedUnitColumn('contents', 7),
-        ]
+    ]
 
     def __init__(self, target):
         self.target = target
@@ -78,17 +78,17 @@ class CatalogSection(Template.Section):
         result = defer.Deferred()
         Database.pool.runQuery(self.query % {
             'path': Database.quote(self.target.path, 'varchar'),
-	    'limit': self.limit,
-            }).addCallback(
+            'limit': self.limit,
+        }).addCallback(
             self._render_rows, context, result
-            ).addErrback(result.errback)
+        ).addErrback(result.errback)
         return result
 
     def _render_rows(self, queryResults, context, result):
         if queryResults:
             content = [Template.Table(list(queryResults), self.columns,
-                                      id = 'catalog',
-                                      defaultSortColumnIndex = 1)]
+                                      id='catalog',
+                                      defaultSortColumnIndex=1)]
             if len(queryResults) == self.limit:
                 content.insert(0, Template.longError[
                     "This page has a very large number of child items, "
@@ -96,9 +96,9 @@ class CatalogSection(Template.Section):
                     "incrementally. Below is an arbitrary set of %d "
                     "items. Sorry for the inconvenience, we're working "
                     "on resolving this issue." % self.limit
-                    ])
+                ])
             result.callback(content)
-	else:
+        else:
             result.callback(None)
 
 ### The End ###

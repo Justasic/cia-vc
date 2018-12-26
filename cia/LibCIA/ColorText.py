@@ -140,7 +140,7 @@ class ColorTextParser:
             # Ignore blank lines
             if line:
                 lines.append(line)
-        for i in xrange(len(lines)):
+        for i in range(len(lines)):
             if i != 0:
                 XML.addElement(self.elementStack[-1][0], 'br')
             self.lex(lines[i])
@@ -222,7 +222,7 @@ class ColorTextParser:
         oldTag, oldState = self.elementStack[-1]
 
         newTag = XML.addElement(self.elementStack[-1][0], name)
-        for key, value in attributes.iteritems():
+        for key, value in attributes.items():
             newTag.setAttributeNS(None, key, value)
 
         newState = copy.deepcopy(oldState)

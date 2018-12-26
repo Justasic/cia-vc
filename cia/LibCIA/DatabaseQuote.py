@@ -93,7 +93,7 @@ def quote(value, typeCode, string_escaper=_safe):
                     l.append("\\%03o" % i)
             l.append("'")
             return "".join(l)
-        if not isinstance(value, types.StringType) and \
-               not isinstance(value, types.UnicodeType):
+        if not isinstance(value, bytes) and \
+               not isinstance(value, str):
             value = str(value)
         return "'%s'" % string_escaper(value)

@@ -37,9 +37,9 @@ import os
 def rel_path(p):
     return os.path.join(os.path.abspath(os.path.split(__file__)[0]), p)
 
-f = open(rel_path('../.git/HEAD'), 'r')
+f = open(rel_path('../../.git/HEAD'), 'r')
 ref = f.read()[5:].strip()
-g = open(rel_path('../.git/'+ref), 'r')
+g = open(rel_path('../../.git/'+ref), 'r')
 commit = g.read().strip()
 branch = ref[11:]
 shortcommit = commit[:13]
@@ -55,8 +55,8 @@ import sys, string
 if sys.version_info < requiredPythonVersion:
     raise Exception("%s requires at least Python %s, found %s instead." % (
         name,
-        string.join(map(str, requiredPythonVersion), "."),
-        string.join(map(str, sys.version_info), ".")))
+        string.join(list(map(str, requiredPythonVersion)), "."),
+        string.join(list(map(str, sys.version_info)), ".")))
 del sys
 del string
 

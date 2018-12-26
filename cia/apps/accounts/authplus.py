@@ -9,7 +9,7 @@ from django.template.context import RequestContext, Context
 from cia.apps.mailutil import send_mail_to_user
 from cia.apps.token import TokenClass
 from django.contrib import messages
-import datetime, urllib
+import datetime, urllib.request, urllib.parse, urllib.error
 
 
 ###########################
@@ -18,7 +18,7 @@ import datetime, urllib
 
 def login_url(next_page):
     if next_page:
-        return settings.LOGIN_URL + "?next_page=" + urllib.quote(next_page)
+        return settings.LOGIN_URL + "?next_page=" + urllib.parse.quote(next_page)
     else:
         return settings.LOGIN_URL
 
@@ -161,8 +161,7 @@ class RegistrationForm(forms.Form):
     first_name = forms.CharField(max_length=30)
     last_name = forms.CharField(max_length=30)
     email = forms.EmailField()
-    username = forms.RegexField(r"^[a-zA-Z0-9_\-\.]*$", max_length=30,
-                                error_message='Only A-Z, 0-9, "_", "-", and "." allowed.')
+    username = forms.RegexField(r"^[a-zA-Z0-9_\-\.]*$", max_length=30)
     password = forms.CharField(min_length=5, max_length=30)
     password2 = forms.CharField()
 
@@ -252,7 +251,7 @@ def do_change_profile(request):
     form = ChangeProfileForm(request.POST)
     form.full_clean()
     if not form.errors:
-        for key, value in form.cleaned_data.items():
+        for key, value in list(form.cleaned_data.items()):
             setattr(request.user, key, value)
         request.user.save()
         messages.add_message(request, messages.INFO, "Your profile was updated successfully.")

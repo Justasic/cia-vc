@@ -88,7 +88,7 @@ def MessageHeaders(d):
             tag('td', _class='name')[ name, ":" ],
             tag('td', _class='value')[ value ],
         ]
-        for name, value in d.iteritems()
+        for name, value in d.items()
     ]]
 
 
@@ -108,7 +108,7 @@ def treeReplace(tree, a, b):
     """Replace any occurrance of 'a' with 'b' recursively in a tree of strings"""
     if type(tree) in (list, tuple):
         return [treeReplace(i, a, b) for i in tree]
-    elif type(tree) in (str, unicode):
+    elif type(tree) in (str, str):
         return tree.replace(a, b)
     else:
         return tree
@@ -147,7 +147,7 @@ def FileTree(tree):
        Dictionaries with no children are treated as files, dictionaries with
        children are treated as directories.
        """
-    keys = tree.keys()
+    keys = list(tree.keys())
     keys.sort()
     items = []
     for key in keys:
@@ -367,7 +367,7 @@ class Page(Nouvelle.Twisted.Page):
             result.callback(siteName)
             return
 
-        if type(title) in types.StringTypes and type(siteName) in types.StringTypes:
+        if type(title) in (str,) and type(siteName) in (str,):
             # The title and site are plain strings. If it starts with or ends with the site name,
             # just use it as-is to avoid being overly redundant.
             if title == siteName or title.startswith(siteName + " ") or title.endswith(" " + siteName):

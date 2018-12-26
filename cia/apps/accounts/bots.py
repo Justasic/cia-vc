@@ -41,8 +41,7 @@ def normalize_channel_to_location(channel):
 
 class AddBotForm(forms.Form):
     network = forms.CharField()
-    channel = forms.RegexField(r"^[^\s\x00-\x1f,%]+$", max_length=63,
-                               error_message='Must be a valid IRC channel name.')
+    channel = forms.RegexField(r"^[^\s\x00-\x1f,%]+$", max_length=63)
 
     def is_other_network(self):
         return self.data.get('network') == '_other'
@@ -56,8 +55,7 @@ class AddBotForm(forms.Form):
 
 class AddNetworkForm(forms.Form):
     netname = forms.CharField(max_length=200)
-    server = forms.RegexField(r"^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?$", max_length=120,
-                               error_message='Must be a valid hostname with optional port.')
+    server = forms.RegexField(r"^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(:\d+)?$", max_length=120)
 
     def get_or_create(self, request):
         """Look up an existing network using this server name,
@@ -254,6 +252,6 @@ def bot_cloud(request, scale=(1 / math.log(20.0))):
 
     return render_to_response('accounts/bot_cloud.html', RequestContext(request, {
         'asset_types': assets.get_user_asset_types(request),
-        'servers': servers.values(),
+        'servers': list(servers.values()),
         }))
 

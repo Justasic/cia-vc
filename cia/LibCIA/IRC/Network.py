@@ -65,7 +65,7 @@ class BaseNetwork:
 
     def __cmp__(self, other):
         if type(self) is type(other) and (
-            isinstance(self, BaseNetwork) and isinstance(other, BaseNetwork)):
+                isinstance(self, BaseNetwork) and isinstance(other, BaseNetwork)):
             return cmp(self.alias or self.servers,
                        other.alias or other.servers)
         else:
@@ -82,7 +82,7 @@ class BaseNetwork:
         self.currentServer += 1
         if port is None:
             port = self.defaultPort
-	return (host, port)
+        return (host, port)
 
 
 class GenericNetwork(BaseNetwork):
@@ -91,10 +91,11 @@ class GenericNetwork(BaseNetwork):
        network isn't specified, and it acts as the base class for all other
        networks.
        """
+
     def __init__(self, host, port=None):
         if port is not None:
             port = int(port)
-        self.servers = ( (host, port), )
+        self.servers = ((host, port), )
 
     def getIdentity(self):
         return self.servers[0]
@@ -107,7 +108,7 @@ class GenericNetwork(BaseNetwork):
             return "%s:%d" % (host, port)
 
     def __repr__(self):
-            return "<IRC.Network.%s %s>" % (self.__class__.__name__, self)
+        return "<IRC.Network.%s %s>" % (self.__class__.__name__, self)
 
     def __hash__(self):
         return hash(self.servers)
@@ -130,8 +131,9 @@ class Freenode(BaseNetwork):
         ('lindbohm.freenode.net', None),
         ('niven.freenode.net', None),
         ('verne.freenode.net', None),
-	('zelazny.freenode.net', None),
-        )
+        ('zelazny.freenode.net', None),
+    )
+
 
 class Undernet(BaseNetwork):
     alias = 'undernet'
@@ -139,7 +141,8 @@ class Undernet(BaseNetwork):
     maxChannels = 8
     servers = (
         ('irc.undernet.org', None),
-        )
+    )
+
 
 class Worldforge(BaseNetwork):
     alias = 'worldforge'
@@ -147,7 +150,8 @@ class Worldforge(BaseNetwork):
         ('lester.mithis.com', None),
         #('irc.worldforge.org', None),
         #('purple.worldforge.org', None),
-        )
+    )
+
 
 class IRCNet(BaseNetwork):
     alias = 'ircnet'
@@ -155,10 +159,11 @@ class IRCNet(BaseNetwork):
         #('irc.osanet.cz', None),
         #('irc.felk.cvut.cz', 6666),
 
-	# Bert Hubert claims either of these should be fine
-	('us.ircnet.org', None),
+        # Bert Hubert claims either of these should be fine
+        ('us.ircnet.org', None),
         ('ircnet.choopa.net', None),
-        )
+    )
+
 
 class EFNet(BaseNetwork):
     alias = 'efnet'
@@ -167,17 +172,20 @@ class EFNet(BaseNetwork):
         ('irc.shoutcast.com', None),
         ('efnet.xs4all.nl', None),
         ('irc.mzima.net', None),
-        )
+    )
+
 
 class SpartaIRC(BaseNetwork):
     alias = 'spartairc'
     password = 'REPLACEME'
     servers = (
         ('irc.spartairc.co.cc', 6667),
-        )
+    )
+
 
 _aliasCache = None
 _instCache = {}
+
 
 def find(host, port=None):
     """Find a network corresponding to the given host (or alias) and port"""
@@ -187,7 +195,7 @@ def find(host, port=None):
     if _aliasCache is None:
         # Cache a dict mapping aliases to classes
         _aliasCache = {}
-        for name, obj in globals().iteritems():
+        for name, obj in globals().items():
             if type(obj) is type(BaseNetwork) and issubclass(obj, BaseNetwork):
                 _aliasCache[obj.alias] = obj
 

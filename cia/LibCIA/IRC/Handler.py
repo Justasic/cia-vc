@@ -95,7 +95,7 @@ class IrcURIHandler(Ruleset.RegexURIHandler):
         self.trans.pop(uri)
 
     def message(self, uri, message, content):
-        self.remoteBots.msg(self.trans[uri], unicode(content).encode('utf-8'))
+        self.remoteBots.msg(self.trans[uri], str(content).encode('utf-8'))
 
     def rulesetsRefreshed(self):
         """Synchronize our requests with the server's only once rulesets have
@@ -228,7 +228,7 @@ class BotControlProtocol(basic.LineOnlyReceiver):
     def sendLine(self, line):
         """Sends a line, asserting it does not contain newlines"""
         if line.count('\r') or line.count('\n'):
-            raise ValueError, "line to send contained newlines!"
+            raise ValueError("line to send contained newlines!")
         if self.transport is None:
             self.connectionLost("Detected by sendLine")
         basic.LineOnlyReceiver.sendLine(self, line)
