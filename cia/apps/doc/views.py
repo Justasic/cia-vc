@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template.context import RequestContext
 from django.http import Http404, HttpResponseRedirect
 from django.conf import settings
@@ -50,7 +50,7 @@ def page(request, path):
         if not os.path.isfile(filePath):
             raise Http404
 
-        ctx = {
+        ctx = render(request, 'layout_doc.html', {
             'parts': publish_parts(
                 source = open(filePath).read(),
                 writer_name = "html4css1",
@@ -59,9 +59,8 @@ def page(request, path):
                     'initial_header_level': 2,
                 },
             ),
-            'sidebar': loader.render_to_string(get_sidebar_templates(path),
-                                               RequestContext(request)),
-        }
+            'sidebar': loader.render_to_string(get_sidebar_templates(path), request=request),
+        })
         cache.set(key, ctx)
 
-    return render_to_response('layout_doc.html', RequestContext(request, ctx))
+    return ctx

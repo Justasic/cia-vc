@@ -7,7 +7,7 @@
     {{ user_asset.asset.location }}
 
     {% ifequal user_asset.access ACCESS.EXCLUSIVE %}
-       <img src="/cia/media/img/lock-10{% ifequal user_asset.id asset_id %}-fe8{% endifequal %}.png"
+       <img src="/media/img/lock-10{% ifequal user_asset.id asset_id %}-fe8{% endifequal %}.png"
             width="10" height="10" alt="Exclusive access" title="Exclusive access" />
     {% endifequal %}
 

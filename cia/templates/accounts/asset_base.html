@@ -7,7 +7,7 @@
 
   <ul class="c2">
     {% if add %} <li class="active"> {% else %} <li><a href="/account/{{ asset_type }}/add/"> {% endif %}
-      <img class="add-icon" src="/cia/media/img/add-10.png" alt="+" /> Add {{ asset_type_name }}...
+      <img class="add-icon" src="/media/img/add-10.png" alt="+" /> Add {{ asset_type_name }}...
     {% if add %} </li> {% else %} </a></li> {% endif %}
 
     <li class="spacer"></li>
@@ -19,7 +19,7 @@
         {{ user_asset.asset }}
 
 	{% ifequal user_asset.access ACCESS.EXCLUSIVE %}
-          <img src="/cia/media/img/lock-10{% ifequal user_asset.id asset_id %}-fe8{% endifequal %}.png"
+          <img src="/media/img/lock-10{% ifequal user_asset.id asset_id %}-fe8{% endifequal %}.png"
                width="10" height="10" alt="Exclusive access" title="Exclusive access" />
         {% endifequal %}
 

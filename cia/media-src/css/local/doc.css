@@ -32,7 +32,7 @@
 
 
 #document-and-sidebar {
-    background: #BASE_COLOR url("/cia/media/img/fringes-BASE_COLOR.png") repeat-x scroll top left;
+    background: #BASE_COLOR url("/media/img/fringes-BASE_COLOR.png") repeat-x scroll top left;
     border-bottom: 1px solid #DARK_COLOR;
     padding: 0;
     position: relative;

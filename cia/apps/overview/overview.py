@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template.context import RequestContext
 
 from cia.apps.overview.models import GetStats
@@ -65,7 +65,7 @@ def GetActiveStat(count, stat_type):
 
 
 def main(request):
-    ctx = RequestContext(request, {
+    return render(request, 'overview.html', {
         'announcement_available': False,
         'announcement_text': "Hello!",
         'tabs': _loadSidebar(rel_path("../../doc/.default.sidebar")),
@@ -74,4 +74,3 @@ def main(request):
         'new_authors': GetNewestStat(15, "author"),
         'new_projects': GetNewestStat(15, "project"),
     })
-    return render_to_response('overview.html', ctx)

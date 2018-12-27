@@ -8,7 +8,7 @@ h1 {
 .ajax-loader {
   display: none;
   overflow: hidden;
-  background: url("/cia/media/img/ajax-loader.gif");
+  background: url("/media/img/ajax-loader.gif");
   width: 16px;
   height: 16px;
 }
@@ -66,7 +66,7 @@ span.error {
   background: #ccf;
   border-right: 1px solid #ccf;  /* IE6 */
   padding: 0.25em;
-  list-style-image: url("/cia/media/img/raquo-10.png");
+  list-style-image: url("/media/img/raquo-10.png");
 }
 
 .columns .c2 {
@@ -106,7 +106,7 @@ span.error {
   background: #fe8;
   border-right: 1px solid #fe8;  /* IE6 */
   padding: 0.15em 0.25em;
-  list-style-image: url("/cia/media/img/raquo-10.png");
+  list-style-image: url("/media/img/raquo-10.png");
 }
 
 .columns .c2 li.group {
@@ -176,7 +176,7 @@ blockquote.note {
   position: absolute;
   top: 0.5em;
   left: 0.5em;
-  background: url("/cia/media/img/check-16.png");
+  background: url("/media/img/check-16.png");
   width: 16px;
   height: 16px;
 }
@@ -619,7 +619,7 @@ ul.arrows {
 }
 
 ul.arrows li {
-  list-style-image: url("/cia/media/img/raquo-10.png");
+  list-style-image: url("/media/img/raquo-10.png");
 }
 
 p.cloud {

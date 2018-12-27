@@ -4,17 +4,17 @@
   <title>{{ site.name }} - {% block page_title %}{% endblock %}</title>
   <link href="/favicon.ico" type="image/x-icon" rel="shortcut icon" />
   {% block stylesheets %}
-    <link href="/cia/media/css/base.css" type="text/css" rel="stylesheet" />
+    <link href="/media/css/base.css" type="text/css" rel="stylesheet" />
   {% endblock %}
   {% block feeds %}{% endblock %}
   {% block scripts %}
-     <script type="text/javascript" src="/cia/media/js/base.js" ></script>
+     <script type="text/javascript" src="/media/js/base.js" ></script>
   {% endblock %}
 {% endblock %}
 
 {% block body %}
 <div class="heading">
-  <a class="logo" href="/"><img src="/cia/media/img/nameplate-24.png" alt="{{ site.name }}" /></a>
+  <a class="logo" href="/"><img src="/media/img/nameplate-24.png" alt="{{ site.name }}" /></a>
   <span class="sep">:</span>
   <span class="title">{% block head_title %}{% endblock %}</span>
   
@@ -28,7 +28,7 @@
     {% endif %}
 
     {% block feedback-nav %}<li>&raquo; <a href="/feedback/?ref={{ request.path }}">Feedback</a></li>{% endblock %}
-    <li>&raquo; <a href="/cia/doc/">About</a></li>
+    <li>&raquo; <a href="/doc/">About</a></li>
     <li>&raquo; <a href="/blog/">Blog</a></li>
 
     {% if user.is_authenticated %}

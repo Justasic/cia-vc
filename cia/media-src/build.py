@@ -6,10 +6,10 @@
 
 import os
 
-from .lib import *
+from lib import merge, jsmin, csspp
 
-
-os.chdir('media-src')
+print("%s\n", os.getcwd())
+os.chdir('cia/media-src')
 DEST = '../media/'
 
 for single_css in [

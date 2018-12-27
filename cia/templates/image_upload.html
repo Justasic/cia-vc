@@ -1,7 +1,7 @@
 {% extends 'skeleton.html' %}
 
 {% block head %}
-<link href="/cia/media/css/image-upload.css" type="text/css" rel="stylesheet" />
+<link href="/media/css/image-upload.css" type="text/css" rel="stylesheet" />
 {% endblock %}
 
 {% block body %}
@@ -21,7 +21,7 @@
 
 {% if error %}
 <div class="thumbnail">
-  <img class="thumbnail" src="/cia/media/img/broken-image-100.png"
+  <img class="thumbnail" src="/media/img/broken-image-100.png"
        width="120" height="100" alt="Broken Image" />
 </div>  
 {% endif %}
@@ -29,7 +29,7 @@
 <form action="/images/upload/" enctype="multipart/form-data" method="post" id="image-upload-form">
   <div>Upload a file:</div>
   <input id="file" type="file" name="file" />
-  <img id="ajax-loader" src="/cia/media/img/ajax-loader.gif" width="16" height="16" />
+  <img id="ajax-loader" src="/media/img/ajax-loader.gif" width="16" height="16" />
   {% if image %}
     <p><input type="submit" name="remove" value="Remove Image" /></p>
   {% endif %}

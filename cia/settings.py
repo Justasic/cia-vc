@@ -120,6 +120,9 @@ LANGUAGE_CODE = 'en-us'
 # Make sure the Django site domain and site name are set correctly!
 SITE_ID = 1
 
+# Ensure we always have a trailing slash on everything
+APPEND_SLASH = True
+
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = rel_path('media')
@@ -139,34 +142,38 @@ ADMIN_MEDIA_PREFIX = MEDIA_URL +'admin/'
 SECRET_KEY = "1234" #open(os.path.expanduser('~/.django_secret')).read().strip()
 
 # List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.app_directories.Loader',
-    'django.template.loaders.filesystem.Loader',
-)
-
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
-    'cia.apps.context_processors.analytics',
-    'cia.apps.context_processors.site',
-    'django.core.context_processors.request',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [rel_path('templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'cia.apps.context_processors.analytics',
+                'cia.apps.context_processors.site',
+            ],
+        },
+    },
+]
 
 MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
-    'cia.apps.middleware.BehindReverseProxy',
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    #'cia.apps.middleware.BehindReverseProxy',
     'django.middleware.doc.XViewMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware'
 )
 
 ROOT_URLCONF = 'cia.apps.urls'
-
-TEMPLATE_DIRS = (
-    rel_path('templates'),
-)
 
 INSTALLED_APPS = (
     'django.contrib.auth',
