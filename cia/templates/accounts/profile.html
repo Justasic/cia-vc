@@ -53,6 +53,7 @@
     <div>&raquo;</div> <input type="submit" name="change-profile" value="Save" />
   </div>
   </fieldset>
+  {% csrf_token %}
 </form>
 
 <form action="/account/" method="post">
@@ -76,5 +77,7 @@
     <div>&raquo;</div> <input type="submit" name="change-password" value="Save" />
   </div>
   </fieldset>
+
+  {% csrf_token %}
 </form>
 {% endblock %}

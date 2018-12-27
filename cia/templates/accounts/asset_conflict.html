@@ -30,5 +30,7 @@
   <div class="submit-row">
     <div>&raquo;</div> <input type="submit" value="Send Message" {% if disable_submit %}disabled="1"{% endif %} />
   </div>
+
+  {% csrf_token %}
 </form>
 {% endblock %}

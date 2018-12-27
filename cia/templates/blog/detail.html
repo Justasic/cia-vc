@@ -44,6 +44,7 @@
             <p><label for="comment_id">Comment on <em>{{ post.title }}</em>: {{ comment_form.comment }}</label></p>
             <input type="hidden" name="post_id" value="{{ post.pk }}">
             <p><input type="submit" value="Post comment"></p>
+    {% csrf_token %}
 		</form>
 	{% endif %}	
     </div>
@@ -65,6 +66,7 @@
                    scrolling="no" marginheight="0" marginwidth="0"
                    > </iframe>
          </p>
+         {% csrf_token %}
        </form>
      </div>
   {% endif %}

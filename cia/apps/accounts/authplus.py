@@ -3,9 +3,9 @@ from django.conf import settings
 from django.contrib import auth
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import loader
-from django.template.context import RequestContext, Context
+from django.template.context import Context
 from cia.apps.mailutil import send_mail_to_user
 from cia.apps.token import TokenClass
 from django.contrib import messages
@@ -28,7 +28,7 @@ def login_required(view_func):
        parameter which we don't need yet.
        """
     def _checklogin(request, *args, **kwargs):
-        if request.user.is_authenticated() and request.user.is_active:
+        if request.user.is_authenticated and request.user.is_active:
 
             # This is a big hammer for superusers: if you're logged
             # in as a superuser, you can add ?impersonate=username
@@ -89,10 +89,10 @@ def login(request, next_page, template_name="accounts/login.html"):
     else:
         error = None
     request.session.set_test_cookie()
-    return render_to_response(template_name, RequestContext(request, {
+    return render(request, template_name, {
         'error': error,
         'login_url': login_url(next_page),
-        }))
+        })
 
 
 ###########################
@@ -111,8 +111,8 @@ def lost(request, next_page, recovery_page):
             send_mail_to_user(user, "accounts/recovery_mail.txt",
                               request = request,
                               recovery_path = recovery_page % PasswordToken.new({'username': user.username}))
-            return render_to_response('accounts/recovery_mail_sent.html', RequestContext(request))
-    return render_to_response('accounts/recovery_form.html', RequestContext(request, {'error': error}))
+            return render(request, 'accounts/recovery_mail_sent.html')
+    return render(request, 'accounts/recovery_form.html', {'error': error})
 
 class ResetPasswordForm(forms.Form):
     password = forms.CharField(min_length=5, max_length=30)
@@ -121,7 +121,7 @@ class ResetPasswordForm(forms.Form):
 def reset(request, key, next_page):
     t = PasswordToken.get(key)
     if not t:
-        return render_to_response('accounts/recovery_key_error.html', RequestContext(request))
+        return render(request, 'accounts/recovery_key_error.html')
     user = get_user(t.get('username'))
 
     if request.POST:
@@ -138,7 +138,8 @@ def reset(request, key, next_page):
             loginError = internal_login(request, user.username, form.cleaned_data['password'])
             if loginError:
                 # This might happen if the account is deactivated.
-                form.errors['submit'] = forms.util.ErrorList([loginError])
+                raise forms.ValidationError(loginError)
+                #form.errors['submit'] = forms.util.ErrorList([loginError])
             else:
                 # We're in successfully. Expire the recovery session.
                 PasswordToken.delete(key)
@@ -147,10 +148,10 @@ def reset(request, key, next_page):
         form = None
 
     request.session.set_test_cookie()
-    return render_to_response('accounts/reset_password.html', RequestContext(request, {
+    return render(request, 'accounts/reset_password.html', {
         'username': user.username,
         'form': form,
-        }))
+        })
 
 
 ###########################
@@ -167,20 +168,23 @@ class RegistrationForm(forms.Form):
 
 def validate_old_password(form, user, field_name='password'):
     if not form.errors.get(field_name) and not user.check_password(form.data.get(field_name)):
-        form.errors[field_name] = forms.util.ErrorList(["Incorrect password."])
+        raise forms.ValidationError("Incorrect Password.")
+        #form.errors[field_name] = forms.util.ErrorList(["Incorrect password."])
 
 def validate_password_confirmation(form, field_name='password'):
     field2_name = field_name + '2'
     if not form.errors.get(field2_name) and form.data.get(field_name) != form.data.get(field2_name):
-        form.errors[field2_name] = forms.util.ErrorList(["Your passwords do not match."])
+        raise forms.ValidationError("Your passwords do not match.")
+        #form.errors[field2_name] = forms.util.ErrorList(["Your passwords do not match."])
 
 def validate_test_cookie(form, request):
     if not request.session.test_cookie_worked():
-        form.errors['submit'] = forms.util.ErrorList(["Cookies must be enabled."])
+        raise forms.ValidationError("Cookies must be enabled.")
+        #form.errors['submit'] = forms.util.ErrorList(["Cookies must be enabled."])
 
 def register(request, next_page, template_name="accounts/register.html"):
     if settings.CIA_REGISTRATION_IS_CLOSED:
-        return render_to_response("accounts/registration_closed.html", RequestContext(request))
+        return render(request, "accounts/registration_closed.html")
 
     if request.POST:
         form = RegistrationForm(request.POST, initial=request.GET)
@@ -191,11 +195,11 @@ def register(request, next_page, template_name="accounts/register.html"):
         if not form.errors:
             # The username still might be taken, but let's test for that atomically
             # as a side-effect of trying to create the user.
-            user = auth.models.User(first_name = form.cleaned_data['first_name'].title(),
-                                    last_name = form.cleaned_data['last_name'].title(),
-                                    email = form.cleaned_data['email'],
-                                    username = form.cleaned_data['username'])
-            user.set_password(form.cleaned_data['password'])
+            user = auth.models.User(first_name = form.cleaned_data.get('first_name').title(),
+                                    last_name = form.cleaned_data.get('last_name').title(),
+                                    email = form.cleaned_data.get('email'),
+                                    username = form.cleaned_data.get('username'))
+            user.set_password(form.cleaned_data.get('password'))
             try:
                 user.save()
             except:
@@ -203,8 +207,9 @@ def register(request, next_page, template_name="accounts/register.html"):
                 # To make this portable, we'll do a second check to see if the username
                 # was taken. This is also slightly racy, but much less so than checking
                 # beforehand. Easier to ask forgiveness than permission.
-                if get_user(form.cleaned_data['username']):
-                    form.errors['username'] = forms.util.ErrorList(["Sorry, this username is taken."])
+                if get_user(form.cleaned_data.get('username')):
+                    raise forms.ValidationError("Sorry, this username is taken.")
+                    #form.errors['username'] = forms.util.ErrorList(["Sorry, this username is taken."])
                 else:
                     # Something else happened.. pass on the exception
                     raise
@@ -212,14 +217,14 @@ def register(request, next_page, template_name="accounts/register.html"):
         if not form.errors:
             # Something's wrong internally if we can't log in to the
             # account we just created...
-            assert not internal_login(request, form.cleaned_data['username'], form.cleaned_data['password'])
+            assert not internal_login(request, form.cleaned_data.get('username'), form.cleaned_data.get('password'))
             return HttpResponseRedirect(next_page)
 
     else:
         form = RegistrationForm(initial=request.GET)
 
     request.session.set_test_cookie()
-    return render_to_response(template_name, RequestContext(request, {'form': form}))
+    return render(request, template_name, {'form': form})
 
 
 ###########################

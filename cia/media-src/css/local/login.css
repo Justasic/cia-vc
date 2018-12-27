@@ -15,7 +15,7 @@ h1 {
 
 .options-box li {
   position: relative;  /* IE6 */
-  list-style-image: url("/cia/media/img/raquo-10.png");
+  list-style-image: url("/media/img/raquo-10.png");
   margin: 0 0 1.2em 0;
   font-size: 0.9em;
 }
@@ -49,7 +49,7 @@ h1 {
   left: -2px;
   width: 6px;
   height: 6px;
-  background: url("/cia/media/img/corner-6-2-tl.png");
+  background: url("/media/img/corner-6-2-tl.png");
 }
 
 .login-box div.tr {
@@ -59,7 +59,7 @@ h1 {
   right: -2px;
   width: 6px;
   height: 6px;
-  background: url("/cia/media/img/corner-6-2-tr.png");
+  background: url("/media/img/corner-6-2-tr.png");
 }
 
 .login-box div.bl {
@@ -69,7 +69,7 @@ h1 {
   left: -2px;
   width: 6px;
   height: 6px;
-  background: url("/cia/media/img/corner-6-2-bl.png");
+  background: url("/media/img/corner-6-2-bl.png");
 }
 
 .login-box div.br {
@@ -79,7 +79,7 @@ h1 {
   right: -2px;
   width: 6px;
   height: 6px;
-  background: url("/cia/media/img/corner-6-2-br.png");
+  background: url("/media/img/corner-6-2-br.png");
 }
 
 h1 {

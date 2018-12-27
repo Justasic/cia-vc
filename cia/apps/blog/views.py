@@ -1,5 +1,4 @@
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template.context import RequestContext
+from django.shortcuts import render, get_object_or_404
 from django.contrib.syndication.views import Feed
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.template.defaultfilters import slugify
@@ -9,7 +8,7 @@ import django.forms as forms
 import datetime
 
 def is_blog_admin(request):
-    return request.user.is_authenticated() and request.user.is_staff
+    return request.user.is_authenticated and request.user.is_staff
 
 def get_recent_comments():
     return Comment.objects.filter(is_public = True)
@@ -24,11 +23,11 @@ def get_blog_context(request):
             pub_date__lte = datetime.datetime.now(),
             listed = True)
 
-    return RequestContext(request, {
+    return {
         'posts': posts,
         'archive_dates': posts.dates('pub_date', 'month')[::-1],
         'can_post': is_admin,
-        })
+        }
 
 def archive(request, num_latest=None, year=None, month=None):
     ctx = get_blog_context(request)
@@ -52,7 +51,7 @@ def archive(request, num_latest=None, year=None, month=None):
         'latest': latest,
         'current_archive_date': current_archive_date,
         })
-    return render_to_response('blog/archive.html', ctx)
+    return render(request, 'blog/archive.html', ctx)
 
 
 class EditPostForm(forms.Form):
@@ -133,7 +132,7 @@ def detail(request, year=None, month=None, slug=None):
         'post_form': post_form,
         'comment_form': CommentForm(initial={'person_name': user_full_name}),
         })
-    return render_to_response('blog/detail.html', ctx)
+    return render(request, 'blog/detail.html', ctx)
 
 
 class BlogFeed(Feed):

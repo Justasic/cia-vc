@@ -1,5 +1,5 @@
 from django import forms as forms
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template.context import RequestContext
 from django.core.mail import send_mail
 from django.http import HttpResponseRedirect
@@ -60,7 +60,7 @@ def feedback(request, referrer='/'):
             send_feedback_mail(form)
             return HttpResponseRedirect(form.cleaned_data['referrer'])
 
-    elif request.user.is_authenticated():
+    elif request.user.is_authenticated:
         form = FeedbackForm({
             'name': request.user.get_full_name(),
             'email': request.user.email,
@@ -73,6 +73,6 @@ def feedback(request, referrer='/'):
             })
 
     form.data['token'] = FeedbackToken.new()
-    return render_to_response('feedback.html', RequestContext(request, {
+    return render(request, 'feedback.html', {
         'form': form,
-        }))
+        })

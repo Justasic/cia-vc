@@ -160,7 +160,7 @@ TEMPLATES = [
     },
 ]
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -170,7 +170,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     #'cia.apps.middleware.BehindReverseProxy',
-    'django.middleware.doc.XViewMiddleware',
+    #'django.middleware.doc.XViewMiddleware',
 )
 
 ROOT_URLCONF = 'cia.apps.urls'

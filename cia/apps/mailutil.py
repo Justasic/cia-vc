@@ -17,11 +17,11 @@ def get_email_with_name(name, email):
     name = re.sub("[!<>@:;\\\\'\"\[\]\r\n\t]", "", name.strip())
     return "%s <%s>" % (name, email)
 
-def render_to_email(template_name, context_dict):
+
+def render_to_email(template_name, context):
     """Render a template, splitting the result into subject and message.
        The first non-blank line is taken as the message's subject.
        """
-    context = Context(context_dict)
     context['site'] = Site.objects.get_current()
     subject, message = loader.render_to_string(template_name, context).lstrip().split("\n", 1)
     return subject.strip(), message.strip()

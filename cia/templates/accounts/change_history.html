@@ -35,7 +35,7 @@
     onclick="ChangeHistory.init('/account/changes/all/');"
     /> <label for="id_all_changes">on all of {{ site.name }}.</label>
 
-</p></form>
+</p>{% csrf_token %}</form>
 {% endblock %}
 
 {% block account-forms %}

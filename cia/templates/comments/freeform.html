@@ -10,5 +10,6 @@
 <input type="hidden" name="gonzo" value="{{ hash }}" />
 <input class="submit" type="submit" name="preview" value="{% trans "Preview comment" %}" />
 </p>
+{% csrf_token %}
 </form>
 {% endif %}

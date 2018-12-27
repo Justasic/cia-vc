@@ -34,6 +34,7 @@
     <p><input type="submit" name="remove" value="Remove Image" /></p>
   {% endif %}
   <input id="form-result" type="hidden" value="{{ image.id }}" />
+  {% csrf_token %}
 </form>
 
 <div class="footer"></div>

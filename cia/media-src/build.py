@@ -6,9 +6,9 @@
 
 import os
 
-from lib import merge, jsmin, csspp
+from lib import merge, csspp
+from lib.jsmin import jsmin
 
-print("%s\n", os.getcwd())
 os.chdir('cia/media-src')
 DEST = '../media/'
 
