@@ -156,7 +156,7 @@ class Page(resource.Resource):
 
     def pageFinishedCallback(self, obj, context):
         """Callback for asynchronous page rendering from a Deferred object"""
-        context['request'].write(str(obj))
+        context['request'].write(str(obj).encode())
         context['request'].finish()
 
     def pageErrorCallback(self, failure, context):

@@ -25,6 +25,9 @@ Utilities for accessing CIA's persistent data stored in an SQL database
 import os
 
 from twisted.enterprise import adbapi
+from twisted.python import log
+import traceback
+from io import StringIO, BytesIO
 
 import MySQLdb.cursors
 from cia.LibCIA import XML
@@ -55,10 +58,10 @@ def removeBlobConversions():
     del conversions[FIELD_TYPE.BLOB]
 
 
-try:
-    removeBlobConversions()
-except:
-    pass
+#try:
+#    removeBlobConversions()
+#except:
+#    pass
 
 
 class ConnectionPool(adbapi.ConnectionPool):
@@ -109,10 +112,10 @@ def createPool(overrides={}, filename="~/.cia_db", serverCursor=False):
     info = {
         'host': 'localhost',
         'db':   'cia',
-        'user': 'root',
+        'user': 'cia',
 
         # This is so we don't splurt our password out to twistd.log...
-        'cp_noisy':  False,
+        'cp_noisy':  True,
         'cp_min': 1,
         'cp_max': 2,
     }

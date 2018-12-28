@@ -9,11 +9,18 @@
 # It can be started via http-cluster.sh.
 #
 
-import os
+import os, sys
 port = int(os.getenv("PORT"))
 
+
+def rel_path(p):
+    return os.path.join(os.path.abspath(os.path.split(__file__)[0]), p)
+
+
+sys.path.append(rel_path("../../"))
+
 from twisted.application import service, internet
-from LibCIA import Database, Message, Web, RpcServer, Stats
+from cia.LibCIA import Database, Message, Web, RpcServer, Stats
 from Nouvelle import xml
 from twisted.internet import tcp
 

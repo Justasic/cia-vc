@@ -39,7 +39,7 @@ from . import Catalog
 from . import Feed
 from . import Link
 from . import MessageViewer
-from cia.LibCIA import XML
+from cia.LibCIA import XML, Stats
 
 
 class Component(Server.Component):
@@ -68,7 +68,7 @@ class Page(Template.Page):
 
     def __init__(self, component, target=None):
         if target is None:
-            target = cia.LibCIA.Stats.Target.StatsTarget()
+            target = Stats.Target.StatsTarget()
         self.component = component
         self.target = target
 
