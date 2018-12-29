@@ -5,6 +5,7 @@ The stats:// URI handler
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,11 +23,11 @@ The stats:// URI handler
 #
 
 from cia.LibCIA.Stats.Target import StatsTarget
-from cia.LibCIA import Ruleset
+from cia.LibCIA.Ruleset import RegexURIHandler
 from cia.LibCIA.Stats.Graph import Relation
 
 
-class StatsURIHandler(Ruleset.RegexURIHandler):
+class StatsURIHandler(RegexURIHandler):
     """Handles stats:// URIs. A stats target is chosen,
        and the message is delivered to it.
        """

@@ -5,6 +5,7 @@ Pages for getting real-time message feeds in RSS and unformatted XML
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -125,7 +126,7 @@ class RSSFeed(FormattedFeed):
         LEFT OUTER JOIN images_imageinstance IM
         ON (IM.source_id = ST.photo_id AND IM.thumbnail_size = 128)
         WHERE ST.path = %s
-        """ % Database.quote(self.target.path, 'varchar')
+        """, (self.target.path,)
         result = defer.Deferred()
         Database.pool.runQuery(photo_query).addCallback(
             self._render_photo, context, result).addErrback(result.errback)

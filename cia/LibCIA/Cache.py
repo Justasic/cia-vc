@@ -24,6 +24,10 @@ A generic object cache. Arbitrary python objects are mapped to files or strings.
 
 from twisted.internet import defer
 from twisted.python import log
+import os
+import traceback
+import hashlib
+import pickle
 
 from cia.LibCIA import Files
 
@@ -145,14 +149,14 @@ class AbstractStringCache(AbstractFileCache):
 
 class AbstractObjectCache(AbstractFileCache):
     """Based on AbstractFileCache, this cache provides an interface based on
-       arbitrary Python objects, serialized using cPickle.
+       arbitrary Python objects, serialized using pickle.
        """
     def _returnHit(self, filename, result):
-        result.callback(cPickle.load(open(filename, "rb")))
+        result.callback(pickle.load(open(filename, "rb")))
 
     def _returnMiss(self, obj, filename, result):
         tempFilename = self.getTempFilename()
-        cPickle.dump(obj, open(tempFilename, "wb"), cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(obj, open(tempFilename, "wb"), pickle.HIGHEST_PROTOCOL)
         os.rename(tempFilename, filename)
         result.callback(obj)
 

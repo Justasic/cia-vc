@@ -6,6 +6,7 @@ get an overview of all stats targets directly under the current one.
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -76,8 +77,8 @@ class CatalogSection(Template.Section):
         # First we run a big SQL query to gather all the data for this catalog.
         # Control is passed to _render_rows once we have the query results.
         result = defer.Deferred()
-        Database.pool.runQuery(self.query % {
-            'path': Database.quote(self.target.path, 'varchar'),
+        Database.pool.runQuery(self.query, {
+            'path': self.target.path,
             'limit': self.limit,
         }).addCallback(
             self._render_rows, context, result

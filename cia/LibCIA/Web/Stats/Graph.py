@@ -7,6 +7,7 @@ visually graphing the relationships between stats targets.
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -134,8 +135,8 @@ class RelatedSection(Template.Section):
         sections = {}
 
         for thisSide, otherSide in ( ('a','b'), ('b', 'a') ):
-            cursor.execute(self.query % dict(
-                path = Database.quote(self.target.path, 'varchar'),
+            cursor.execute(self.query, (
+                path = self.target.path,
                 filter = filterSql,
                 thisSide = thisSide,
                 otherSide = otherSide,

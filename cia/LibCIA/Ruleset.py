@@ -23,6 +23,7 @@ used to store and query rulesets in a RulesetStorage.
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -49,7 +50,6 @@ from twisted.internet import defer, reactor
 from . import Message
 from . import Security
 from . import RpcServer
-from . import Formatters
 import sys
 from cia.LibCIA import XML, Database
 
@@ -134,6 +134,7 @@ class TinyRuleset(object):
         self.includeName = includeName
 
     def __call__(self, msg):
+        from . import Formatters
         if not self.matches(msg):
             return None
 
@@ -345,6 +346,7 @@ class Ruleset(XML.XMLFunction):
            returns a function that applies the formatter against the current
            message and result.
            """
+        from . import Formatters
         # Evaluate this once at parse-time so any silly errors
         # like unknown formatters or media can be detected.
         Formatters.getFactory().fromXml(element)
@@ -663,7 +665,7 @@ class DatabaseRulesetStorage(RulesetStorage):
 
         # Delete the old ruleset, if there was one
         result = defer.Deferred()
-        d = Database.pool.runOperation("DELETE FROM rulesets WHERE uri = %s" % Database.quote(ruleset.uri, 'text'))
+        d = Database.pool.runOperation("DELETE FROM rulesets WHERE uri = %s", (ruleset.uri,))
 
         # If we need to insert a new ruleset, do that after the delete finishes
         if ruleset.isEmpty():
@@ -675,8 +677,7 @@ class DatabaseRulesetStorage(RulesetStorage):
 
     def _insertRuleset(self, none, result, ruleset):
         """Callback used by store() to insert a new or modified ruleset into the SQL database"""
-        d = Database.pool.runOperation("INSERT INTO rulesets (uri, xml) values(%s, %s)" % (
-            Database.quote(ruleset.uri, 'text'), Database.quote(ruleset.get_source(), 'text')))
+        d = Database.pool.runOperation("INSERT INTO rulesets (uri, xml) values(%s, %s)", (ruleset.uri, ruleset.get_source()))
         d.addCallback(result.callback)
         d.addErrback(result.errback)
 

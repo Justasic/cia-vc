@@ -20,6 +20,7 @@ making keys map to pickled callable objects would be too fragile.
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -38,7 +39,7 @@ making keys map to pickled callable objects would be too fragile.
 
 import string
 import os
-import hashlib
+import hashlib, base64
 
 from twisted.web import xmlrpc
 from twisted.internet import defer
@@ -210,12 +211,9 @@ def createRandomKey(bytes = 24,
        block, and would make everything else here more complex.
        The result will be base64-encoded.
        """
-    s = ''
-    f = open("/dev/urandom")
-    for i in range(bytes):
-        s += allowedChars[ ord(f.read(1)) % len(allowedChars) ]
-    f.close()
-    return s
+    random = os.urandom(bytes)
+
+    return base64.b64encode(random)
 
 
 def logProtectedCall(result, path, args, user, allowed=True):
@@ -240,11 +238,11 @@ def logProtectedCall(result, path, args, user, allowed=True):
     Database.pool.runOperation(
         "INSERT INTO audit_trail (timestamp, uid, action_domain, action_name,"
         " main_param, params, allowed, results)"
-        " VALUES(%d, %d, 'protected_call', %s, %s, '%s', %d, '%s')" % (
+        " VALUES(%d, %d, 'protected_call', %s, %s, '%s', %d, '%s')", (
         time.time(),
         uid,
-        Database.quote(".".join(path), 'text'),
-        Database.quote(main_param, 'text'),
+        ".".join(path),
+        main_param,
         Database.quoteBlob(pickle.dumps(args)),
         allowed,
         Database.quoteBlob(pickle.dumps(result))))
@@ -390,14 +388,13 @@ class User:
 
     def _test(self, cursor, *capabilities):
         # If the user has been disabled, they have no capabilities
-        cursor.execute("SELECT active FROM users WHERE uid = %d" % self._getUid(cursor))
+        cursor.execute("SELECT active FROM users WHERE uid = %d", (self._getUid(cursor)))
         if not int(cursor.fetchone()[0]):
             return False
 
-        if cursor.execute(self._createTestQuery(self._getUid(cursor), capabilities)):
+        if cursor.execute(self._createTestQuery(cursor, self._getUid(cursor), capabilities)):
             # We do have permission, update the key's access time and return
-            cursor.execute("UPDATE users SET key_atime = %d WHERE uid = %d" %
-                            (time.time(), self._getUid(cursor)))
+            cursor.execute("UPDATE users SET key_atime = %d WHERE uid = %d", (time.time(), self._getUid(cursor)))
             return True
         else:
             return False
@@ -407,15 +404,11 @@ class User:
         return Database.pool.runInteraction(self._grant, *capabilities)
 
     def _grant(self, cursor, *capabilities):
-        uid = self._getUid(cursor)
+        uid = int(self._getUid(cursor))
         for capability in capabilities:
             rep = repr(capability)
-            print(rep)
             cursor.execute("INSERT IGNORE INTO capabilities (uid, cap_md5, cap_repr)"
-                           " VALUES(%d, %s, %s)" % (
-                uid,
-                Database.quote(hashlib.md5(rep).hexdigest(), 'char'),
-                Database.quote(rep, 'text')))
+                           " VALUES(%s, %s, %s)", (uid, hashlib.md5(rep.encode()).hexdigest(), rep))
 
     def require(self, *capabilities):
         """Like test(), but in case none of the listed capabilities have been
@@ -433,7 +426,7 @@ class User:
         except:
             return failure.Failure()
 
-    def _createTestQuery(self, uid, capabilities):
+    def _createTestQuery(self, cursor, uid, capabilities):
         """Create an SQL query that returns something nonzero if a uid matches any of
            a list of capabilities. If the capabilities list is empty, this creates a
            query that always has a nonzero result.
@@ -441,16 +434,13 @@ class User:
         if capabilities:
             return "SELECT 1 FROM capabilities WHERE uid = %d AND (%s) LIMIT 1" % (
                 uid,
-                " OR ".join(["cap_md5 = " + Database.quote(hashlib.md5(repr(c)).hexdigest(),
-                                                           'char') for c in capabilities]),
-                )
+                " OR ".join(["cap_md5 = " + cursor.escape_string(hashlib.md5(repr(c)).hexdigest()) for c in capabilities]),)
         else:
             return "SELECT 1"
 
     def _getUidFromKey(self, cursor, key):
         """Find a user by their key"""
-        cursor.execute("SELECT uid FROM users WHERE secret_key = %s" %
-                       Database.quote(key.strip(), 'varchar'))
+        cursor.execute("SELECT uid FROM users WHERE secret_key = %s", key.strip())
         row = cursor.fetchone()
         if row:
             return int(row[0])
@@ -459,8 +449,7 @@ class User:
 
     def _getUidFromLoginName(self, cursor, name):
         """Find a user by login name"""
-        cursor.execute("SELECT uid FROM users WHERE login_name = %s" %
-                       Database.quote(name, 'text'))
+        cursor.execute("SELECT uid FROM users WHERE login_name = %s", name)
         row = cursor.fetchone()
         if row:
             return int(row[0])
@@ -472,8 +461,7 @@ class User:
         if name is None:
             cursor.execute("SELECT uid FROM users WHERE full_name is NULL")
         else:
-            cursor.execute("SELECT uid FROM users WHERE full_name = %s" %
-                           Database.quote(name, 'text'))
+            cursor.execute("SELECT uid FROM users WHERE full_name = %s", name)
         row = cursor.fetchone()
         if row:
             return int(row[0])
@@ -482,8 +470,7 @@ class User:
 
     def _getUidFromEmail(self, cursor, name):
         """Find a user by email address"""
-        cursor.execute("SELECT uid FROM users WHERE email = %s" %
-                       Database.quote(name, 'text'))
+        cursor.execute("SELECT uid FROM users WHERE email = %s", name)
         row = cursor.fetchone()
         if row:
             return int(row[0])
@@ -497,18 +484,13 @@ class User:
         log.msg("Creating new user %r" % self._full_name)
         self.newUser = True
         cursor.execute("INSERT INTO users (secret_key, creation_time, full_name, email, login_name) "
-                       "VALUES (%s, %d, %s, %s, %s)" % (
-            Database.quote(createRandomKey(), 'varchar'),
-            time.time(),
-            Database.quote(self._full_name, 'text'),
-            Database.quote(self._email, 'text'),
-            Database.quote(self._login_name, 'varchar')))
+                       "VALUES (%s, UNIX_TIMESTAMP(), %s, %s, %s)", (createRandomKey(), self._full_name, self._email, self._login_name))
         cursor.execute("SELECT LAST_INSERT_ID()")
         return int(cursor.fetchone()[0])
 
     def _validateUid(self, cursor, uid):
         """We have a UID. Validate it, returning a valid UID or raising NoSuchUser"""
-        cursor.execute("SELECT 1 FROM users WHERE uid = %d" % uid)
+        cursor.execute("SELECT 1 FROM users WHERE uid = %d", uid)
         if cursor.fetchone():
             return uid
         else:
@@ -520,7 +502,7 @@ class User:
 
     def _getCapabilities(self, cursor):
         uid = self._getUid(cursor)
-        cursor.execute("SELECT cap_repr FROM capabilities WHERE uid = %d" % uid)
+        cursor.execute("SELECT cap_repr FROM capabilities WHERE uid = %d", uid)
         return [row[0] for row in cursor.fetchall()]
 
 ### The End ###

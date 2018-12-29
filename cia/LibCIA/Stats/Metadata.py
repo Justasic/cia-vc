@@ -7,6 +7,7 @@ used to cache thumbnails generated with PIL.
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -100,9 +101,7 @@ class Metadata:
         # Our new column names use underscores instead of dashes
         columns = [key.replace('-', '_') for key in keys]
 
-        cursor.execute("SELECT %s FROM stats_statstarget WHERE path = %s" % (
-            ', '.join(columns),
-            Database.quote(self.target.path, 'varchar')))
+        cursor.execute("SELECT %s FROM stats_statstarget WHERE path = %s", (', '.join(columns), self.target.path))
 
         row = cursor.fetchone()
         self._cache = {}

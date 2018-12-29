@@ -6,6 +6,7 @@ and the maintenance system. All the usual entry points for the stats system.
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -164,8 +165,8 @@ class SubscriptionInterface(RpcServer.Interface):
         """Remove all subscriptions for the given client.
            This is intended to be run inside a database interaction.
            """
-        cursor.execute("DELETE FROM stats_subscriptions WHERE client = %s" %
-                       Database.quote(client, 'varchar'))
+        cursor.execute("DELETE FROM stats_subscriptions WHERE client = %s", 
+                       client)
 
     def makeTrigger(self, triggerFunc, *triggerArgs, **triggerKwargs):
         """Given a trigger function and the arguments to pass it,
@@ -183,12 +184,8 @@ class SubscriptionInterface(RpcServer.Interface):
            """
         cursor.execute("INSERT INTO stats_subscriptions "
                        "(target_path, expiration, scope, client, `trigger`) "
-                       "VALUES (%s, %s, %s, %s, '%s')" %
-                       (Database.quote(target.path, 'varchar'),
-                        Database.quote(int(time.time() + ttl), 'bigint'),
-                        Database.quote(scope, 'varchar'),
-                        Database.quote(client, 'varchar'),
-                        Database.quoteBlob(trigger)))
+                       "VALUES (%s, %s, %s, %s, '%s')",
+                       (target.path, int(time.time() + ttl), scope, client, Database.quoteBlob(trigger)))
 
     def xmlrpc_rss2(self, procedureName, clientPort, responderPath, protocol, urls, request=None):
         """This is the flavor of subscription required for the RSS 2.0 <cloud>

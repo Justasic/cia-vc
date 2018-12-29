@@ -10,6 +10,7 @@ have been implemented here.
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -60,16 +61,12 @@ class Relation:
         self.a._autoCreateTargetFor(cursor, self.b._autoCreateTargetFor,
                                     cursor, cursor.execute,
                                     "INSERT IGNORE INTO stats_relations "
-                                    "(target_a_path, target_b_path) VALUES(%s, %s)" %
-                                    (Database.quote(self.a.path, 'varchar'),
-                                     Database.quote(self.b.path, 'varchar')))
+                                    "(target_a_path, target_b_path) VALUES(%s, %s)",
+                                    (self.a.path, self.b.path))
 
-        cursor.execute("UPDATE stats_relations "
-                       "SET strength = strength + 1, freshness = %s "
-                       "WHERE target_a_path = %s AND target_b_path = %s" %
-                       (Database.quote(int(time.time()), 'bigint'),
-                        Database.quote(self.a.path, 'varchar'),
-                        Database.quote(self.b.path, 'varchar')))
+        cursor.execute("UPDATE stats_relations SET strength = strength + 1, freshness = %s WHERE target_a_path = %s AND target_b_path = %s",
+        (int(time.time()), self.a.path, self.b.path)
+        )
 
 
 class Selector:

@@ -6,6 +6,7 @@ interacting with stats targets.
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -186,8 +187,7 @@ class StatsTarget(object):
            """
         # Delete the item in stats_target- the other tables will be
         # deleted due to cascading foreign keys
-        return Database.pool.runOperation("DELETE FROM stats_catalog WHERE target_path = %s" %
-                                          Database.quote(self.path, 'varchar'))
+        return Database.pool.runOperation("DELETE FROM stats_catalog WHERE target_path = %s", (self.path,))
 
     def __repr__(self):
         return "<StatsTarget at %r>" % self.path
@@ -206,15 +206,11 @@ class StatsTarget(object):
         if parent:
             # If we have a parent, we have to worry about creating it
             # if it doesn't exist and generating the proper parent path.
-            parent._autoCreateTargetFor(cursor, cursor.execute,
-                                        "INSERT IGNORE INTO stats_catalog (parent_path, target_path) VALUES(%s, %s)" %
-                                        (Database.quote(parent.path, 'varchar'),
-                                         Database.quote(self.path, 'varchar')))
+            parent._autoCreateTargetFor(cursor, cursor.execute, "INSERT IGNORE INTO stats_catalog (parent_path, target_path) VALUES(%s, %s)", (parent.path, self.path,))
         else:
             # This is the root node. We still need to insert a parent to keep the
             # table consistent, but our parent in this case is NULL.
-            cursor.execute("INSERT IGNORE INTO stats_catalog (target_path) VALUES(%s)" %
-                           Database.quote(self.path, 'varchar'))
+            cursor.execute("INSERT IGNORE INTO stats_catalog (target_path) VALUES(%s)", (self.path))
 
     def _autoCreateTargetFor(self, cursor, func, *args, **kwargs):
         """Run the given function. If an exception occurs that looks like a violated
@@ -240,8 +236,7 @@ class StatsTarget(object):
 
     def _catalog(self, cursor):
         """Database interaction representing the internals of catalog()"""
-        cursor.execute("SELECT target_path FROM stats_catalog WHERE parent_path = %s" %
-                       Database.quote(self.path, 'varchar'))
+        cursor.execute("SELECT target_path FROM stats_catalog WHERE parent_path = %s", (self.path,))
         results = []
         while True:
             row = cursor.fetchone()
@@ -264,9 +259,7 @@ class SubscriptionDelivery:
         # Get a list of applicable triggers from the database
         Database.pool.runQuery("SELECT id, `trigger` FROM stats_subscriptions "
                                "WHERE target_path = %s "
-                               "AND (scope is NULL or scope = %s)" %
-                               (Database.quote(self.target.path, 'varchar'),
-                                Database.quote(scope, 'varchar'))).addCallback(self.runTriggers)
+                               "AND (scope is NULL or scope = %s)", (self.target.path, scope)).addCallback(self.runTriggers)
 
     def runTriggers(self, rows):
         """After retrieving a list of applicable triggers, this calls them.
@@ -284,8 +277,7 @@ class SubscriptionDelivery:
     def triggerSuccess(self, result, id):
         """Record a successful trigger run for the given subscription id"""
         # Zero the consecutive failure count
-        Database.pool.runOperation("UPDATE stats_subscriptions SET failures = 0 WHERE id = %s" %
-                                   Database.quote(id, 'bigint'))
+        Database.pool.runOperation("UPDATE stats_subscriptions SET failures = 0 WHERE id = %s", (id,))
 
     def triggerFailure(self, failure, id):
         """Record an unsuccessful trigger run for the given subscription id"""
@@ -295,13 +287,10 @@ class SubscriptionDelivery:
         # Increment the consecutive failure count
         log.msg("Failed to notify subscriber %d for %r: %r" %
                 (id, self.target, failure))
-        cursor.execute("UPDATE stats_subscriptions SET failures = failures + 1 WHERE id = %s" %
-                       Database.quote(id, 'bigint'))
+        cursor.execute("UPDATE stats_subscriptions SET failures = failures + 1 WHERE id = %s", (id,))
 
         # Cancel the subscription if we've had too many failures
-        cursor.execute("DELETE FROM stats_subscriptions WHERE id = %s AND failures > %s" %
-                       (Database.quote(id, 'bigint'),
-                        Database.quote(maxFailures, 'int')))
+        cursor.execute("DELETE FROM stats_subscriptions WHERE id = %s AND failures > %s", (id, maxFailures))
         if cursor.rowcount:
             log.msg("Unsubscribing subscriber %d for %r, more than %d consecutive failures" %
                     (id, self.target, maxFailures))
@@ -330,9 +319,7 @@ class Counters:
     def _createCounter(self, cursor, name):
         """Internal function to create one blank counter if it doesn't exist."""
         try:
-            cursor.execute("INSERT INTO stats_counters (target_path, name) VALUES(%s, %s)" %
-                           (Database.quote(self.target.path, 'varchar'),
-                            Database.quote(name, 'varchar')))
+            cursor.execute("INSERT INTO stats_counters (target_path, name) VALUES(%s, %s)", (self.target.path, name))
         except:
             # Ignore duplicate key errors
             if str(sys.exc_info()[1]).find("duplicate key") < 0:
@@ -354,19 +341,13 @@ class Counters:
         self.cache = None
 
         # Insert a default value, which will be ignored if the counter already exists
-        cursor.execute("INSERT IGNORE INTO stats_counters (target_path, name, first_time) VALUES(%s, %s, %s)" %
-                       (Database.quote(self.target.path, 'varchar'),
-                        Database.quote(name, 'varchar'),
-                        Database.quote(now, 'bigint')))
+        cursor.execute("INSERT IGNORE INTO stats_counters (target_path, name, first_time) VALUES(%s, %s, %s)", (self.target.path, name, now))
 
         # Increment the counter and update its timestamp
         cursor.execute("UPDATE stats_counters SET "
                        "event_count = event_count + 1,"
                        "last_time = %s "
-                       "WHERE target_path = %s AND name = %s" %
-                       (Database.quote(now, 'bigint'),
-                        Database.quote(self.target.path, 'varchar'),
-                        Database.quote(name, 'varchar')))
+                       "WHERE target_path = %s AND name = %s", (now, self.target.path, name))
 
     def getCounter(self, name):
         """Return a Deferred that eventually results in a dictionary,
@@ -400,8 +381,7 @@ class Counters:
     def _updateCache(self, cursor):
         """Database interaction to update our counter cache"""
         cursor.execute("SELECT name, first_time, last_time, event_count FROM stats_counters WHERE"
-                       " target_path = %s" %
-                       Database.quote(self.target.path, 'varchar'))
+                       " target_path = %s", (self.target.path, ))
         results = {}
         while True:
             row = cursor.fetchone()
@@ -427,8 +407,7 @@ class Counters:
     def clear(self):
         """Delete all counters for this target. Returns a Deferred"""
         self.cache = {}
-        return Database.pool.runOperation("DELETE FROM stats_counters WHERE target_path = %s" %
-                                          Database.quote(self.target.path, 'varchar'))
+        return Database.pool.runOperation("DELETE FROM stats_counters WHERE target_path = %s", (self.target.path,))
 
 
 class Maintenance:
@@ -458,10 +437,8 @@ class Maintenance:
         # Delete counters that are too old to bother keeping at all
         cursor.execute("DELETE FROM stats_counters "
                        "WHERE (name = %s OR name = %s) "
-                       "AND first_time < %s" %
-                       (Database.quote(previous, 'varchar'),
-                        Database.quote(current, 'varchar'),
-                        Database.quote(int(TimeUtil.Interval(previous).getFirstTimestamp()), 'bigint')))
+                       "AND first_time < %s", 
+                       (previous, current, int(TimeUtil.Interval(previous).getFirstTimestamp())))
 
         # Roll over remaining counters that are too old for current
         # but still within the range of previous. Note that there is a
@@ -471,10 +448,8 @@ class Maintenance:
         # it. If the rollover fails this time, it will get another chance.
         cursor.execute("UPDATE stats_counters SET name = %s "
                        "WHERE name = %s "
-                       "AND first_time < %s" %
-                       (Database.quote(previous, 'varchar'),
-                        Database.quote(current, 'varchar'),
-                        Database.quote(int(TimeUtil.Interval(current).getFirstTimestamp()), 'bigint')))
+                       "AND first_time < %s", 
+                       (previous, current, int(TimeUtil.Interval(current).getFirstTimestamp())))
 
     def checkRollovers(self, cursor):
         """Check all applicable counters for rollovers. This should
@@ -486,7 +461,6 @@ class Maintenance:
 
     def pruneSubscriptions(self, cursor, maxFailures=3):
         """Delete subscriptions that have expired"""
-        cursor.execute("DELETE FROM stats_subscriptions WHERE expiration < %s" %
-                       Database.quote(int(time.time()), 'bigint'))
+        cursor.execute("DELETE FROM stats_subscriptions WHERE expiration < %s", int(time.time()))
 
 ### The End ###

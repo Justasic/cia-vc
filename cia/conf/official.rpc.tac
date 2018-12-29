@@ -9,13 +9,19 @@
 # It can be started via http-cluster.sh.
 #
 
-import os
+
+import os, sys
 port = int(os.getenv("PORT"))
 
-import LibCIA.IRC.Handler
+def rel_path(p):
+    return os.path.join(os.path.abspath(os.path.split(__file__)[0]), p)
+
+sys.path.append(rel_path("../../"))
+
+import cia.LibCIA.IRC.Handler
+from cia.LibCIA import Debug, Security, RpcServer, RpcClient, Web, Cache, Files
+from cia.LibCIA import Database, Message, Ruleset, IRC, Stats, IncomingMail, Cron
 from twisted.application import service, internet
-from LibCIA import Database, Message, Ruleset, IRC, Stats, IncomingMail, Cron
-from LibCIA import Debug, Security, RpcServer, RpcClient, Web, Cache, Files
 
 Database.init()
 

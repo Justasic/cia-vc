@@ -5,6 +5,7 @@ Viewers and editors for the metadata associated with each stats target
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -43,7 +44,7 @@ class Info(Template.Section):
         LEFT OUTER JOIN images_imageinstance IM
         ON (IM.source_id = ST.photo_id AND IM.thumbnail_size = 256)
         WHERE ST.path = %s
-        """ % Database.quote(self.target.path, 'varchar')
+        """
 
         # XXX: This is hacky. Search for exclusive owners of this target.
         owner_query = """
@@ -63,15 +64,15 @@ class Info(Template.Section):
               OR (UA.content_type_id = CT_PROJ.id AND UA.object_id = PROJ.id))
 
         WHERE ST.path = %s AND UA.access > 1
-        """ % Database.quote(self.target.path, 'varchar')
+        """
 
         # Grab the metadata keys we'll need and wait for them to become available
         result = defer.Deferred()
         defer.gatherResults([
             self.metadata.getValue('url'),
             self.metadata.getValue('description'),
-            Database.pool.runQuery(photo_query),
-            Database.pool.runQuery(owner_query),
+            Database.pool.runQuery(photo_query, (self.target.path,)),
+            Database.pool.runQuery(owner_query, (self.target.path,)),
             ]).addCallback(self._render_rows, context, result).addErrback(result.errback)
         return result
 

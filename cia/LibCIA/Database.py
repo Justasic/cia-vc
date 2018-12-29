@@ -1,4 +1,3 @@
-from cia.LibCIA.DatabaseQuote import quote
 """ LibCIA.Database
 
 Utilities for accessing CIA's persistent data stored in an SQL database
@@ -6,6 +5,7 @@ Utilities for accessing CIA's persistent data stored in an SQL database
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by

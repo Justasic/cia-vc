@@ -11,6 +11,7 @@ or choose not to use it in your .tac file.
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -55,6 +56,7 @@ class ActivitySection(Template.Section):
     ORDER BY STAT.%(counter_attrib)s %(sort)s
     LIMIT %(limit)d
     """
+    query_data = None
 
     def __init__(self, targetPath, title,
                  numItems      = 15,
@@ -73,18 +75,7 @@ class ActivitySection(Template.Section):
         self.columnTitle = columnTitle
         self.title = title
         self.hint = hint
-        self.initQuery()
         self.initColumns()
-
-    def initQuery(self):
-        self.query = self.query % dict(
-            path = Database.quote(self.targetPath, 'varchar'),
-            limit = self.numItems,
-            counter = Database.quote(self.counter, 'varchar'),
-            counter_attrib = self.counterAttrib,
-            sort = self.sort,
-            hint = self.hint,
-            )
 
     def initColumns(self):
         self.columns = [
@@ -94,12 +85,19 @@ class ActivitySection(Template.Section):
             ]
 
     def render_rows(self, context):
+        if not self.query_data:
+            self.query_data = {
+                'path': self.targetPath,
+                'limit': self.numItems,
+                'counter': self.counter,
+                'counter_attrib': self.counterAttrib,
+                'sort': self.sort,
+                'hint': self.hint
+            }
         # First we run a big SQL query to gather all the data for this catalog.
         # Control is passed to _render_rows once we have the query results.
         result = defer.Deferred()
-        Database.pool.runQuery(self.query).addCallback(
-            self._render_rows, context, result
-            ).addErrback(result.errback)
+        Database.pool.runQuery(self.query, self.query_data).addCallback(self._render_rows, context, result).addErrback(result.errback)
         return result
 
     def _render_rows(self, queryResults, context, result):

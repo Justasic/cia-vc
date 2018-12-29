@@ -5,6 +5,7 @@ URI handlers that deliver messages over various RPC methods to other servers
 #
 # CIA open source notification system
 # Copyright (C) 2003-2007 Micah Dowty <micah@navi.cx>
+# Copyright (C) 2013-2019 Justin Crawford <Justin@stacksmash.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -92,7 +93,8 @@ class XmlrpcURIHandler(Ruleset.RegexURIHandler):
         for token in self.argLexer.finditer(args):
             for tokenType, tokenValue in list(token.groupdict().items()):
                 if tokenValue is not None:
-                    argList.append(getattr(self, 'argtoken_'+tokenType)(tokenValue, vars))
+                    argList.append(getattr(self, 'argtoken_' +
+                                           tokenType)(tokenValue, vars))
         return argList
 
     def argtoken_float(self, value, vars):
@@ -102,7 +104,8 @@ class XmlrpcURIHandler(Ruleset.RegexURIHandler):
         try:
             return vars[value]
         except KeyError:
-            raise Ruleset.InvalidURIException("Unknown variable name %r" % value)
+            raise Ruleset.InvalidURIException(
+                "Unknown variable name %r" % value)
 
     def argtoken_int(self, value, vars):
         return int(value)
@@ -124,14 +127,15 @@ class XmlrpcURIHandler(Ruleset.RegexURIHandler):
             server = server + '/RPC2'
         server = 'http://' + server
         proxy = xmlrpc.Proxy(server)
-	class QuietQueryFactory(proxy.queryFactory):
-		noisy = False
-	proxy.queryFactory = QuietQueryFactory
+
+        class QuietQueryFactory(proxy.queryFactory):
+            noisy = False
+        proxy.queryFactory = QuietQueryFactory
 
         # Parse arguments, allowing use of our 'message' and 'content' variables.
         args = self.parseArgs(groups['args'],
-                              message = str(message),
-                              content = content)
+                              message=str(message),
+                              content=content)
 
         # Make the call, ignoring the resulting Deferred. If it succeeds,
         # we don't really care. If it fails, the error will get logged.
