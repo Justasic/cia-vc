@@ -101,7 +101,7 @@ CACHE_MIDDLEWARE_SECONDS = 60 * 60
 #
 CIA_RPC_URL = 'http://localhost:3910'
 CIA_KEY = open(os.path.expanduser('~/.cia_key')).read().strip()
-CIA_BOT_SOCKET = rel_path('bots.socket')
+CIA_BOT_SOCKET = "/var/run/cia/bots.socket"
 
 #
 # Preferred domain for incoming mail: CIA requests, repository pingers.

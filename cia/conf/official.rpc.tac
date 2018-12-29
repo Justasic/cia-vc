@@ -36,7 +36,7 @@ hub.addClient(Stats.Messages.MessageArchive(
     Files.getDir(Files.dbDir, 'archive')).deliver)
 
 # Connect to IRC bots running in a separate process
-remoteBots = IRC.Handler.RemoteBots("bots.socket")
+remoteBots = IRC.Handler.RemoteBots("/var/run/cia/bots.socket")
 
 # Set up periodic maintenance tasks
 Cron.Scheduler(

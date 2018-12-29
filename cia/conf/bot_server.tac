@@ -8,14 +8,20 @@
 #   twistd -oy conf/bot_server.tac -l bot_server.log --pidfile=bot_server.pid
 #
 
+import os, sys
+def rel_path(p):
+    return os.path.join(os.path.abspath(os.path.split(__file__)[0]), p)
+
+sys.path.append(rel_path("../../"))
+
 from twisted.application import service, internet
 #from twisted.conch.manhole_tap import makeService 
-from LibCIA.IRC import Bots
-from settings import rel_path
+from cia.LibCIA.IRC import Bots
 
 # This shit is all for the stupid console authentication
 from twisted.conch.manhole import ColoredManhole
 from twisted.conch.insults import insults
+from twisted.conch.ssh import keys
 from twisted.conch.telnet import TelnetTransport, TelnetBootstrapProtocol
 from twisted.conch.manhole_ssh import ConchFactory, TerminalRealm
 
@@ -34,7 +40,7 @@ application = service.Application("bot_server")
 botNet = Bots.BotNetwork(Bots.SequentialNickAllocator("CIA-"))
 
 # The bot server listens on a UNIX socket rather than TCP/IP, for security
-botSocketName = rel_path("bots.socket")
+botSocketName = "/var/run/cia/bots.socket"
 
 internet.UNIXServer(botSocketName, Bots.CommandHandlerFactory(botNet)).setServiceParent(application)
 
@@ -45,7 +51,7 @@ internet.UNIXServer(botSocketName, Bots.CommandHandlerFactory(botNet)).setServic
 # restarting the system
 
 def makeService(args):
-    checker = checkers.InMemoryUsernamePasswordDatabaseDontUse(cia="letmein")
+    checker = checkers.InMemoryUsernamePasswordDatabaseDontUse(cia=b"letmein")
 
     f = protocol.ServerFactory()
     f.protocol = lambda: TelnetTransport(TelnetBootstrapProtocol,
@@ -65,6 +71,10 @@ def makeService(args):
     rlm.chainedProtocolFactory = chainProtocolFactory
     ptl = portal.Portal(rlm, [checker])
     f = ConchFactory(ptl)
+    # Generate keys with
+    # ckeygen -t rsa -f ssh-keys/ssh_host_rsa_key
+    f.publicKeys[b"ssh-rsa"] = keys.Key.fromFile("ssh-keys/ssh_host_rsa_key.pub")
+    f.privateKeys[b"ssh-rsa"] = keys.Key.fromFile("ssh-keys/ssh_host_rsa_key")
     csvc = internet.TCPServer(args['ssh'], f)
 
     m = service.MultiService()

@@ -1,9 +1,17 @@
 #
 # Bot daemon
 #
-cd ~/cia
-rm *.log
-rm bots.socket
+# Delete files and clean up before we try and start again
+cd cia/
+rm /var/log/cia/*.log
+rm -f /var/run/cia/bots.socket
+
+for port in 3930 3931 3932 3933; do
+    kill `cat server-$port.pid`
+done
+kill `cat bot_server.pid`
+
+# Start the bot daemon
 /usr/bin/python -OO /usr/bin/twistd -oy conf/bot_server.tac -l /var/log/cia/bot_server.log --pidfile=bot_server.pid
 
 #
@@ -28,8 +36,7 @@ for port in 3930 3931 3932 3933; do
         -l $LOGDIR/server-$PORT.log --pidfile=$pidfile
 done
 
+cd ..
 # Start django
-/usr/bin/python ~/cia/manage.py runfcgi socket=/var/run/cia/django.sock pidfile=/var/run/cia/django.pid
+/usr/bin/python manage.py runfcgi socket=/var/run/cia/django.sock pidfile=/var/run/cia/django.pid
 
-# The first web server is primarily for spiders: make it lower-priority
-snice +10 `cat ~/cia/server-3930.pid`
