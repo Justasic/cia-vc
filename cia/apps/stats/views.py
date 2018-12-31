@@ -2,9 +2,8 @@
 # XXX: Experimental
 #
 
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.http import HttpResponse
-from django.template.context import RequestContext
 from django.conf import settings
 from cia.esquilax import _fidtool
 from cia.apps.api.util import json_result
@@ -72,5 +71,5 @@ def fidtool_graph(request):
     return response
 
 def fidtool_page(request):
-    return render_to_response("fidtool_page.html", RequestContext(request))
+    return render(request, "fidtool_page.html")
 

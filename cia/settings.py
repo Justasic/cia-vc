@@ -32,16 +32,6 @@ PROFANITIES_LIST = ('asshat', 'asshead', 'asshole', 'cunt', 'fuck', 'gook', 'nig
 # comment spammers
 BANNED_IPS = ()
 
-#
-# Optional integration with Google Analytics.
-# Set this either to None or to the _uacct value from Google.
-#
-# XXX: This value must be defined separately for the old site, in official.web.tac
-#
-#GOOGLE_ANALYTICS_ACCOUNT = "UA-247340-1"
-#GOOGLE_ANALYTICS_ACCOUNT = "UA-46071704-1"
-GOOGLE_ANALYTICS_ACCOUNT = ""
-
 ADMINS = (
 #    ('Micah Dowty', 'micah@navi.cx'),
 #    ('Karsten Behrmann', 'bear-cia@gmx.net'),
@@ -130,8 +120,11 @@ MEDIA_ROOT = rel_path('media')
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
 MEDIA_URL = '/media/'
+STATIC_URL = "/media/"
 
 LOGIN_URL = '/account/login/'
+LOGIN_REDIRECT_URL = '/account/'
+LOGOUT_REDIRECT_URL = LOGIN_URL
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
@@ -153,7 +146,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'cia.apps.context_processors.analytics',
                 'cia.apps.context_processors.site',
             ],
         },

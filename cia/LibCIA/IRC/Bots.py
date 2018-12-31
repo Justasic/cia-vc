@@ -99,11 +99,16 @@ class CommandHandler(basic.LineOnlyReceiver):
         }
         self.sync_id = -1
 
+    def Send(self, message):
+        self.sendLine(message.encode())
+
     def lineReceived(self, line):
         """Parses a line and calls the appropriate handler."""
-        #log.msg("Received command: " + line)
+        line = line.decode('utf-8')
+        log.msg("Received command: " + line)
         parts = line.split(None, 2)
         command = parts[0]
+        log.msg("Command Protocol: %s(%s)" % (command, parts[1:]))
         handler = self.handlers[command]
         handler(*parts[1:])
 
@@ -146,7 +151,7 @@ class CommandHandler(basic.LineOnlyReceiver):
         self.botNet.end_sync(self.sync_id)
 
     def handle_status(self):
-        self.sendLine("BEGIN_STATUS")
+        self.Send("BEGIN_STATUS")
         for request in self.botNet.requests:
             target = str(request.network) + '/' + request.channel
             if request.bots:
@@ -154,8 +159,8 @@ class CommandHandler(basic.LineOnlyReceiver):
             else:
                 botNick = "---"
             numClients = request.getUserCount() or 0
-            self.sendLine("STATUS %s %d@%s" % (target, numClients, botNick))
-        self.sendLine("END_STATUS")
+            self.Send("STATUS %s %d@%s" % (target, numClients, botNick))
+        self.Send("END_STATUS")
 
     def handle_report(self, target):
         (network, channel) = self.parse_target(target)
@@ -170,16 +175,16 @@ class CommandHandler(basic.LineOnlyReceiver):
             botNick = '???'
             numClients = -1
 
-        self.sendLine("REPORT %s %d@%s" % (target, numClients, botNick))
+        self.Send("REPORT %s %d@%s" % (target, numClients, botNick))
 
     def handle_totals(self):
-        self.sendLine("TOTALS * " + str(self.botNet.getTotals()))
+        self.Send("TOTALS * " + str(self.botNet.getTotals()))
 
     def handle_msglog(self):
-        self.sendLine("BEGIN_MSGLOG")
+        self.Send("BEGIN_MSGLOG")
         for logRecord in self.botNet.unknownMessageLog.buffer:
-            self.sendLine("MSGLOG %s %s@%s %s %s" % logRecord)
-        self.sendLine("END_MSGLOG")
+            self.Send("MSGLOG %s %s@%s %s %s" % logRecord)
+        self.Send("END_MSGLOG")
 
     def parse_target(self, target):
         """Parses a name[:port]/target spec.
@@ -812,8 +817,8 @@ class FairQueue:
                 except queue.Empty:
                     break
 
-                queue = self._targetDict[target]
-                message = queue.get()
+                localqueue = self._targetDict[target]
+                message = localqueue.get()
 
                 if message:
                     # We got a message. Reschedule this queue for later.
@@ -1172,7 +1177,7 @@ class Bot(irc.IRCClient):
         self.pingTimer = None
         log.msg("%r disconnected" % self)
         self.botNet.botDisconnected(self)
-        irc.IRCClient.connectionLost(self)
+        irc.IRCClient.connectionLost(self, "disconnected")
 
     def getLag(self):
         """Calculate a single figure for the lag between us and the server.

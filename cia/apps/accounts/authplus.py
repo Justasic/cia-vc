@@ -22,7 +22,9 @@ def login_url(next_page):
     else:
         return settings.LOGIN_URL
 
-def login_required(view_func):
+# I don't quite want to get rid of this yet because of it's impersonate feature.
+# I would like to find a way to integrate that better into django's core. - Justasic
+def old_login_required(view_func):
     """Simplified version of auth.decorators.login_required,
        which works with our LOGIN_URL and removes the 'next'
        parameter which we don't need yet.
@@ -52,7 +54,7 @@ def login_required(view_func):
 
 def internal_login(request, username, password):
     try:
-        user = auth.authenticate(username = username.encode('ascii'),
+        user = auth.authenticate(username = username.encode(),
                                  password = password)
     except UnicodeDecodeError:
         user = None
@@ -69,30 +71,7 @@ def internal_login(request, username, password):
     user.save()
 
 def get_user(username):
-    try:
-        return auth.models.User.objects.get(username=username)
-    except auth.models.User.DoesNotExist:
-        return None
-
-def login(request, next_page, template_name="accounts/login.html"):
-    """Simple login form view which doesn't rely on Django's current
-       inflexible oldforms-based auth view.
-       """
-    next_page = request.GET.get('next_page', next_page)
-
-    if request.POST:
-        error = internal_login(request,
-                               request.POST.get('username'),
-                               request.POST.get('password'))
-        if not error:
-            return HttpResponseRedirect(next_page)
-    else:
-        error = None
-    request.session.set_test_cookie()
-    return render(request, template_name, {
-        'error': error,
-        'login_url': login_url(next_page),
-        })
+    return auth.models.User.objects.get(username=username)
 
 
 ###########################
@@ -183,12 +162,17 @@ def validate_test_cookie(form, request):
         #form.errors['submit'] = forms.util.ErrorList(["Cookies must be enabled."])
 
 def register(request, next_page, template_name="accounts/register.html"):
+
+    # Ignore if they're already registered, they need to logout first - Justasic
+    if request.user.is_authenticated:
+        return HttpResponseRedirect(reverse('index'))
+
     if settings.CIA_REGISTRATION_IS_CLOSED:
         return render(request, "accounts/registration_closed.html")
 
-    if request.POST:
-        form = RegistrationForm(request.POST, initial=request.GET)
-        form.full_clean()
+    form = RegistrationForm(request.POST, initial=request.GET)
+
+    if request.POST and form.is_valid():
         validate_password_confirmation(form)
         validate_test_cookie(form, request)
 
@@ -247,17 +231,14 @@ def do_change_password(request):
         messages.add_message(request, messages.INFO, "Your password was changed successfully.")
     return form
 
-class ChangeProfileForm(forms.Form):
-    first_name = forms.CharField(max_length=30)
-    last_name = forms.CharField(max_length=30)
-    email = forms.EmailField()
+class ChangeProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
 
 def do_change_profile(request):
-    form = ChangeProfileForm(request.POST)
-    form.full_clean()
-    if not form.errors:
-        for key, value in list(form.cleaned_data.items()):
-            setattr(request.user, key, value)
+    form = ChangeProfileForm(request.POST, instance=request.user)
+    if form.is_valid():
         request.user.save()
         messages.add_message(request, messages.INFO, "Your profile was updated successfully.")
     return form

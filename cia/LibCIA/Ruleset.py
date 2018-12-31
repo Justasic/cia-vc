@@ -389,7 +389,11 @@ class BaseURIHandler(object):
         """Return True if this URI handler is applicable to the given URI.
            The default implementation checks it against our URI scheme.
            """
-        return uri.startswith(self.scheme + ':')
+        ### XXX: Hack to make django stop crashing thanks to stupid python 3 strings
+        if type(uri) == type(b""):
+            return uri.startswith(self.scheme.encode() + b':')
+        else:
+            return uri.encode().startswith(self.scheme.encode() + b':')
 
     def assigned(self, uri, newRuleset):
         """This optional function is called when a URI matching this handler is

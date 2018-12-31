@@ -1,5 +1,3 @@
-from django.shortcuts import render_to_response
-from django.template.context import RequestContext
 from django.utils.html import escape
 from cia.apps.api.util import json_result
 from cia.apps.stats.models import StatsTarget

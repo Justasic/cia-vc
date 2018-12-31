@@ -238,14 +238,8 @@ def logProtectedCall(result, path, args, user, allowed=True):
     Database.pool.runOperation(
         "INSERT INTO audit_trail (timestamp, uid, action_domain, action_name,"
         " main_param, params, allowed, results)"
-        " VALUES(%d, %d, 'protected_call', %s, %s, '%s', %d, '%s')", (
-        time.time(),
-        uid,
-        ".".join(path),
-        main_param,
-        Database.quoteBlob(pickle.dumps(args)),
-        allowed,
-        Database.quoteBlob(pickle.dumps(result))))
+        " VALUES(%s, %s, 'protected_call', %s, %s, %s, %s, %s)", (
+        time.time(), uid, ".".join(path), main_param, pickle.dumps(args), allowed, pickle.dumps(result)))
     return result
 
 
@@ -350,7 +344,7 @@ class User:
 
     def _getInfo(self, cursor):
         uid = self._getUid(cursor)
-        cursor.execute("SELECT * FROM users WHERE uid = %d" % uid)
+        cursor.execute("SELECT * FROM users WHERE uid = %s", (uid,))
         row = cursor.fetchone()
         d = {}
         for i in range(len(row)):
@@ -388,13 +382,13 @@ class User:
 
     def _test(self, cursor, *capabilities):
         # If the user has been disabled, they have no capabilities
-        cursor.execute("SELECT active FROM users WHERE uid = %d", (self._getUid(cursor)))
+        cursor.execute("SELECT active FROM users WHERE uid = %s", (self._getUid(cursor),))
         if not int(cursor.fetchone()[0]):
             return False
 
         if cursor.execute(self._createTestQuery(cursor, self._getUid(cursor), capabilities)):
             # We do have permission, update the key's access time and return
-            cursor.execute("UPDATE users SET key_atime = %d WHERE uid = %d", (time.time(), self._getUid(cursor)))
+            cursor.execute("UPDATE users SET key_atime = %s WHERE uid = %s", (int(time.time()), self._getUid(cursor)))
             return True
         else:
             return False
@@ -432,15 +426,20 @@ class User:
            query that always has a nonzero result.
            """
         if capabilities:
-            return "SELECT 1 FROM capabilities WHERE uid = %d AND (%s) LIMIT 1" % (
-                uid,
-                " OR ".join(["cap_md5 = " + cursor.escape_string(hashlib.md5(repr(c)).hexdigest()) for c in capabilities]),)
+            arraydata = []
+            for c in capabilities:
+                hashed = hashlib.md5(repr(c).encode('ascii')).hexdigest()
+                arraydata.append(b"cap_md5 = \"" + Database.escape_string(hashed) + b"\"")
+
+            finaldata = "SELECT 1 FROM capabilities WHERE uid = %s AND (%s) LIMIT 1" % (uid, (b" OR ".join(arraydata).decode('ascii')))
+            #log.msg("=========================== ", finaldata)
+            return finaldata
         else:
             return "SELECT 1"
 
     def _getUidFromKey(self, cursor, key):
         """Find a user by their key"""
-        cursor.execute("SELECT uid FROM users WHERE secret_key = %s", key.strip())
+        cursor.execute("SELECT uid FROM users WHERE secret_key = %s", (key.strip(), ))
         row = cursor.fetchone()
         if row:
             return int(row[0])
@@ -449,7 +448,7 @@ class User:
 
     def _getUidFromLoginName(self, cursor, name):
         """Find a user by login name"""
-        cursor.execute("SELECT uid FROM users WHERE login_name = %s", name)
+        cursor.execute("SELECT uid FROM users WHERE login_name = %s", (name,))
         row = cursor.fetchone()
         if row:
             return int(row[0])
@@ -461,7 +460,7 @@ class User:
         if name is None:
             cursor.execute("SELECT uid FROM users WHERE full_name is NULL")
         else:
-            cursor.execute("SELECT uid FROM users WHERE full_name = %s", name)
+            cursor.execute("SELECT uid FROM users WHERE full_name = %s", (name,))
         row = cursor.fetchone()
         if row:
             return int(row[0])
@@ -470,7 +469,7 @@ class User:
 
     def _getUidFromEmail(self, cursor, name):
         """Find a user by email address"""
-        cursor.execute("SELECT uid FROM users WHERE email = %s", name)
+        cursor.execute("SELECT uid FROM users WHERE email = %s", (name,))
         row = cursor.fetchone()
         if row:
             return int(row[0])
@@ -490,7 +489,7 @@ class User:
 
     def _validateUid(self, cursor, uid):
         """We have a UID. Validate it, returning a valid UID or raising NoSuchUser"""
-        cursor.execute("SELECT 1 FROM users WHERE uid = %d", uid)
+        cursor.execute("SELECT 1 FROM users WHERE uid = %s", (uid,))
         if cursor.fetchone():
             return uid
         else:
@@ -502,7 +501,7 @@ class User:
 
     def _getCapabilities(self, cursor):
         uid = self._getUid(cursor)
-        cursor.execute("SELECT cap_repr FROM capabilities WHERE uid = %d", uid)
+        cursor.execute("SELECT cap_repr FROM capabilities WHERE uid = %s", (uid,))
         return [row[0] for row in cursor.fetchall()]
 
 ### The End ###

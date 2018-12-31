@@ -30,6 +30,7 @@ import traceback
 from io import StringIO, BytesIO
 
 import MySQLdb.cursors
+from MySQLdb import escape_string
 from cia.LibCIA import XML
 
 
@@ -193,7 +194,7 @@ class Filter(XML.XMLObjectParser):
            leading and trailing whitespace.
            """
         return "(%s = %s)" % (self.varLookup(element.getAttributeNS(None, 'var')),
-                              quote(XML.shallowText(element).strip(), 'varchar'))
+                              escape_string(XML.shallowText(element).strip()))
 
     def element_like(self, element):
         """Compare a given variable to the element's content using SQL's 'LIKE' operator,
@@ -201,7 +202,7 @@ class Filter(XML.XMLObjectParser):
            the '%' wildcard which may be placed at the beginning or end of the string.
            """
         return "(%s LIKE %s)" % (self.varLookup(element.getAttributeNS(None, 'var')),
-                                 quote(XML.shallowText(element).strip(), 'varchar'))
+                                 escape_string(XML.shallowText(element).strip()))
 
     def element_and(self, element):
         """Evaluates to True if and only if all child expressions evaluate to True"""

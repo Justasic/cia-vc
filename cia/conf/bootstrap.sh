@@ -3,10 +3,15 @@
 #
 # Delete files and clean up before we try and start again
 cd cia/
-rm /var/log/cia/*.log
+
+export LOGDIR=/var/log/cia
+export REQUEST_HOST=cia.stacksmash.net
+export REQUEST_PORT=80
+
+#rm $LOGDIR/*.log
 rm -f /var/run/cia/bots.socket
 
-for port in 3930 3931 3932 3933; do
+for port in 3920 3930 3931 3932 3933; do
     kill `cat server-$port.pid`
 done
 kill `cat bot_server.pid`
@@ -17,10 +22,6 @@ kill `cat bot_server.pid`
 #
 # RPC daemon
 #
-export LOGDIR=/var/log/cia
-export REQUEST_HOST=cia.stacksmash.net
-export REQUEST_PORT=80
-
 export PORT=3920
 pidfile=server-$PORT.pid
 /usr/bin/python -OO /usr/bin/twistd -oy conf/official.rpc.tac \
@@ -36,7 +37,8 @@ for port in 3930 3931 3932 3933; do
         -l $LOGDIR/server-$PORT.log --pidfile=$pidfile
 done
 
-cd ..
+#cd ..
 # Start django
-/usr/bin/python manage.py runfcgi socket=/var/run/cia/django.sock pidfile=/var/run/cia/django.pid
+#/usr/bin/python manage.py runfcgi socket=/var/run/cia/django.sock pidfile=/var/run/cia/django.pid
+uwsgi --ini conf/uwsgi.ini
 

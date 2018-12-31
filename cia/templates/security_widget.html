@@ -1,6 +1,7 @@
+{% load static %}
 <div class="security-widget">
    {% if request.is_secure %}
-      <strong>Secure</strong> <img src="/media/img/lock-10.png" width="10" height="10" /> |
+      <strong>Secure</strong> <img src="{% static "img/lock-10.png" %}" width="10" height="10" /> |
    {% endif %}
       
       <a href="http{% if not request.is_secure %}s{% endif %}://{{ request.META.HTTP_HOST }}{{ request.get_full_path|escape }}"

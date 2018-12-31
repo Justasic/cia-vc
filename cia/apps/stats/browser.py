@@ -1,6 +1,4 @@
-from django.shortcuts import render_to_response
-from django.template.context import RequestContext
-
+from django.shortcuts import render
 from cia.LibCIA import XML
 from cia.apps.stats.models import StatsTarget
 import datetime
@@ -64,8 +62,8 @@ def stats_page(request, path):
     messages = list(map(Message, oldtarget.messages.getLatest(20)))
     messages.reverse()
 
-    return render_to_response('stats/stats_page.html', RequestContext(request, {
+    return render(request, 'stats/stats_page.html', {
         'path': path,
         'target': target,
         'recent_messages': messages,
-        }))
+        })

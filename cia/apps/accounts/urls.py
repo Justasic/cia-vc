@@ -6,24 +6,25 @@ from django.contrib import auth
 from cia.apps.accounts import authplus, bots, assets
 
 account_page = {
-    'next_page': '/account/',
+    'next': '/account/',
 }
 
 login_page = {
-    'next_page': settings.LOGIN_URL,
+    'next': settings.LOGIN_URL,
+    'template_name': 'accounts/login.html'
 }
 
 lost_pages = {
-    'next_page': settings.LOGIN_URL,
+    'next': settings.LOGIN_URL,
     'recovery_page': '/account/reset/%s/',
 }
 
 urlpatterns = [
-    re_path(r'^login/$', authplus.login, account_page),
-    re_path(r'^logout/$', auth_views.LogoutView.as_view(), login_page),
-    re_path(r'^register/$', authplus.register, account_page),
-    re_path(r'^lost/$', authplus.lost, lost_pages),
-    re_path(r'^reset/(?P<key>\w+)/$', authplus.reset, account_page),
+    re_path(r'^login/$', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
+    re_path(r'^logout/$', auth_views.LogoutView.as_view(), name='logout'),
+    re_path(r'^register/$', authplus.register, account_page, name='register'),
+    re_path(r'^lost/$', authplus.lost, lost_pages, name='lost'),
+    re_path(r'^reset/(?P<key>\w+)/$', authplus.reset, account_page, name='reset'),
 
     re_path(r'^$', assets.profile),
 

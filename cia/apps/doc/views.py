@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from django.template.context import RequestContext
 from django.http import Http404, HttpResponseRedirect
 from django.conf import settings
 from docutils.core import publish_parts
@@ -25,12 +24,12 @@ def get_sidebar_templates(path):
     paths.append(pattern % "default")
     return paths
     
-    dir, basename = os.path.split(path)
-    specific = os.path.join(dir, format % basename)
+    direct, basename = os.path.split(path)
+    specific = os.path.join(direct, format % basename)
     if os.path.isfile(specific):
         return specific
     else:
-        return os.path.join(dir, format % 'default')
+        return os.path.join(direct, format % 'default')
 
 def page(request, path):
     key = 'cia.apps.doc.page.%s' % (path.replace('/', '.'))

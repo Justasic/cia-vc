@@ -7,8 +7,8 @@ from cia.apps.mailutil import get_email_for_user, render_to_email
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.mail import mail_managers, send_mail
 from django.http import Http404, HttpResponseRedirect
-from django.shortcuts import render_to_response
-from django.template.context import RequestContext
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 import django.forms as forms
@@ -121,7 +121,7 @@ def get_asset_edit_context(request, asset_type, asset_id):
 #     Profile Editing     #
 ###########################
 
-@authplus.login_required
+@login_required
 def profile(request):
     if 'change-password' in request.POST:
         password_form = authplus.do_change_password(request)
@@ -131,16 +131,16 @@ def profile(request):
     if 'change-profile' in request.POST:
         profile_form = authplus.do_change_profile(request)
     else:
-        profile_form = authplus.ChangeProfileForm(request.user)
+        profile_form = authplus.ChangeProfileForm(request.POST, instance=request.user)
 
-    return render_to_response('accounts/profile.html', RequestContext(request, {
+    return render(request, 'accounts/profile.html', {
         'asset_types': get_user_asset_types(request),
         'password_form': password_form,
         'profile_form': profile_form,
-    }))
+    })
 
 
-@authplus.login_required
+@login_required
 def generic_page(request, template):
     """This is a generic template-only page, plus the information needed
        by the navigation templates.
@@ -148,9 +148,9 @@ def generic_page(request, template):
        XXX: If asset_types could be provided by a template tag,
             this would be a normal generic view.
        """
-    return render_to_response(template, RequestContext(request, {
+    return render(request, template, {
         'asset_types': get_user_asset_types(request),
-    }))
+    })
 
 
 ###########################
@@ -223,7 +223,7 @@ class EditAssetForm(forms.Form):
                 user_asset.asset.assets.exclude(user=request.user).delete()
 
 
-@authplus.login_required
+@login_required
 @json_result
 def changes(request, asset_type=None, asset_id=None,
             current_user=True, page_number=0, num_per_page=10):
@@ -274,10 +274,10 @@ def changes(request, asset_type=None, asset_id=None,
 
         'html': smart_text(loader.render_to_string(
             'accounts/asset_changes.html',
-            RequestContext(request, {
+            {
                 'changesets': contents.object_list,
                 'show_asset_name': asset_id is None,
-            }))),
+            })),
     }
 
 
@@ -304,7 +304,7 @@ class ConflictForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea)
 
 
-@authplus.login_required
+@login_required
 def conflict(request, asset_type, asset_id):
     """Asset conflict resolution. We redirect to this page when an
        'add asset' page encounters an exclusive access restriction.
@@ -344,8 +344,7 @@ def conflict(request, asset_type, asset_id):
         'asset': asset,
         'owner_ua': owner_ua,
     })
-    return render_to_response(('accounts/%s_conflict.html' % model._meta.object_name.lower(),
-                               'accounts/asset_conflict.html'), RequestContext(request, ctx))
+    return render(request, ('accounts/%s_conflict.html' % model._meta.object_name.lower(), 'accounts/asset_conflict.html'), ctx)
 
 
 ###########################
@@ -404,7 +403,7 @@ class StatsMetadataForm(forms.Form):
             target.icon.reference()
 
 
-@authplus.login_required
+@login_required
 def stats_asset(request, asset_type, asset_id):
     """Generic form for editing stats-based assets."""
     ctx = get_asset_edit_context(request, asset_type, asset_id)
@@ -430,7 +429,7 @@ def stats_asset(request, asset_type, asset_id):
         if form.EditAssetForm.should_delete():
             return form.EditAssetForm.delete(request, user_asset)
 
-    return render_to_response('accounts/stats_asset_edit.html', RequestContext(request, ctx))
+    return render(request, 'accounts/stats_asset_edit.html', ctx)
 
 
 class AddStatsAssetForm(forms.Form):
@@ -439,7 +438,7 @@ class AddStatsAssetForm(forms.Form):
     )
 
 
-@authplus.login_required
+@login_required
 def add_stats_asset(request, asset_type, prefix, template, name=None):
     """Generic form for adding stats-based assets"""
     model = get_asset_by_type(asset_type)
@@ -488,7 +487,7 @@ def add_stats_asset(request, asset_type, prefix, template, name=None):
     ctx.update({
         'form': form,
     })
-    return render_to_response(template, RequestContext(request, ctx))
+    return render(request, template, ctx)
 
 
 ###########################
@@ -597,7 +596,7 @@ class RepositoryForm(forms.Form):
         cset.set_field_dict(self.cleaned_data, prefix='repos.')
 
 
-@authplus.login_required
+@login_required
 def project(request, asset_type, asset_id):
     """Generic form for editing stats-based assets."""
     ctx = get_asset_edit_context(request, asset_type, asset_id)
@@ -654,4 +653,4 @@ def project(request, asset_type, asset_id):
         if form.EditAssetForm.should_delete():
             return form.EditAssetForm.delete(request, user_asset)
 
-    return render_to_response('accounts/project_edit.html', RequestContext(request, ctx))
+    return render(request, 'accounts/project_edit.html', ctx)

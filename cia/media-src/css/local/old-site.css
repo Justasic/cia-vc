@@ -400,9 +400,9 @@ form {
 
 #search {
   display: none;  /* Search requires Javascript currently */
-
   background: #f0f0f0;
-  border: 1px solid white;
+  border: 1px solid #AAA;
+  color: black; /* fixes text color on firefox */
   padding: 0.3em;
   width: 20em;
   margin: 4px 0 0 0;

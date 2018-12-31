@@ -11,7 +11,7 @@ import socket
 
 import Client
 import time
-from cia.tools import RandomMessage
+import RandomMessage
 
 
 class MessageGenerator(Client.App):

@@ -1,6 +1,4 @@
 from django.shortcuts import render
-from django.template.context import RequestContext
-
 from cia.apps.overview.models import GetStats
 from datetime import datetime
 import os

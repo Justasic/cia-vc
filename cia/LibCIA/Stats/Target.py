@@ -461,6 +461,6 @@ class Maintenance:
 
     def pruneSubscriptions(self, cursor, maxFailures=3):
         """Delete subscriptions that have expired"""
-        cursor.execute("DELETE FROM stats_subscriptions WHERE expiration < %s", int(time.time()))
+        cursor.execute("DELETE FROM stats_subscriptions WHERE expiration < %s", (int(time.time()),))
 
 ### The End ###

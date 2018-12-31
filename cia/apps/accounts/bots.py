@@ -1,11 +1,11 @@
-from cia.apps.accounts import models, assets, authplus, formtools
+from cia.apps.accounts import models, assets, formtools
+from django.contrib.auth.decorators import login_required
 from cia.apps.legacy import bots
 from django import forms as forms
 from django.conf import settings
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.core.cache import cache
-from django.template.context import RequestContext
 import math
 
 
@@ -69,7 +69,7 @@ class AddNetworkForm(forms.Form):
                             created_by = request.user),
             )[0]
 
-@authplus.login_required
+@login_required
 def add_bot(request, asset_type):
     form = formtools.MultiForm(request.POST)
 
@@ -120,7 +120,7 @@ def add_bot(request, asset_type):
         'networks': allNetworks,
         'form': form,
         })
-    return render_to_response('accounts/bot_add.html', RequestContext(request, ctx))
+    return render(request, 'accounts/bot_add.html', ctx)
 
 
 ###########################
@@ -183,7 +183,7 @@ class EditBotForm(forms.Form):
         cset.asset.syncToServer()
 
 
-@authplus.login_required
+@login_required
 def bot(request, asset_type, asset_id):
     ctx = assets.get_asset_edit_context(request, asset_type, asset_id)
     user_asset = ctx['user_asset']
@@ -212,14 +212,14 @@ def bot(request, asset_type, asset_id):
         'network_host': bot.network.getHost('irc'),
         'channel': get_channel_from_location(bot.location),
         })
-    return render_to_response('accounts/bot_edit.html', RequestContext(request, ctx))
+    return render(request, 'accounts/bot_edit.html', ctx)
 
 
 ###########################
 #        Bot Cloud        #
 ###########################
 
-@authplus.login_required
+@login_required
 def bot_cloud(request, scale=(1 / math.log(20.0))):
     cache_key = 'cia.bot_cloud'
     servers = cache.get(cache_key)
@@ -250,8 +250,8 @@ def bot_cloud(request, scale=(1 / math.log(20.0))):
 
         cache.set(cache_key, servers)
 
-    return render_to_response('accounts/bot_cloud.html', RequestContext(request, {
+    return render(request, 'accounts/bot_cloud.html', {
         'asset_types': assets.get_user_asset_types(request),
         'servers': list(servers.values()),
-        }))
+        })
 

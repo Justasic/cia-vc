@@ -137,7 +137,7 @@ class Interface(xmlrpc.XMLRPC):
            """
         def rpcWrapper(*args):
 
-            import Security
+            from . import Security
             result = defer.Deferred()
 
             # First argument is the key

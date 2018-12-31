@@ -13,7 +13,7 @@ from django.utils.encoding import smart_text
 from django.contrib import messages
 
 from cia.LibCIA import XML, Ruleset
-from cia.LibCIA.IRC import Network
+from cia.LibCIA.IRC import Network as LibCIANetwork
 from cia.apps.stats.models import StatsTarget
 from cia.apps.repos.models import Repository
 
@@ -106,9 +106,9 @@ class UserAsset(models.Model):
 class NetworkManager(models.Manager):
     def importNetworks(self):
         """Import all network definitions from LibCIA into the database."""
-        for name, obj in Network.__dict__.items():
-            if (type(obj) is type(Network.BaseNetwork)
-                and issubclass(obj, Network.BaseNetwork)
+        for name, obj in LibCIANetwork.__dict__.items():
+            if (type(obj) is type(LibCIANetwork.BaseNetwork)
+                and issubclass(obj, LibCIANetwork.BaseNetwork)
                 and obj.alias):
 
                 net = self.get_or_create(uri = "irc://%s/" % obj.alias)[0]
@@ -150,15 +150,6 @@ class Network(models.Model):
 
     class Admin:
         list_display = ('uri', 'description', 'reviewed_by_admin', 'created_by')
-
-
-def smart_unicode_cmp(a, b):
-    """Compare two values, converting both to Unicode via
-       smart_text() if either value is a string."""
-    if type(a) in (str, str) or type(b) in (str, str):
-        a = smart_text(a)
-        b = smart_text(b)
-    return cmp(a, b)
 
 class AssetChangesetManager(models.Manager):
     def begin(self, request, asset):
@@ -224,7 +215,7 @@ class AssetChangeset(models.Model):
         model, name = self._lookup_model(field_name)
         prev = getattr(model, name, None)
 
-        if smart_unicode_cmp(prev, value) == 0:
+        if prev == value:
             # No change
             return
 

@@ -12,9 +12,9 @@ class AuditTrail(models.Model):
     action_domain = models.CharField(max_length=96)
     action_name = models.TextField()
     main_param = models.TextField(blank=True)
-    params = models.TextField(blank=True)
+    params = models.BinaryField(blank=True)
     allowed = models.IntegerField()
-    results = models.TextField(blank=True)
+    results = models.BinaryField(blank=True)
     class Meta:
         managed = False
         db_table = 'audit_trail'

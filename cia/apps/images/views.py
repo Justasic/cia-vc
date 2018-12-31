@@ -1,8 +1,7 @@
 from cia.apps.images import models
 from django.http import Http404
 from django.conf import settings
-from django.shortcuts import render_to_response
-from django.template.context import RequestContext
+from django.shortcuts import render
 
 
 def upload(request):
@@ -30,7 +29,7 @@ def upload(request):
             if settings.DEBUG:
                 raise
 
-    return render_to_response('image_upload.html', RequestContext(request, {
+    return render(request, 'image_upload.html', {
         'image': image,
         'error': error,
-        }))
+        })

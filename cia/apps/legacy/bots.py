@@ -4,8 +4,10 @@ from twisted.protocols import basic
 from twisted.python import failure
 import time
 
+
 class TimeoutError(Exception):
     pass
+
 
 def block(d, timeout=60.0):
     """Block on a deferred, resolving it into a value or an exception.
@@ -17,10 +19,11 @@ def block(d, timeout=60.0):
         remaining = deadline - time.time()
         if remaining < 0:
             raise TimeoutError()
-        reactor.iterate(delay = min(1, remaining))
+        reactor.iterate(delay=min(1, remaining))
     if isinstance(d.result, failure.Failure):
         d.result.raiseException()
     return d.result
+
 
 class BotServer(basic.LineOnlyReceiver):
     def __init__(self):
@@ -38,12 +41,19 @@ class BotServer(basic.LineOnlyReceiver):
 
     def lineReceived(self, line):
         try:
-            parts = line.split(None, 2)
+            parts = line.decode('ascii').split(None, 2)
             command = parts[0]
+            # print(type(line), type(parts), type(command), parts)
             handler = self.handlers[command]
             handler(*parts[1:])
         except Exception as e:
+            print("=================Exception: ", e)
             self.deferred.errback(e)
+
+    # Python and unicode is fucking annoying
+    def Send(self, line):
+        string = line.encode()
+        self.sendLine(string)
 
     def disconnect(self):
         self.transport.loseConnection()
@@ -89,23 +99,23 @@ class BotServer(basic.LineOnlyReceiver):
 
 
     def status(self):
-        self.sendLine("STATUS")
+        self.Send("STATUS")
         self.result = []
         self.deferred = defer.Deferred()
         return self.deferred
 
     def report(self, target):
-        self.sendLine("REPORT " + target)
+        self.Send("REPORT " + target)
         self.deferred = defer.Deferred()
         return self.deferred
 
     def totals(self):
-        self.sendLine("TOTALS")
+        self.Send("TOTALS")
         self.deferred = defer.Deferred()
         return self.deferred
 
     def msglog(self):
-        self.sendLine("MSGLOG")
+        self.Send("MSGLOG")
         self.result = []
         self.deferred = defer.Deferred()
         return self.deferred
@@ -149,7 +159,7 @@ def status():
 def report(target):
     server = block(connect())
     try:
-        return block(server.report(target.encode('utf-8')))
+        return block(server.report(target))
     finally:
         server.disconnect()
 

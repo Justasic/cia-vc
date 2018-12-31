@@ -2,7 +2,7 @@ from django.forms.widgets import Widget
 from django.utils.html import escape
 
 class ImageWidget(Widget):
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, attrs=None, renderer=None):
         """Images render to two HTML elements: an iframe, which runs our
            asynchronous image uploader, and a hidden element which displays
            the result. Each time the iframe reloads, code in iframe.js will

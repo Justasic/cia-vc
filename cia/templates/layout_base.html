@@ -1,14 +1,14 @@
 {% extends 'skeleton.html' %}
+{% load static %}
 
 {% block head %}
   <title>{{ site.name }} - {% block page_title %}{% endblock %}</title>
-  <link href="/favicon.ico" type="image/x-icon" rel="shortcut icon" />
   {% block stylesheets %}
-    <link href="/media/css/base.css" type="text/css" rel="stylesheet" />
+    <link href="{% static "css/base.css" %}" type="text/css" rel="stylesheet" />
   {% endblock %}
   {% block feeds %}{% endblock %}
   {% block scripts %}
-     <script type="text/javascript" src="/media/js/base.js" ></script>
+     <script type="text/javascript" src="{% static "js/base.js" %}" ></script>
   {% endblock %}
 {% endblock %}
 
@@ -54,20 +54,5 @@
   CIASearch.init("/api/search/", "search", "Search {{ site.name }}");
 {% endblock %}
 </script>
-
-{% if GOOGLE_ANALYTICS_ACCOUNT %}
-<script
-   {% if request.is_secure %}
-     src="https://ssl.google-analytics.com/urchin.js"
-   {% else %}
-     src="http://www.google-analytics.com/urchin.js"
-   {% endif %}
-   type="text/javascript">
-</script>
-<script type="text/javascript">
-_uacct = "{{ GOOGLE_ANALYTICS_ACCOUNT }}";
-urchinTracker();
-</script>
-{% endif %}
 
 {% endblock %}

@@ -67,9 +67,6 @@ class DiskBackedQueue(object):
         """
         filename = QUEUE_PREFIX + self.queueKey + "-" + str(self.queueIndex)
         self.queueIndex += 1
-        # Caution: unconditionally encoding will raise UnicodeDecodeError...
-        if isinstance(message, str):
-            message = message.encode('UTF-8')
 
         fh = open(filename, "w")
         fh.write(message)
@@ -108,7 +105,6 @@ class DiskBackedQueue(object):
             fh.close()
             os.unlink(filename)
             #os.rename(filename, filename.replace('xml.', 'done.'))
-            contents = contents.decode('UTF-8', 'replace')
             self.callback(contents)
             self.bump()
             return

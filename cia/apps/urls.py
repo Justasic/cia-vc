@@ -8,7 +8,7 @@ import cia.apps.feedback
 import cia.apps.overview.overview
 
 urlpatterns = [
-    re_path(r'^account/', include('cia.apps.accounts.urls')),
+    re_path(r'^account/', include(('cia.apps.accounts.urls', 'accounts'), namespace='account')),
     re_path(r'^api/', include('cia.apps.api.urls')),
 #    path(r'^admin/', include('django.contrib.admin.urls')),
     re_path(r'^blog/', include('cia.apps.blog.urls')),
@@ -17,7 +17,7 @@ urlpatterns = [
     re_path(r'^images/', include('cia.apps.images.urls')),
     re_path(r'^stats-experimental/', include('cia.apps.stats.urls')),
     re_path(r'^feedback/', cia.apps.feedback.feedback),
-    re_path(r'^$', cia.apps.overview.overview.main),
+    re_path(r'^$', cia.apps.overview.overview.main, name='index'),
 ]
 
 # XXX: Experimental

@@ -91,6 +91,7 @@ class IrcURIHandler(Ruleset.RegexURIHandler):
         self.remoteBots.add(transformed)
 
     def unassigned(self, uri):
+        uri = str(uri, encoding='utf-8')
         self.remoteBots.delete(self.trans[uri])
         self.trans.pop(uri)
 
@@ -231,6 +232,6 @@ class BotControlProtocol(basic.LineOnlyReceiver):
             raise ValueError("line to send contained newlines!")
         if self.transport is None:
             self.connectionLost("Detected by sendLine")
-        basic.LineOnlyReceiver.sendLine(self, line)
+        basic.LineOnlyReceiver.sendLine(self, line.encode())
 
 ### The End ###
