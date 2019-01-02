@@ -437,7 +437,7 @@ class RegexURIHandler(BaseURIHandler):
 
     def parseURI(self, uri):
         """Given a valid URI, return a dictionary of named groups in the regex match"""
-        match = re.match(self.regex, uri, self.regexFlags)
+        match = re.match(self.regex, uri.decode('utf-8'), self.regexFlags)
         if not match:
             raise InvalidURIException("Invalid URI: %r" % uri)
         return match.groupdict()
@@ -463,6 +463,7 @@ class RulesetDelivery(object):
         # exceptions to be propagated to the original sender of the message.
         # In ruleset delivery however, messages never have a return value
         # and shouldn't raise exceptions.
+        print("Ruleset %s for %s" % (self.ruleset, self.uriHandler))
         try:
             result = self.ruleset(message)
             if result:

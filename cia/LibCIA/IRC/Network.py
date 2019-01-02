@@ -22,6 +22,9 @@ define special behaviour relevant to that IRC network.
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
+# XXX: This is a py3 hack, please fix :(
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 class BaseNetwork:
     """Base class for IRC networks. A network may consist of multiple servers-
@@ -31,6 +34,9 @@ class BaseNetwork:
     alias = None
     defaultPort = 6667
     currentServer = 0
+
+    # XXX: This should be filled by the classes below
+    servers = (("", defaultPort), )
 
     # PASS to send on connect, or None
     password = None
@@ -52,7 +58,7 @@ class BaseNetwork:
     pingInterval = 60
 
     def __str__(self):
-        return self.alias
+        return "%s:%s" % self.servers[0] if not self.alias else self.alias
 
     def getIdentity(self):
         """Return a (host, port) tuple that can be used to return this network
@@ -65,7 +71,7 @@ class BaseNetwork:
 
     def __cmp__(self, other):
         if type(self) is type(other) and (
-                isinstance(self, BaseNetwork) and isinstance(other, BaseNetwork)):
+            isinstance(self, BaseNetwork) and isinstance(other, BaseNetwork)):
             return cmp(self.alias or self.servers,
                        other.alias or other.servers)
         else:
@@ -180,6 +186,13 @@ class SpartaIRC(BaseNetwork):
     password = 'REPLACEME'
     servers = (
         ('irc.spartairc.co.cc', 6667),
+    )
+
+
+class StackSmash(BaseNetwork):
+    alias = 'StackSmash'
+    servers = (
+        ('irc.stacksmash.net', 6667),
     )
 
 

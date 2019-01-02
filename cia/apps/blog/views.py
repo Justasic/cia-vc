@@ -118,7 +118,7 @@ def detail(request, year=None, month=None, slug=None):
         else:
             post_form = EditPostForm(initial = post.__dict__)
 
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         if request.user.first_name and request.user.last_name:
             user_full_name = "%s %s" % (request.user.first_name, request.user.last_name)
         else:

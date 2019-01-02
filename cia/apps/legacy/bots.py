@@ -43,6 +43,7 @@ class BotServer(basic.LineOnlyReceiver):
         try:
             parts = line.decode('ascii').split(None, 2)
             command = parts[0]
+            print("%s (%s)" % (command, parts))
             # print(type(line), type(parts), type(command), parts)
             handler = self.handlers[command]
             handler(*parts[1:])

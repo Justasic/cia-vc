@@ -100,6 +100,7 @@ class CommandHandler(basic.LineOnlyReceiver):
         self.sync_id = -1
 
     def Send(self, message):
+        print("Sending %s" % message)
         self.sendLine(message.encode())
 
     def lineReceived(self, line):

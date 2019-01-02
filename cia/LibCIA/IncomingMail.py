@@ -28,9 +28,6 @@ from .Message import Message
 from .ColorText import ColorTextParser
 from . import RpcServer
 
-
-
-
 # List of email headers worth logging.
 # This should cover all those that are really interesting
 # from a security or identity point of view. Most other headers

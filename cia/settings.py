@@ -17,6 +17,12 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 #
+# This is so we can test Django's email system without having a running mail
+# server for simple emails.
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+#
 # This can be used to temporarily restrict the creation of new user accounts.
 # I'm using this to put the site through a testing period in which it isn't
 # fully public, but it's coexisting with the rest of CIA.
@@ -36,7 +42,6 @@ ADMINS = (
 #    ('Micah Dowty', 'micah@navi.cx'),
 #    ('Karsten Behrmann', 'bear-cia@gmx.net'),
 #    ('Lewis Cawte', 'lewiscawte@googlemail.com'),
-#    ('William Pitcock', 'nenolod@atheme.org'),
      ('Justin Crawford', 'Justin@stacksmash.net'),
 )
 

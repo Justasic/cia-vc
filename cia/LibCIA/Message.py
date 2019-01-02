@@ -32,8 +32,6 @@ from twisted.internet import reactor
 import time
 from . import RpcServer
 
-
-
 # Because we cannot import django settings into the Twisted part of 
 # CIA, Use rel_path to get a relative path to this file and
 # then use whatever we need from there..
@@ -207,7 +205,9 @@ class Hub(object):
            """
         result = None
         for callable, filter in self.clientItems:
+            print("Announcing to %s using filter %s" % (callable, filter))
             if filter and not list(filter(message)):
+                print("Filter excludes this callable.")
                 continue
             itemResult = callable(message)
             if itemResult is not None:

@@ -44,7 +44,7 @@ def send_feedback_mail(form):
     message = str("Name: %(name)s\n"
                       "E-mail: %(email)s\n"
                       "Referrer: %(referrer)s\n"
-                      "\n%(comment)s" % form.cleaned_data).encode("utf-8")
+                      "\n%(comment)s" % form.cleaned_data)
 
     send_mail(subject, message, from_addr, [a[1] for a in settings.MANAGERS])
 

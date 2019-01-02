@@ -114,6 +114,7 @@ def add_bot(request, asset_type):
     if not allNetworks:
         models.Network.objects.importNetworks()
         allNetworks = list(models.Network.objects.all())
+    print("Networks: %s" % models.Network.objects.all())
 
     ctx = assets.get_asset_add_context(request, asset_type)
     ctx.update({

@@ -90,7 +90,7 @@ class UserAsset(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     trusted_by = models.DateTimeField(null=True, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s access to %s for %s" % (
             self.get_access_display(),
             self.asset,
@@ -107,9 +107,9 @@ class NetworkManager(models.Manager):
     def importNetworks(self):
         """Import all network definitions from LibCIA into the database."""
         for name, obj in LibCIANetwork.__dict__.items():
-            if (type(obj) is type(LibCIANetwork.BaseNetwork)
-                and issubclass(obj, LibCIANetwork.BaseNetwork)
-                and obj.alias):
+            if (type(obj) is type(LibCIANetwork.BaseNetwork) and issubclass(obj, LibCIANetwork.BaseNetwork) and obj.alias):
+
+                print("Importing %s irc network..." % name)
 
                 net = self.get_or_create(uri = "irc://%s/" % obj.alias)[0]
                 net.description = name
@@ -131,7 +131,7 @@ class Network(models.Model):
     def id_string(self):
         return str(self.id)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.description
 
     def getHost(self, requiredScheme):
@@ -188,7 +188,7 @@ class AssetChangeset(models.Model):
     object_id = models.PositiveIntegerField(db_index=True)
     asset = GenericForeignKey()
 
-    def __unicode__(self):
+    def __str__(self):
         return "Change %d for %s by %s" % (self.id or 0, self.asset, self.user)
 
     def _lookup_model(self, field):
@@ -390,7 +390,7 @@ class AssetChangeItem(models.Model):
 
         return chunks
 
-    def __unicode__(self):
+    def __str__(self):
         if self.new_value is None:
             return str(self.field)
         else:
@@ -446,7 +446,7 @@ class Project(models.Model):
     def is_top_level(self):
         return len(self.target.path.split('/')) == 2
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.target)
 
     class Admin:
@@ -457,7 +457,7 @@ class Author(models.Model):
     assets = GenericRelation(UserAsset)
     target = models.ForeignKey(StatsTarget, on_delete=models.CASCADE)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.target)
 
     class Admin:
@@ -655,7 +655,7 @@ class Bot(models.Model):
 
         server.ruleset.store(settings.CIA_KEY, self._wrapRuleset(content))
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s on %s" % (self.location, self.network)
 
     class Admin:
