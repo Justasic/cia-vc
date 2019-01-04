@@ -10,7 +10,7 @@
    {% if request.is_secure %}
       >Insecure</a>
    {% else %}
-      >Secure <img src="/media/img/lock-10.png" width="10" height="10" /></a> |
+      >Secure <img src="{% static "img/lock-10.png" %}" width="10" height="10" /></a> |
       <strong>Insecure</strong>
    {% endif %}
 </div>

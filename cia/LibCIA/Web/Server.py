@@ -67,7 +67,7 @@ class Request(server.Request):
         # Allow environment variables to override the host/port of this machine,
         # with an extra header to enable SSL. This is an alternative to VHostMonster
         # that works with the "pound" proxy and load balancer.
-        host = os.getenv("REQUEST_HOST")
+        host = False#os.getenv("REQUEST_HOST")
         if host:
             xfp = self.getHeader('X-Forwarded-Proto')
             if xfp and xfp.strip().lower() == "https":
@@ -187,9 +187,15 @@ class Site(server.Site):
 
     def putComponent(self, childName, component):
         """Install the given component instance at 'childName'"""
-        component.url = '/' + childName
+        component.url = '/' + childName + '/'
+        print("Putting %s" % component.url)
         if component.resource:
-            self.resource.putChild(childName, component.resource)
+            self.resource.putChild(childName.encode(), component.resource)
+            # Because Twisted is fucking retarded in handling trailing
+            # slashes, we must put the resource as a child of itself.
+            # Good thing Twisted web will be going bye bye soon.
+            component.resource.children = {}
+            component.resource.putChild(b'', component.resource)
         self.components.append(component)
 
 ### The End ###

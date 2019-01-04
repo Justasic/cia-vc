@@ -111,8 +111,8 @@
     background: white;
     width: 48em;
 
-    padding: 0 1em;
-    margin: 0 auto 1em auto;
+    padding: 0 1em 36%;
+    margin: 0 auto 5% auto;
 
     border-left: 1px solid #DARK_COLOR;
     border-right: 1px solid #DARK_COLOR;

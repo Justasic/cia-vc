@@ -1,13 +1,14 @@
 {% extends 'layout_base.html' %}
+{% load static %}
 
 {% block stylesheets %}
 {{ block.super }}
-  <link href="/media/css/stats.css" type="text/css" rel="stylesheet" />
+  <link href="{% static "css/stats.css" %}" type="text/css" rel="stylesheet" />
 {% endblock %}
 
 {% block scripts %}
   {{ block.super }}
-  <script type="text/javascript" src="/media/js/stats.js" ></script>
+  <script type="text/javascript" src="{% static "js/stats.js" %}" ></script>
 {% endblock %}
 
 {% block page_title %}{{ target.title }}{% endblock %}
@@ -51,20 +52,20 @@
 	{% ifchanged message.timestamp.year %}
 	  <span class="expander-open" id="expander-{{ message.timestamp|date:"Y" }}"
 	        onclick="expandYear({{ message.timestamp|date:"'Y','m','d'" }})">
-	    <img src="/media/img/tlexpand-open.png" width="10" height="10" />
+	    <img src="{% static "img/tlexpand-open.png" %}" width="10" height="10" />
 	    {{ message.timestamp|date:"Y" }}</span>
 	{% endifchanged %}
 
 	{% ifchanged message.get_year_and_month %}
 	  <span class="expander-open" id="expander-{{ message.timestamp|date:"Y-m" }}"
 	        onclick="expandMonth({{ message.timestamp|date:"'Y','m','d'" }})">
-	    <img src="/media/img/tlexpand-open.png" width="10" height="10" />
+	    <img src="{% static "img/tlexpand-open.png" %}" width="10" height="10" />
 	    {{ message.timestamp|date:"F" }}</span>
 	{% endifchanged %}
 
 	<span class="expander-open" id="expander-{{ message.timestamp|date:"Y-m-d" }}"
 	      onclick="expandDay({{ message.timestamp|date:"'Y','m','d'" }})">
-	  <img src="/media/img/tlexpand-open.png" width="10" height="10" />
+	  <img src="{% static "img/tlexpand-open.png" %}" width="10" height="10" />
 	  {{ message.timestamp|date:"l \t\h\e jS" }}</span>
       </div>
 

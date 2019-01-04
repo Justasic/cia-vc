@@ -2,8 +2,9 @@ from django import forms as forms
 from django.conf import settings
 from django.contrib import auth
 from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render
+from django.urls import reverse
 from django.template import loader
 from django.template.context import Context
 from cia.apps.mailutil import send_mail_to_user
@@ -18,7 +19,7 @@ import datetime, urllib.request, urllib.parse, urllib.error
 
 def login_url(next_page):
     if next_page:
-        return settings.LOGIN_URL + "?next_page=" + urllib.parse.quote(next_page)
+        return settings.LOGIN_URL + "?next=" + urllib.parse.quote(next_page)
     else:
         return settings.LOGIN_URL
 
@@ -51,13 +52,38 @@ def old_login_required(view_func):
     _checklogin.__dict__ = view_func.__dict__
     return _checklogin
 
+class ImpersonationForm(forms.Form):
+    username = forms.CharField(max_length=255)
+
+def impersonate(request, impersonatee):
+    # This is a big hammer for superusers: if you're logged
+    # in as a superuser, you can use this form to logout as
+    # yourself but login as any user on the site.
+    #  This is useful as an abuse management tool.
+    if not request.user.is_superuser or not request.user.has_perm("accounts.impersonate"):
+        raise Http404()  # Yeet
+        
+    form = ImpersonationForm(request.POST, initial=request.GET)
+
+    if request.POST and form.is_valid():
+        # First check and see if the username exists.
+        if not user_exists(form.username):
+            raise forms.ValidationError("Username does not exist.")
+        
+        # Now authenticate as that user, this is different from
+        # internal_login as it does not do test cookies or
+        # change the login time, it simply authenticates as that
+        # user without a password.
+        user = get_user(form.username)
+        auth.login(request, user)
+    else:
+        form = ImpersonationForm(initial=request.GET)
+    
+    return render(request, 'accounts/impersonate.html', {"impersonateform": form})
+
 
 def internal_login(request, username, password):
-    try:
-        user = auth.authenticate(username = username.encode(),
-                                 password = password)
-    except UnicodeDecodeError:
-        user = None
+    user = auth.authenticate(username = username, password = password)
     if user is None:
         return "Incorrect username or password."
     elif not user.is_active:
@@ -72,6 +98,9 @@ def internal_login(request, username, password):
 
 def get_user(username):
     return auth.models.User.objects.get(username=username)
+
+def user_exists(username):
+    return auth.models.User.objects.filter(username=username).exists()
 
 
 ###########################
@@ -118,7 +147,6 @@ def reset(request, key, next_page):
             if loginError:
                 # This might happen if the account is deactivated.
                 raise forms.ValidationError(loginError)
-                #form.errors['submit'] = forms.util.ErrorList([loginError])
             else:
                 # We're in successfully. Expire the recovery session.
                 PasswordToken.delete(key)
@@ -161,8 +189,7 @@ def validate_test_cookie(form, request):
         raise forms.ValidationError("Cookies must be enabled.")
         #form.errors['submit'] = forms.util.ErrorList(["Cookies must be enabled."])
 
-def register(request, next_page, template_name="accounts/register.html"):
-
+def register(request, next, template_name="accounts/register.html"):
     # Ignore if they're already registered, they need to logout first - Justasic
     if request.user.is_authenticated:
         return HttpResponseRedirect(reverse('index'))
@@ -177,32 +204,14 @@ def register(request, next_page, template_name="accounts/register.html"):
         validate_test_cookie(form, request)
 
         if not form.errors:
-            # The username still might be taken, but let's test for that atomically
-            # as a side-effect of trying to create the user.
-            user = auth.models.User(first_name = form.cleaned_data.get('first_name').title(),
-                                    last_name = form.cleaned_data.get('last_name').title(),
-                                    email = form.cleaned_data.get('email'),
-                                    username = form.cleaned_data.get('username'))
-            user.set_password(form.cleaned_data.get('password'))
-            try:
-                user.save()
-            except:
-                # The actual error we get for a duplicate username is database-specific.
-                # To make this portable, we'll do a second check to see if the username
-                # was taken. This is also slightly racy, but much less so than checking
-                # beforehand. Easier to ask forgiveness than permission.
-                if get_user(form.cleaned_data.get('username')):
-                    raise forms.ValidationError("Sorry, this username is taken.")
-                    #form.errors['username'] = forms.util.ErrorList(["Sorry, this username is taken."])
-                else:
-                    # Something else happened.. pass on the exception
-                    raise
-
-        if not form.errors:
-            # Something's wrong internally if we can't log in to the
-            # account we just created...
-            assert not internal_login(request, form.cleaned_data.get('username'), form.cleaned_data.get('password'))
-            return HttpResponseRedirect(next_page)
+            if user_exists(form.cleaned_data.get('username')):
+                raise forms.ValidationError("Sorry, this username is taken.")
+            else:
+                # Something's wrong internally if we can't log in to the
+                # account we just created...
+                print(form.cleaned_data)
+                assert not internal_login(request, form.cleaned_data.get('username'), form.cleaned_data.get('password'))
+                return HttpResponseRedirect(next)
 
     else:
         form = RegistrationForm(initial=request.GET)

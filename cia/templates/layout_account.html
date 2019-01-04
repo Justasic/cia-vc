@@ -1,9 +1,10 @@
 {% extends 'layout_base.html' %}
 {% load account_nav %}
+{% load static %}
 
 {% block stylesheets %}
 {{ block.super }}
-  <link href="/media/css/account.css" type="text/css" rel="stylesheet" />
+  <link href="{% static "css/account.css" %}" type="text/css" rel="stylesheet" />
 {% endblock %}
 
 {% block page_title %}Your Account{% endblock %}

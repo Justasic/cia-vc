@@ -9,6 +9,7 @@
 # It can be started via http-cluster.sh.
 #
 
+from twisted.python import log
 import os, sys
 port = int(os.getenv("PORT"))
 
@@ -24,17 +25,9 @@ from cia.LibCIA import Database, Message, Web, RpcServer, Stats
 from Nouvelle import xml
 from twisted.internet import tcp
 
-Database.init()
+log.startLogging(sys.stdout)
 
-# Add the Google Analytics integration
-Web.Template.Page.site_bottomOfFooter = [xml("""
-  <script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
-  </script>
-  <script type="text/javascript">
-  _uacct = "UA-247340-1";
-  urchinTracker();
-  </script>
-""")]
+Database.init()
 
 application = service.Application("web_server")
 
@@ -62,6 +55,6 @@ site.putComponent('blog', Web.Server.Component("Blog"))
 site.putComponent('account', Web.Server.Component("Your Account"))
 
 # Run the HTTP server
-internet.TCPServer(port, site, interface='localhost').setServiceParent(application)
+internet.TCPServer(port, site).setServiceParent(application)
 
 ### The End ###

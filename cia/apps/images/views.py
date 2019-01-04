@@ -19,7 +19,7 @@ def upload(request):
         except models.ImageSource.DoesNotExist:
             raise Http404
 
-    elif request.FILES and request.user.is_authenticated():
+    elif request.FILES and request.user.is_authenticated:
         # Upload a new image
         try:
             image = models.ImageInstance.objects.create_original(

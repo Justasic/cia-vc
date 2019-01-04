@@ -30,6 +30,11 @@ toggles sorting by that column and the direction of the sort.
 
 from .Serial import tag, xml
 import re
+from functools import cmp_to_key
+
+# XXX: This is a py3 hack, please fix :(
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 __all__ = ['BaseTable', 'Column', 'AttributeColumn', 'IndexedColumn',
            'ResortableTable']
@@ -159,9 +164,9 @@ class BaseTable:
 
     def sortByColumn(self, column, reverse=False):
         if reverse:
-            self.rows.sort(lambda a,b: -column.cmp(a,b))
+            self.rows.sort(key=cmp_to_key(lambda a,b: -column.cmp(a,b)))
         else:
-            self.rows.sort(column.cmp)
+            self.rows.sort(key=cmp_to_key(column.cmp))
 
 
 class ResortableTable(BaseTable):

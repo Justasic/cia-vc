@@ -1,11 +1,12 @@
 {% extends 'layout_base.html' %}
+{% load static %}
 
 {% block page_title %}FID Graphing Test{% endblock %}
 {% block head_title %}FID Graphing Test{% endblock %}
 
 {% block scripts %}
   {{ block.super }}
-  <script type="text/javascript" src="/media/js/fidtool.js" ></script>
+  <script type="text/javascript" src="{% static "js/fidtool.js" %}" ></script>
 {% endblock %}
 
 {% block scripts-init %}

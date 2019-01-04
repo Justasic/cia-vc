@@ -106,7 +106,7 @@ class StatsTarget(object):
            guarantee that it exists yet.
            """
         # XXX - Bear hack: store as stats/author/f/foobar for filesystem sanity
-        segmentsLower = list(map(string.lower, self.pathSegments))
+        segmentsLower = list(map(str.lower, self.pathSegments))
         if len(segmentsLower) > 0:
             if len(segmentsLower) > 0 and segmentsLower[0] == 'author' or segmentsLower[0] == 'project':
                 target = segmentsLower[1]

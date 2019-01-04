@@ -37,17 +37,6 @@ import sys
 from cia.LibCIA import XML
 
 
-class Component(Server.Component):
-    """A server component showing the info page"""
-    name = 'Server Info'
-
-    def __init__(self):
-        self.resource = Page()
-
-    def __contains__(self, page):
-        return isinstance(page, Page)
-
-
 class Clock(Template.Section):
     title = 'UTC clock'
 
@@ -249,5 +238,16 @@ class Page(Template.Page):
         CachePerformance(),
         DbTables(),
         ]
+
+
+class Component(Server.Component):
+    """A server component showing the info page"""
+    name = 'Server Info'
+
+    def __init__(self):
+        self.resource = Page()
+
+    def __contains__(self, page):
+        return isinstance(page, Page)
 
 ### The End ###

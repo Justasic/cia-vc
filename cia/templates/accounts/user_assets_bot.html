@@ -1,3 +1,4 @@
+{% load static %}
 {% regroup user_assets|dictsort:"asset.getURI" by asset.network as grouped %}
 {% for group in grouped %}
   <li class="group">{{ group.grouper }}</li>
@@ -7,7 +8,7 @@
     {{ user_asset.asset.location }}
 
     {% ifequal user_asset.access ACCESS.EXCLUSIVE %}
-       <img src="/media/img/lock-10{% ifequal user_asset.id asset_id %}-fe8{% endifequal %}.png"
+       <img src="{% get_static_prefix %}/img/lock-10{% ifequal user_asset.id asset_id %}-fe8{% endifequal %}.png"
             width="10" height="10" alt="Exclusive access" title="Exclusive access" />
     {% endifequal %}
 

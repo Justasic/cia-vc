@@ -1,10 +1,11 @@
 {% extends 'layout_account.html' %}
+{% load static %}
 
 {% block nav-changes %}<li class="active">Changes</li>{% endblock %}
 
 {% block scripts %}
   {{ block.super }}
-  <script type="text/javascript" src="/media/js/asset-edit.js" ></script>
+  <script type="text/javascript" src="{% static "js/asset-edit.js" %}" ></script>
 {% endblock %}
 
 {% block scripts-init %}

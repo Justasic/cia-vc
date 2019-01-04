@@ -211,7 +211,8 @@ class Comment(models.Model):
         else:
             return self.comment[:length].rsplit(" ", 1)[0] + "..."
 
-
-
     class Admin:
         pass
+
+    class Meta:
+        db_table = 'comment_comment'

@@ -1,9 +1,10 @@
 {% extends 'accounts/asset_base.html' %}
 {% load account_nav %}
+{% load static %}
 
 {% block scripts %}
   {{ block.super }}
-  <script type="text/javascript" src="/media/js/asset-edit.js" ></script>
+  <script type="text/javascript" src="{% static "js/asset-edit.js" %}" ></script>
 {% endblock %}
 
 {% block scripts-init %}

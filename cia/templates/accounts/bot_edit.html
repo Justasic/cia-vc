@@ -1,4 +1,5 @@
 {% extends 'accounts/asset_edit.html' %}
+{% load static %}
 
 {% block user_assets %}
   {% include 'accounts/user_assets_bot.html' %}
@@ -6,7 +7,7 @@
 
 {% block scripts %}
   {{ block.super }}
-  <script type="text/javascript" src="/media/js/bot-edit.js" ></script>
+  <script type="text/javascript" src="{% static "js/bot-edit.js" %}" ></script>
 {% endblock %}
 
 {% block scripts-init %}

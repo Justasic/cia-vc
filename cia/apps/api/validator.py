@@ -1,4 +1,5 @@
 import django.forms as forms
+from django.views.decorators.csrf import csrf_exempt
 from cia.apps.api.util import json_result
 
 def validation_result(view_func):
@@ -19,6 +20,8 @@ def validation_result(view_func):
     _wrap.__dict__ = view_func.__dict__
     return _wrap
 
+# XXX: FIXME: Make csrf tokens work proper
+@csrf_exempt
 @json_result
 @validation_result
 def ruleset(request):

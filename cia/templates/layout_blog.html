@@ -1,4 +1,5 @@
 {% extends 'layout_doc.html' %}
+{% load static %}
 
 {% block page_title %}Blog{% endblock %}
 {% block head_title %}Blog{% endblock %}
@@ -28,7 +29,7 @@
           Posts from {{ current_archive_date|date:"F Y" }}
        {% else %}
           <a href="/blog/">Recent Posts</a>
-          <a href="/blog/feed/"><img src="/media/img/feed-icon-14x14.png" width="14" height="14"
+          <a href="/blog/feed/"><img src="{% static "img/feed-icon-14x14.png" %}" width="14" height="14"
                                      alt="Subscribe to Posts"
                                      title="Subscribe to Posts" /></a>
        {% endif %}
@@ -45,7 +46,7 @@
   {% if recent_comments %}
   <li>
     <p>Latest Comments
-       <a href="/blog/comment-feed/"><img src="/media/img/feed-icon-14x14.png" width="14" height="14"
+       <a href="/blog/comment-feed/"><img src="{% static "img/feed-icon-14x14.png" %}" width="14" height="14"
                                           alt="Subscribe to Comments"
                                           title="Subscribe to Comments" /></a>
        </p>

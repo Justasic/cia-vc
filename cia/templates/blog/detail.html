@@ -1,11 +1,12 @@
 {% extends 'layout_blog.html' %}
+{% load static %}
 
 {% block page_title %}{% if post.title %}{{ post.title }}{% else %}New blog post{% endif %}{% endblock %}
 
 {% block scripts %}
   {{ block.super }}
   {% if can_post %}
-    <script type="text/javascript" src="/media/js/blog-admin.js" ></script>
+    <script type="text/javascript" src="{% static "js/blog-admin.js" %}" ></script>
   {% endif %}
 {% endblock %}
 
@@ -22,7 +23,7 @@
   {% if post.getCommentCount > 0 %}
     <div class="comments">
     {% for c in post.getComments %}
-      <div class="comment comment-{% cycle odd,even %}" id="c{{ c.id }}">
+      <div class="comment comment-{% cycle 'odd' 'even' %}" id="c{{ c.id }}">
 	<div>
 	  <a id="c{{ c.id }}" href="#c{{ c.id }}">#{{ forloop.counter }}</a>
       {% if can_post %}<a href="{% url "cia.apps.blog.views.delete_comment" post.pk c.pk %}" class="X_button">X</a>{% endif %}

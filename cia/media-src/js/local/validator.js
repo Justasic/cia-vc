@@ -13,9 +13,10 @@ var Validator = {};
  */
 Validator.editTimeout = 2000.0;
 
-Validator.init = function(url, validMessage, fieldId, statusId, loadingId)
+Validator.init = function(url, validMessage, fieldId, statusId, loadingId, csrftoken)
 {
-    this.url = url;
+	this.url = url;
+	this.csrftoken = csrftoken;
     this.validMessage = validMessage;
     this.field = document.getElementById(fieldId);
     this.status = document.getElementById(statusId);
@@ -95,30 +96,31 @@ Validator.updateData = function()
 
     self.loading.style.display = "block";
 
-    var responseSuccess = function(req) {
-	self.loading.style.display = "none";
-	self.request = null;
+	var responseSuccess = function (req)
+	{
+		self.loading.style.display = "none";
+		self.request = null;
 
-	var obj = parseJSON(req.responseText);
+		var obj = parseJSON(req.responseText);
 
-	if (obj.is_valid) {
-	    self.show(self.validMessage);
-	} else {
-	    self.show(htmlEscape(obj.messages[0]), true);
-	}
+		if (obj.is_valid) {
+			self.show(self.validMessage);
+		} else {
+			self.show(htmlEscape(obj.messages[0]), true);
+		}
     }
 
     var responseFailure = function(req) {
-	self.loading.style.display = "none";
-	self.request = null;
+		self.loading.style.display = "none";
+		self.request = null;
 
-	self.show("Connection error during validation (" + req.status + ")");
+		self.show("Connection error during validation (" + req.status + ")");
     }
 
     var callback = {
-	success: responseSuccess,
-	failure: responseFailure,
-	timeout: 5000
+		success: responseSuccess,
+		failure: responseFailure,
+		timeout: 5000
     };
 
     self.request = YAHOO.util.Connect.asyncRequest('POST', this.url, callback,

@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.db.models import signals
 from django.core.signals import got_request_exception
-import os, re, subprocess, random, subprocess
+import os, re, subprocess, random
 #from popen2 import Popen4
 
 # These must be listed from largest to smallest
@@ -36,20 +36,20 @@ class ImageMagick:
     #
     # The -background option here should give us transparent PNGs when rendering vector images.
     #
-    CONVERT = "convert -background none -composite -quality 100"
+    CONVERT = ["/usr/bin/convert", "-background", "none", "-composite", "-quality", "100"]
 
-    IDENTIFY = "identify -ping"
+    IDENTIFY = ["/usr/bin/identify", "-ping"]
 
     def get_image_size(self, file_path):
         """Probe the size of an on-disk image, returning a (width, height) tuple.
            """
-        child = subprocess.Popen("%s -ping %s" % (self.IDENTIFY, subprocess.mkarg(file_path)))
-        output = child.fromchild.read()
+        child = subprocess.Popen(self.IDENTIFY + [file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = child.communicate()
         status = child.wait()
-        match = re.search(r" (\d+)x(\d+) ", output)
+        match = re.search(r" (\d+)x(\d+) ", stdout)
 
         if status or not match:
-            raise ImageException(output)
+            raise ImageException(stdout)
 
         return int(match.group(1)), int(match.group(2))
 
@@ -94,21 +94,23 @@ class ImageMagick:
             #   2. Reading and writing the child process simultaneously,
             #      without introducing deadlocks, would significantly
             #      complicate this function.
-            f = open(src_path, "wb")
-            f.write(data)
-            f.close()
+            try:
+                with open(src_path, "wb") as f:
+                    f.write(data)
+            except IOError as e:
+                print("Couldn't write to file %s" % e)
             del data
 
-            child = Popen4("%s %s %s" % (
-                self.CONVERT,
-                subprocess.mkarg(src_path),
-                subprocess.mkarg(dest_path),
-                ))
+            child = subprocess.Popen(
+                ["/usr/bin/convert", "-background", "none", "-composite", dest_path, "-quality", "100", src_path, dest_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-            output = child.fromchild.read()
+            stdout, stderr = child.communicate()
             status = child.wait()
+
+            print(child.args)
+            
             if status:
-                raise ImageException(output)
+                raise ImageException(stderr.decode('ascii').strip())
 
         finally:
             try:
@@ -118,17 +120,13 @@ class ImageMagick:
 
     def thumbnail_image(self, src_path, dest_path, size):
         """Generate a square thumbnail, with on-disk source and destination paths."""
-        child = Popen4("%s -geometry %dx%d %s %s" % (
-            self.CONVERT,
-            size, size,
-            subprocess.mkarg(src_path),
-            subprocess.mkarg(dest_path),
-            ))
+        child = subprocess.Popen(self.CONVERT + ["-geometry", "%dx%d" % (
+            size, size), src_path, dest_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        output = child.fromchild.read()
+        stdout, stderr = child.communicate()
         status = child.wait()
         if status:
-            raise ImageException(output)
+            raise ImageException(stdout)
 
 
 class ImageSource(models.Model):
@@ -172,7 +170,7 @@ class ImageSource(models.Model):
             self.get_thumbnail(size=64).to_html(),
             )
 
-    def __unicode__(self):
+    def __str__(self):
         original = self.get_original()
         s = "Image #%d (%dx%d)" % (self.id, original.width, original.height)
         if self.is_temporary:
@@ -207,7 +205,7 @@ class ImageInstanceManager(models.Manager):
 
         try:
             self.magick.store_image(original.get_path(create=True),
-                                    image['content'], image.get('filename'))
+                                    image.read(), image.name)
         except:
             source.delete()
             raise
