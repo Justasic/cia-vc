@@ -91,12 +91,12 @@ class IrcURIHandler(Ruleset.RegexURIHandler):
         self.remoteBots.add(transformed)
 
     def unassigned(self, uri):
-        uri = str(uri, encoding='utf-8')
         self.remoteBots.delete(self.trans[uri])
         self.trans.pop(uri)
 
     def message(self, uri, message, content):
-        self.remoteBots.msg(self.trans[uri], str(content).encode('utf-8'))
+        log.msg("Sending %s a message:\n" % uri, content)
+        self.remoteBots.msg(self.trans[uri], content)
 
     def rulesetsRefreshed(self):
         """Synchronize our requests with the server's only once rulesets have

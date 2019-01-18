@@ -25,6 +25,7 @@ The stats:// URI handler
 from cia.LibCIA.Stats.Target import StatsTarget
 from cia.LibCIA.Ruleset import RegexURIHandler
 from cia.LibCIA.Stats.Graph import Relation
+from pathlib import PurePath
 
 
 class StatsURIHandler(RegexURIHandler):
@@ -49,7 +50,7 @@ class StatsURIHandler(RegexURIHandler):
            targets this message has been delivered to, and reinforce the
            new relations this forms.
            """
-        path = posixpath.join(self.parseURI(uri)['path'], content)
+        path = PurePath(self.parseURI(uri)['path']).joinpath(content).as_posix()
         target = StatsTarget(path)
         target.deliver(message)
 

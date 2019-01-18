@@ -40,6 +40,8 @@ The top-level directory ('data' by default) is split into three branches:
 #
 
 import os, random
+from pathlib import PurePath
+from twisted.python import log
 
 def setDataRoot(path):
     """Change the root 'data' directory. This can be called in
@@ -71,7 +73,7 @@ def tryGetDir(*seg):
     """Like getDir, but this will not check the directory
        for existence nor create any new directories.
        """
-    return os.path.join(dataRoot, *seg)
+    return PurePath(dataRoot).joinpath(*seg).as_posix()
 
 def getCacheFile(ns, digest):
     """Get a cache file in the provided namespace (directory)

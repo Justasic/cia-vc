@@ -24,6 +24,8 @@ SAX events.
 #
 
 import struct, os, datetime
+from pathlib import PurePath
+from twisted.python import log
 import xml.sax, xml.dom.minidom
 
 class CircularFile:
@@ -701,8 +703,9 @@ class MessageArchive:
                 os.mkdir(p)
             except OSError:
                 pass
-            p = os.path.join(p, segment)
+            p = PurePath(p).joinpath(segment).as_posix()
 
+        log.msg("SAX Path is:", p)
         self._file = open(p, 'ab')
 
     def push(self, msg):
@@ -731,7 +734,8 @@ class MessageArchive:
            just so we can re-serialize it with SAX. This is a stopgap measure
            until the message filtering architecture is redesigned.
            """
-        self.push(str(msg).encode('utf-8'))
+        #log.msg("LibCIA.Stats.Messages: ", msg)
+        self.push(msg.getXML())
 
     def readNextFromFile(self, f):
         """Read a single message from a file-like object, advancing the file

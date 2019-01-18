@@ -21,6 +21,7 @@ sys.path.append(rel_path("../../"))
 import cia.LibCIA.IRC.Handler
 from cia.LibCIA import Debug, Security, RpcServer, RpcClient, Web, Cache, Files
 from cia.LibCIA import Database, Message, Ruleset, IRC, Stats, IncomingMail, Cron
+from cia.LibCIA import Discord
 from twisted.application import service, internet
 
 Database.init()
@@ -32,8 +33,10 @@ hub = Message.Hub()
 # append-only SAX buffer, sorted by date. We don't do anything with
 # this data yet, but it will be the foundation for a new message
 # filtering architecture.
-hub.addClient(Stats.Messages.MessageArchive(
-    Files.getDir(Files.dbDir, 'archive')).deliver)
+hub.addClient(Stats.Messages.MessageArchive(Files.getDir(Files.dbDir, 'archive')).deliver)
+
+# A really dumb simple Discord implementation for right now
+hub.addClient(Discord.DiscordRuleset().deliver)
 
 # Connect to IRC bots running in a separate process
 remoteBots = IRC.Handler.RemoteBots("/var/run/cia/bots.socket")

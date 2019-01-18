@@ -111,6 +111,7 @@ class RulesetInterface(RpcServer.Interface):
 
 
 def parseRuleset(spec):
+    log.msg("parseRuleset checking ", spec)
     if spec[0] == '[':
         includeName = (spec[1] == 'I')
         parts = spec[2:].split('\n')
@@ -155,6 +156,7 @@ class TinyRuleset(object):
         return len(self.projects) == 0
 
     def matches(self, msg):
+        print("TinyRuleset Checking match", self.uri, msg)
         match = self.projectPath.queryObject(msg)
         if match:
             for node in match:
@@ -279,12 +281,6 @@ class Ruleset(XML.XMLFunction):
         # If not, this will be None.
         self.uri = element.getAttributeNS(None, 'uri') or None
 
-        # URIs are always encoded if necessary, since just about everywhere we'd need to
-        # use a URI we can't support Unicode yet. Specific examples are IRC servers/channels
-        # and as dict keys in an XML-RPC response.
-        if type(self.uri) is str:
-            self.uri = self.uri.encode()
-
         # Create a function to evaluate this element as a <rule> would be evaluated
         ruleFunc = self.element_rule(element)
 
@@ -389,11 +385,7 @@ class BaseURIHandler(object):
         """Return True if this URI handler is applicable to the given URI.
            The default implementation checks it against our URI scheme.
            """
-        ### XXX: Hack to make django stop crashing thanks to stupid python 3 strings
-        if type(uri) == type(b""):
-            return uri.startswith(self.scheme.encode() + b':')
-        else:
-            return uri.encode().startswith(self.scheme.encode() + b':')
+        return uri.startswith(self.scheme + ':')
 
     def assigned(self, uri, newRuleset):
         """This optional function is called when a URI matching this handler is
@@ -437,7 +429,7 @@ class RegexURIHandler(BaseURIHandler):
 
     def parseURI(self, uri):
         """Given a valid URI, return a dictionary of named groups in the regex match"""
-        match = re.match(self.regex, uri.decode('utf-8'), self.regexFlags)
+        match = re.match(self.regex, uri, self.regexFlags)
         if not match:
             raise InvalidURIException("Invalid URI: %r" % uri)
         return match.groupdict()
@@ -463,9 +455,12 @@ class RulesetDelivery(object):
         # exceptions to be propagated to the original sender of the message.
         # In ruleset delivery however, messages never have a return value
         # and shouldn't raise exceptions.
-        print("Ruleset %s for %s" % (self.ruleset, self.uriHandler))
+        print("Ruleset %s for %s" % (repr(self.ruleset), self.uriHandler))
         try:
+            print("calling with message:\n\n", message)
+            print("\n\n")
             result = self.ruleset(message)
+            print("Ruleset result: ", result)
             if result:
                 self.uriHandler.message(self.ruleset.uri, message, result)
         except:
@@ -537,8 +532,7 @@ class RulesetStorage:
            """
         log.msg("Starting to refresh rulesets...")
         result = defer.Deferred()
-        defer.maybeDeferred(self.dbIter).addCallback(
-            self._refresh, result).addErrback(result.errback)
+        defer.maybeDeferred(self.dbIter).addCallback(self._refresh, result).addErrback(result.errback)
         return result
 
     def _refresh(self, seq, result):

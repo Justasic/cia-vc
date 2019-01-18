@@ -205,11 +205,13 @@ class Hub(object):
            """
         result = None
         for callable, filter in self.clientItems:
-            print("Announcing to %s using filter %s" % (callable, filter))
+            print("Announcing to %s ------- " % callable, filter)
             if filter and not list(filter(message)):
                 print("Filter excludes this callable.")
                 continue
+            print("Calling filter %s....." % type(callable))
             itemResult = callable(message)
+            print("finished calling filter.......")
             if itemResult is not None:
                 result = itemResult
         return result

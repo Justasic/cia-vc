@@ -25,6 +25,7 @@ interacting with stats targets.
 
 import string
 import posixpath
+from pathlib import PurePath
 
 from twisted.internet import defer
 from twisted.python import log
@@ -73,6 +74,7 @@ class StatsTarget(object):
     metadata = property(_getMetadata)
 
     def setPath(self, path):
+        log.msg("PATH: ", path)
         # Remove leading and trailing slashes, remove duplicate
         # slashes, process '.' and '..' directories. We don't
         # allow paths beginning with '.' or '_'.
@@ -107,16 +109,20 @@ class StatsTarget(object):
            """
         # XXX - Bear hack: store as stats/author/f/foobar for filesystem sanity
         segmentsLower = list(map(str.lower, self.pathSegments))
+        log.msg("Segments Lower: ", segmentsLower)
+        log.msg("Path segments: ", self.pathSegments)
         if len(segmentsLower) > 0:
-            if len(segmentsLower) > 0 and segmentsLower[0] == 'author' or segmentsLower[0] == 'project':
-                target = segmentsLower[1]
+            if segmentsLower[0] == 'author' or segmentsLower[0] == 'project':
+                log.msg("Fixing path segments")
+                target = segmentsLower[0]
                 segmentsLower.insert(1, target[0])
         return Files.tryGetDir(Files.dbDir, 'stats', *segmentsLower)
 
     def deliver(self, message=None):
         """An event has occurred which should be logged by this stats target"""
+
         if message:
-            self.messages.push(str(message).encode('utf-8'))
+            self.messages.push(message)
 
             # XXX:
             # We want to close the file now, even if this StatsTarget instance lingers
@@ -128,11 +134,12 @@ class StatsTarget(object):
         self.counters.increment()
 
         # XXX: Disable subscriptions for speed. Nobody uses them anyway.
-        # SubscriptionDelivery(self).notify('messages')
+        SubscriptionDelivery(self).notify('messages')
 
     def child(self, name):
         """Return the StatsTarget for the given sub-target name under this one"""
-        return StatsTarget(posixpath.join(self.path, name))
+        log.msg(type(self.path), type(name))
+        return StatsTarget(PurePath(self.path).joinpath(name).as_posix())
 
     def parent(self):
         """Return the parent StatsTarget of this one, or None if we're the root"""

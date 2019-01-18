@@ -53,7 +53,10 @@ class XMLObject(object):
             self.loadFromDom(doc)
 
     def __str__(self):
-        return toString(self.xml)
+        return self.xml.toxml()
+
+    def getXML(self):
+        return self.xml.toxml()
 
     def loadFromString(self, string, uri=None):
         """Parse the given string as XML and set the contents of the message"""
@@ -118,6 +121,7 @@ class XMLObjectParser(XMLObject):
         elif node.nodeType == node.ELEMENT_NODE:
             f = getattr(self, "element_" + node.nodeName, None)
             if f:
+                print("Calling function for node \"%s\"" % node)
                 return f(node, *args, **kwargs)
             else:
                 return self.unknownElement(node, *args, **kwargs)
@@ -150,6 +154,7 @@ class XMLFunction(XMLObjectParser):
     resultAttribute = 'f'
 
     def __call__(self, *args, **kwargs):
+        print("__call__ with args and kwargs", args, kwargs)
         return self.f(*args, **kwargs)
 
 
@@ -272,10 +277,6 @@ def addElement(node, name, content=None, attributes={}):
 parseStream = minidom.parse
 
 def parseString(string):
-    # Grarr.. minidom can't directly parse Unicode objects
-    if type(string) is str:
-        string = string.encode('utf-8')
-
     return minidom.parseString(string)
 
 

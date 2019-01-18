@@ -24,10 +24,12 @@ to metadata or RSS pages.
 #
 
 import posixpath
+from pathlib import PurePath
 import re
 
 from twisted.internet import defer
 from twisted.web import error
+from twisted.python import log
 
 from cia.LibCIA.Web import Template, Info, Server
 from Nouvelle import tag, place
@@ -78,13 +80,17 @@ class Page(Template.Page):
             return self.__class__(self.component, parentTarget)
 
     def getURL(self, context):
-        return posixpath.join(self.component.url, self.target.path)
+        #log.msg(type(self.component.url), type(self.target.path))
+        return PurePath(self.component.url).joinpath(self.target.path) # posixpath.join(self.component.url.encode(), self.target.path.encode())
 
     def getChildWithDefault(self, name, request):
         """Part of IResource, called by twisted.web to retrieve pages for URIs
            below this one. This just creates a Page instance for our StatsTarget's child,
            with a few special cases used for metadata and editing.
            """
+        log.msg("getChildWithDefault", type(name))
+        if isinstance(name, bytes):
+            name = name.decode()
         childFactories = {
             '.message':  MessageViewer.RootPage,
             '.rss':      Feed.RSSFrontend,

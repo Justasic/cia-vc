@@ -22,7 +22,8 @@ Classes for forming hyperlinks between stats browser pages
 #
 
 from urllib.parse import quote
-import posixpath
+import posixpath, pathlib
+from twisted.python import log
 
 from Nouvelle import tag
 from cia.LibCIA.Web import Template
@@ -42,7 +43,7 @@ class TargetRelativeLink:
         req = context['request']
         #port = req.host[2]
         port = req.host.port
-        hostname = req.getRequestHostname()
+        hostname = req.getRequestHostname().decode()
         if req.isSecure():
             default = 443
         else:
@@ -51,13 +52,9 @@ class TargetRelativeLink:
             hostport = ''
         else:
             hostport = ':%d' % port
-        path = posixpath.join('/stats',
-                              *(tuple(self.target.pathSegments) + self.relativePathSegments))
-        return quote('http%s://%s%s%s' % (
-            req.isSecure() and 's' or '',
-            hostname,
-            hostport,
-            path), "/:")
+
+        path = pathlib.PurePath('/stats').joinpath(*(tuple(self.target.pathSegments) + self.relativePathSegments)).as_posix()
+        return quote('http%s://%s%s%s' % (req.isSecure() and 's' or '', hostname, hostport, path), "/:")
 
 
 class StatsLink(TargetRelativeLink):
